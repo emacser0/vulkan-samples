@@ -13,7 +13,6 @@ public:
 	class FVulkanContext* GetRenderContext() const;
 	class FVulkanScene* GetScene() const;
 	class FVulkanUIRenderer* GetUIRenderer() const;
-	class FVulkanMeshRenderer* GetMeshRenderer() const;
 	class FCamera* GetCamera() const;
 
 private:
@@ -25,7 +24,6 @@ private:
 	class FVulkanContext* RenderContext;
 	class FVulkanScene* Scene;
 	class FVulkanUIRenderer* UIRenderer;
-	class FVulkanMeshRenderer* MeshRenderer;
 	class FCamera* Camera;
 };
 

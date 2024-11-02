@@ -52,16 +52,14 @@ void OnMouseWheelEvent(GLFWwindow* Window, double XOffset, double YOffset)
 		FCamera* Camera = GEngine->GetCamera();
 		assert(Camera != nullptr);
 
-		FTransform CameraTransform = Camera->GetTransform();
-		glm::mat4 RotationMatrix = glm::toMat4(CameraTransform.GetRotation());
+		glm::mat4 RotationMatrix = glm::toMat4(Camera->GetRotation());
 
 		glm::vec4 MoveVector(0.0f, 0.0f, -YOffset, 1.0f);
 
 		float CameraMoveSpeed;
 		GConfig->Get("CameraMoveSpeed", CameraMoveSpeed);
 
-		CameraTransform.SetTranslation(CameraTransform.GetTranslation() + glm::vec3(RotationMatrix * MoveVector) * CameraMoveSpeed * 0.1f);
-		Camera->SetTransform(CameraTransform);
+		Camera->SetLocation(Camera->GetLocation() + glm::vec3(RotationMatrix * MoveVector) * CameraMoveSpeed * 0.1f);
 	}
 }
 
@@ -139,7 +137,7 @@ private:
 
 FMainWidget::FMainWidget()
 	: bInitialized(false)
-	, ShaderItems({ "frag_phong", "blinn_phong" })
+	, ShaderItems({ "phong", "blinn_phong" })
 	, CurrentShaderItem(ShaderItems[1])
 {
 	Light.Position = glm::vec3(1.0f);
@@ -196,10 +194,11 @@ void FMainWidget::Draw()
 	ImGui::End();
 }
 
+FVulkanMeshRenderer* MeshRenderer;
+
 void FMainWidget::OnShaderItemSelected(const std::string& NewSelectedItem)
 {
-	FVulkanMeshRenderer* MeshRenderer = GEngine->GetMeshRenderer();
-	if (NewSelectedItem == "frag_phong")
+	if (NewSelectedItem == "phong")
 	{
 		MeshRenderer->SetPipelineIndex(0);
 	}
@@ -309,7 +308,7 @@ void Run(int argc, char** argv)
 	SphereModel->SetLocation(glm::vec3(0.0f, 0.0f, -2.0f));
 	GEngine->GetScene()->AddModel(SphereModel);
 
-	FVulkanMeshRenderer* MeshRenderer = GEngine->GetMeshRenderer();
+	MeshRenderer = RenderContext->CreateObject<FVulkanMeshRenderer>();
 	MeshRenderer->Ready();
 	MeshRenderer->SetPipelineIndex(1);
 
@@ -392,9 +391,7 @@ void Update(float InDeltaTime)
 	PrevMouseX = MouseX;
 	PrevMouseY = MouseY;
 
-	FTransform CameraTransform = Camera->GetTransform();
-
-	glm::mat4 RotationMatrix = glm::toMat4(CameraTransform.GetRotation());
+	glm::mat4 RotationMatrix = glm::toMat4(Camera->GetRotation());
 
 	glm::vec4 MoveVector = RotationMatrix * glm::vec4(glm::normalize(CameraMoveDelta), 1.0f);
 	glm::vec3 FinalMoveDelta(MoveVector);
@@ -405,10 +402,8 @@ void Update(float InDeltaTime)
 
 	if (glm::length(FinalMoveDelta) > FLT_EPSILON)
 	{
-		CameraTransform.SetTranslation(CameraTransform.GetTranslation() + FinalMoveDelta * CameraMoveSpeed * InDeltaTime);
+		Camera->SetLocation(Camera->GetLocation() + FinalMoveDelta * CameraMoveSpeed * InDeltaTime);
 	}
-
-	Camera->SetTransform(CameraTransform);
 }
 
 int main(int argc, char** argv)

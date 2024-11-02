@@ -14,8 +14,6 @@ FVulkanMesh::FVulkanMesh(FVulkanContext* InContext)
 	, BaseColorTexture(nullptr)
 	, NormalTexture(nullptr)
 	, bLoaded(false)
-	, NumVertices(0)
-	, NumIndices(0)
 {
 
 }
@@ -66,9 +64,6 @@ void FVulkanMesh::Unload()
 	{
 		vkFreeMemory(Device, IndexBuffer.Memory, nullptr);
 	}
-
-	NumVertices = 0;
-	NumIndices = 0;
 
 	VertexBuffer.Buffer = VK_NULL_HANDLE;
 	VertexBuffer.Memory = VK_NULL_HANDLE;

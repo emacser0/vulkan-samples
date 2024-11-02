@@ -19,20 +19,12 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Asset.cpp" />
-    <ClCompile Include="AssetManager.cpp" />
     <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="Mesh.cpp" />
-    <ClCompile Include="TextureSource.cpp" />
-    <ClCompile Include="Widget.cpp" />
+    <ClCompile Include="Engine.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\Asset.h" />
-    <ClInclude Include="include\AssetManager.h" />
     <ClInclude Include="include\Camera.h" />
-    <ClInclude Include="include\Mesh.h" />
-    <ClInclude Include="include\TextureSource.h" />
-    <ClInclude Include="include\Widget.h" />
+    <ClInclude Include="include\Engine.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -136,7 +128,7 @@
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)core_1.2\include;$(SolutionDir)external\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)core_1.2\include;$(SolutionDir)rendering_1.2\include;$(SolutionDir)external\include;C:\VulkanSDK\1.3.290.0\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -156,7 +148,7 @@
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)core_1.2\include;$(SolutionDir)external\include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)core_1.2\include;$(SolutionDir)rendering_1.2\include;$(SolutionDir)external\include;C:\VulkanSDK\1.3.290.0\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
