@@ -1,14 +1,17 @@
-#include "Engine.h"
 #include "Config.h"
 #include "AssetManager.h"
+#include "Mesh.h"
+#include "TextureSource.h"
+#include "Widget.h"
+
 #include "VulkanContext.h"
 #include "VulkanModel.h"
 #include "VulkanScene.h"
 #include "VulkanMeshRenderer.h"
 #include "VulkanUIRenderer.h"
+
 #include "Camera.h"
-#include "TextureSource.h"
-#include "Widget.h"
+#include "Engine.h"
 
 #include <ctime>
 #include <chrono>
@@ -52,16 +55,14 @@ void OnMouseWheelEvent(GLFWwindow* Window, double XOffset, double YOffset)
 		FCamera* Camera = GEngine->GetCamera();
 		assert(Camera != nullptr);
 
-		FTransform CameraTransform = Camera->GetTransform();
-		glm::mat4 RotationMatrix = glm::toMat4(CameraTransform.GetRotation());
+		glm::mat4 RotationMatrix = glm::toMat4(Camera->GetRotation());
 
 		glm::vec4 MoveVector(0.0f, 0.0f, -YOffset, 1.0f);
 
 		float CameraMoveSpeed;
 		GConfig->Get("CameraMoveSpeed", CameraMoveSpeed);
 
-		CameraTransform.SetTranslation(CameraTransform.GetTranslation() + glm::vec3(RotationMatrix * MoveVector) * CameraMoveSpeed * 0.1f);
-		Camera->SetTransform(CameraTransform);
+		Camera->SetLocation(Camera->GetLocation() + glm::vec3(RotationMatrix * MoveVector) * CameraMoveSpeed * 0.1f);
 	}
 }
 
@@ -429,9 +430,7 @@ void Update(float InDeltaTime)
 	PrevMouseX = MouseX;
 	PrevMouseY = MouseY;
 
-	FTransform CameraTransform = Camera->GetTransform();
-
-	glm::mat4 RotationMatrix = glm::toMat4(CameraTransform.GetRotation());
+	glm::mat4 RotationMatrix = glm::toMat4(Camera->GetRotation());
 
 	glm::vec4 MoveVector = RotationMatrix * glm::vec4(glm::normalize(CameraMoveDelta), 1.0f);
 	glm::vec3 FinalMoveDelta(MoveVector);
@@ -442,10 +441,8 @@ void Update(float InDeltaTime)
 
 	if (glm::length(FinalMoveDelta) > FLT_EPSILON)
 	{
-		CameraTransform.SetTranslation(CameraTransform.GetTranslation() + FinalMoveDelta * CameraMoveSpeed * InDeltaTime);
+		Camera->SetLocation(Camera->GetLocation() + FinalMoveDelta * CameraMoveSpeed * InDeltaTime);
 	}
-
-	Camera->SetTransform(CameraTransform);
 }
 
 int main(int argc, char** argv)

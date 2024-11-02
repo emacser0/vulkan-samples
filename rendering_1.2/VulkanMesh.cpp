@@ -3,8 +3,7 @@
 #include "VulkanHelpers.h"
 #include "VulkanTexture.h"
 
-#include <cassert>
-#include <stdexcept>
+#include "Mesh.h"
 
 #include "glm/glm.hpp"
 
@@ -44,6 +43,8 @@ bool FVulkanMesh::Load(FMesh* InMesh)
 void FVulkanMesh::Unload()
 {
 	VkDevice Device = Context->GetDevice();
+
+	MeshAsset = nullptr;
 
 	if (VertexBuffer.Buffer != VK_NULL_HANDLE)
 	{

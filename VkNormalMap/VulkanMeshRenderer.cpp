@@ -8,6 +8,7 @@
 #include "Utils.h"
 #include "Engine.h"
 #include "Config.h"
+#include "Mesh.h"
 #include "Camera.h"
 
 #include "glm/gtc/matrix_transform.hpp"

@@ -5,9 +5,11 @@
 #include "VulkanScene.h"
 
 #include "Utils.h"
-#include "Engine.h"
 #include "Config.h"
+#include "Mesh.h"
+
 #include "Camera.h"
+#include "Engine.h"
 
 #include "glm/gtc/matrix_transform.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
@@ -533,6 +535,12 @@ void FVulkanMeshRenderer::Render()
 			continue;
 		}
 
+		FMesh* MeshAsset = Mesh->GetMeshAsset();
+		if (MeshAsset == nullptr)
+		{
+			continue;
+		}
+
 		const auto DescriptorSetIter = DescriptorSetMap.find(Model);
 		if (DescriptorSetIter == DescriptorSetMap.end())
 		{
@@ -549,6 +557,6 @@ void FVulkanMeshRenderer::Render()
 
 		vkCmdBindIndexBuffer(CommandBuffer, Mesh->GetIndexBuffer().Buffer, 0, VK_INDEX_TYPE_UINT32);
 
-		vkCmdDrawIndexed(CommandBuffer, static_cast<uint32_t>(Mesh->GetNumIndices()), 1, 0, 0, 0);
+		vkCmdDrawIndexed(CommandBuffer, static_cast<uint32_t>(MeshAsset->GetIndices().size()), 1, 0, 0, 0);
 	}
 }

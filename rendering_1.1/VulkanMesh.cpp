@@ -3,8 +3,7 @@
 #include "VulkanHelpers.h"
 #include "VulkanTexture.h"
 
-#include <cassert>
-#include <stdexcept>
+#include "Mesh.h"
 
 #include "glm/glm.hpp"
 
@@ -12,8 +11,6 @@ FVulkanMesh::FVulkanMesh(FVulkanContext* InContext)
 	: FVulkanObject(InContext)
 	, Texture(nullptr)
 	, bLoaded(false)
-	, NumVertices(0)
-	, NumIndices(0)
 {
 
 }
@@ -30,11 +27,10 @@ bool FVulkanMesh::Load(FMesh* InMesh)
 		return false;
 	}
 
+	MeshAsset = InMesh;
+
 	const std::vector<FVertex>& Vertices = InMesh->GetVertices();
 	const std::vector<uint32_t>& Indices = InMesh->GetIndices();
-
-	NumVertices = Vertices.size();
-	NumIndices = Indices.size();
 
 	CreateVertexBuffer(Vertices);
 	CreateIndexBuffer(Indices);
@@ -45,6 +41,8 @@ bool FVulkanMesh::Load(FMesh* InMesh)
 void FVulkanMesh::Unload()
 {
 	VkDevice Device = Context->GetDevice();
+
+	MeshAsset = nullptr;
 
 	if (VertexBuffer.Buffer != VK_NULL_HANDLE)
 	{
@@ -65,9 +63,6 @@ void FVulkanMesh::Unload()
 	{
 		vkFreeMemory(Device, IndexBuffer.Memory, nullptr);
 	}
-
-	NumVertices = 0;
-	NumIndices = 0;
 
 	VertexBuffer.Buffer = VK_NULL_HANDLE;
 	VertexBuffer.Memory = VK_NULL_HANDLE;

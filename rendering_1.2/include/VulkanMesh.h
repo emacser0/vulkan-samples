@@ -3,7 +3,6 @@
 #include "VulkanObject.h"
 #include "VulkanBuffer.h"
 
-#include "Mesh.h"
 #include "Vertex.h"
 
 #include "vulkan/vulkan.h"
@@ -17,13 +16,13 @@ public:
 	FVulkanMesh(class FVulkanContext* InContext);
 	virtual ~FVulkanMesh();
 
-	bool Load(FMesh* InMesh);
+	bool Load(class FMesh* InMesh);
 	void Unload();
 
 	FVulkanBuffer GetVertexBuffer() const { return VertexBuffer; }
 	FVulkanBuffer GetIndexBuffer() const { return IndexBuffer; }
 
-	FMesh* GetMeshAsset() const { return MeshAsset; }
+	class FMesh* GetMeshAsset() const { return MeshAsset; }
 
 	class FVulkanTexture* GetBaseColorTexture() const { return BaseColorTexture; }
 	void SetBaseColorTexture(class FVulkanTexture* InTexture) { BaseColorTexture = InTexture; }

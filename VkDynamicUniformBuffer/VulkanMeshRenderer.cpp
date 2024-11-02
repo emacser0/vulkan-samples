@@ -5,9 +5,11 @@
 #include "VulkanScene.h"
 
 #include "Utils.h"
-#include "Engine.h"
 #include "Config.h"
+#include "Mesh.h"
+
 #include "Camera.h"
+#include "Engine.h"
 
 #include "glm/gtc/matrix_transform.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
@@ -677,6 +679,12 @@ void FVulkanMeshRenderer::Render()
 				continue;
 			}
 
+			FMesh* MeshAsset = Mesh->GetMeshAsset();
+			if (MeshAsset == nullptr)
+			{
+				continue;
+			}
+
 			uint32_t DynamicOffset = DynamicAlignment * DynamicIndex;
 			vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipelines[CurrentPipelineIndex].Layout, 0, 1, &DescriptorSet, 1, &DynamicOffset);
 			++DynamicIndex;
@@ -687,7 +695,7 @@ void FVulkanMeshRenderer::Render()
 
 			vkCmdBindIndexBuffer(CommandBuffer, Mesh->GetIndexBuffer().Buffer, 0, VK_INDEX_TYPE_UINT32);
 
-			vkCmdDrawIndexed(CommandBuffer, static_cast<uint32_t>(Mesh->GetNumIndices()), 1, 0, 0, 0);
+			vkCmdDrawIndexed(CommandBuffer, static_cast<uint32_t>(MeshAsset->GetIndices().size()), 1, 0, 0, 0);
 		}
 	}
 }
