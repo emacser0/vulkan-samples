@@ -17,6 +17,7 @@ struct FVertex
 	glm::vec3 Position;
 	glm::vec3 Normal;
 	glm::vec2 TexCoord;
+	glm::vec3 Tangent;
 
 	bool operator==(const FVertex& RHS) const;
 };
@@ -30,6 +31,7 @@ namespace std
 			size_t CombinedHash = hash<glm::vec3>()(InVertex.Position);
 			CombineHash(CombinedHash, hash<glm::vec3>()(InVertex.Normal));
 			CombineHash(CombinedHash, hash<glm::vec2>()(InVertex.TexCoord));
+			CombineHash(CombinedHash, hash<glm::vec2>()(InVertex.Tangent));
 
 			return CombinedHash;
 		}

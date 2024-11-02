@@ -148,7 +148,6 @@
     <ClCompile Include="VulkanShader.cpp" />
     <ClCompile Include="VulkanTexture.cpp" />
     <ClCompile Include="VulkanUIRenderer.cpp" />
-    <ClCompile Include="Widget.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine.h" />
@@ -164,7 +163,6 @@
     <ClInclude Include="VulkanShader.h" />
     <ClInclude Include="VulkanTexture.h" />
     <ClInclude Include="VulkanUIRenderer.h" />
-    <ClInclude Include="Widget.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="imgui.ini" />

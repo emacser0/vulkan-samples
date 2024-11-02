@@ -22,21 +22,22 @@ layout(std140, binding = 0) uniform UniformBufferObject
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inTexCoord;
+layout(location = 3) in vec3 inTangent;
 
-layout(location = 3) in vec4 inModel_0;
-layout(location = 4) in vec4 inModel_1;
-layout(location = 5) in vec4 inModel_2;
-layout(location = 6) in vec4 inModel_3;
+layout(location = 4) in vec4 inModel_0;
+layout(location = 5) in vec4 inModel_1;
+layout(location = 6) in vec4 inModel_2;
+layout(location = 7) in vec4 inModel_3;
 
-layout(location = 7) in vec4 inModelView_0;
-layout(location = 8) in vec4 inModelView_1;
-layout(location = 9) in vec4 inModelView_2;
-layout(location = 10) in vec4 inModelView_3;
+layout(location = 8) in vec4 inModelView_0;
+layout(location = 9) in vec4 inModelView_1;
+layout(location = 10) in vec4 inModelView_2;
+layout(location = 11) in vec4 inModelView_3;
 
-layout(location = 11) in vec4 inNormalMatrix_0;
-layout(location = 12) in vec4 inNormalMatrix_1;
-layout(location = 13) in vec4 inNormalMatrix_2;
-layout(location = 14) in vec4 inNormalMatrix_3;
+layout(location = 12) in vec4 inNormalMatrix_0;
+layout(location = 13) in vec4 inNormalMatrix_1;
+layout(location = 14) in vec4 inNormalMatrix_2;
+layout(location = 15) in vec4 inNormalMatrix_3;
 
 layout(location = 0) out vec4 outPosition;
 layout(location = 1) out vec3 outNormal;

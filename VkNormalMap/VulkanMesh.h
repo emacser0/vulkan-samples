@@ -22,9 +22,9 @@ public:
 
 	FVulkanBuffer GetVertexBuffer() const { return VertexBuffer; }
 	FVulkanBuffer GetIndexBuffer() const { return IndexBuffer; }
+	FVulkanBuffer GetTangentBuffer() const { return TangentBuffer; }
 
-	uint32_t GetNumVertices() const { return NumVertices; }
-	uint32_t GetNumIndices() const { return NumIndices; }
+	FMesh* GetMeshAsset() const { return MeshAsset; }
 
 	class FVulkanTexture* GetBaseColorTexture() const { return BaseColorTexture; }
 	void SetBaseColorTexture(class FVulkanTexture* InTexture) { BaseColorTexture = InTexture; }
@@ -35,10 +35,14 @@ public:
 private:
 	void CreateVertexBuffer(const std::vector<FVertex>& Vertices);
 	void CreateIndexBuffer(const std::vector<uint32_t>& Indices);
+	void CreateTangentBuffer(const std::vector<glm::vec3>& Tangents);
 	
 private:
+	class FMesh* MeshAsset;
+
 	FVulkanBuffer VertexBuffer;
 	FVulkanBuffer IndexBuffer;
+	FVulkanBuffer TangentBuffer;
 
 	class FVulkanTexture* BaseColorTexture;
 	class FVulkanTexture* NormalTexture;

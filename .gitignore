@@ -41,3 +41,7 @@
 *.log
 *.ipdb
 *.iobj
+*.enc
+
+*.txt
+imgui.ini

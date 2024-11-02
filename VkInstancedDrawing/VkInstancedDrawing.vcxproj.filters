@@ -51,9 +51,6 @@
     <ClCompile Include="VulkanUIRenderer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Widget.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Engine.h">
@@ -90,9 +87,6 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="VulkanUIRenderer.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
-    <ClInclude Include="Widget.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="VulkanLight.h">

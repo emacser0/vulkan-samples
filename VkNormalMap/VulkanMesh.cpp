@@ -10,6 +10,7 @@
 
 FVulkanMesh::FVulkanMesh(FVulkanContext* InContext)
 	: FVulkanObject(InContext)
+	, MeshAsset(nullptr)
 	, BaseColorTexture(nullptr)
 	, NormalTexture(nullptr)
 	, bLoaded(false)
@@ -31,14 +32,15 @@ bool FVulkanMesh::Load(FMesh* InMesh)
 		return false;
 	}
 
+	MeshAsset = InMesh;
+
 	const std::vector<FVertex>& Vertices = InMesh->GetVertices();
 	const std::vector<uint32_t>& Indices = InMesh->GetIndices();
-
-	NumVertices = Vertices.size();
-	NumIndices = Indices.size();
+	const std::vector<glm::vec3>& Tangents = InMesh->GetTangents();
 
 	CreateVertexBuffer(Vertices);
 	CreateIndexBuffer(Indices);
+	CreateTangentBuffer(Tangents);
 
 	return true;
 }
@@ -142,6 +144,46 @@ void FVulkanMesh::CreateIndexBuffer(const std::vector<uint32_t>& Indices)
 	void* Data;
 	VK_ASSERT(vkMapMemory(Device, StagingBufferMemory, 0, BufferSize, 0, &Data));
 	memcpy(Data, Indices.data(), static_cast<size_t>(BufferSize));
+	vkUnmapMemory(Device, StagingBufferMemory);
+
+	Vk::CreateBuffer(
+		PhysicalDevice,
+		Device,
+		BufferSize,
+		VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_INDEX_BUFFER_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
+		IndexBuffer.Buffer,
+		IndexBuffer.Memory);
+
+	Vk::CopyBuffer(Device, CommandPool, GfxQueue, StagingBuffer, IndexBuffer.Buffer, BufferSize);
+
+	vkDestroyBuffer(Device, StagingBuffer, nullptr);
+	vkFreeMemory(Device, StagingBufferMemory, nullptr);
+}
+
+void FVulkanMesh::CreateTangentBuffer(const std::vector<glm::vec3>& Tangents)
+{
+	VkPhysicalDevice PhysicalDevice = Context->GetPhysicalDevice();
+	VkDevice Device = Context->GetDevice();
+	VkQueue GfxQueue = Context->GetGfxQueue();
+	VkCommandPool CommandPool = Context->GetCommandPool();
+
+	VkDeviceSize BufferSize = sizeof(glm::vec3) * Tangents.size();
+
+	VkBuffer StagingBuffer;
+	VkDeviceMemory StagingBufferMemory;
+	Vk::CreateBuffer(
+		PhysicalDevice,
+		Device,
+		BufferSize,
+		VK_BUFFER_USAGE_TRANSFER_SRC_BIT,
+		VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
+		StagingBuffer,
+		StagingBufferMemory);
+
+	void* Data;
+	VK_ASSERT(vkMapMemory(Device, StagingBufferMemory, 0, BufferSize, 0, &Data));
+	memcpy(Data, Tangents.data(), static_cast<size_t>(BufferSize));
 	vkUnmapMemory(Device, StagingBufferMemory);
 
 	Vk::CreateBuffer(

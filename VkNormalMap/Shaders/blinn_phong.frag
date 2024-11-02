@@ -43,5 +43,7 @@ void main()
     vec4 diffuse = max(dot(L, N), 0.0) * light.diffuse / denom;
     vec4 specular = pow(max(dot(N, H), 0.0), 3 * light.shininess) * light.specular / denom;
 
+    vec3 tangentNormal = normalize(texture(normalSampler, inTexCoord).rgb * 2.0 - 1.0);
+
     outColor = (ambient + diffuse) * texture(baseColorSampler, inTexCoord) + specular;
 }

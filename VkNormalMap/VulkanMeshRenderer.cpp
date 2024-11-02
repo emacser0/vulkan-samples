@@ -224,8 +224,12 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 		VertexInputBindingDescs[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
 		VertexInputBindingDescs[1].binding = 1;
-		VertexInputBindingDescs[1].stride = sizeof(FInstanceBuffer);
-		VertexInputBindingDescs[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+		VertexInputBindingDescs[1].stride = sizeof(glm::vec3);
+		VertexInputBindingDescs[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+		VertexInputBindingDescs[2].binding = 2;
+		VertexInputBindingDescs[2].stride = sizeof(FInstanceBuffer);
+		VertexInputBindingDescs[2].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
 		std::array<VkVertexInputAttributeDescription, 15> VertexInputAttributeDescs{};
 		VertexInputAttributeDescs[0].binding = 0;
@@ -243,28 +247,33 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 		VertexInputAttributeDescs[2].format = VK_FORMAT_R32G32_SFLOAT;
 		VertexInputAttributeDescs[2].offset = offsetof(FVertex, TexCoord);
 
+		VertexInputAttributeDescs[3].binding = 1;
+		VertexInputAttributeDescs[3].location = 3;
+		VertexInputAttributeDescs[3].format = VK_FORMAT_R32G32B32_SFLOAT;
+		VertexInputAttributeDescs[3].offset = 0;
+
 		for (int Idx = 0; Idx < 4; ++Idx)
 		{
-			VertexInputAttributeDescs[3 + Idx].binding = 1;
-			VertexInputAttributeDescs[3 + Idx].location = 3 + Idx;
-			VertexInputAttributeDescs[3 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-			VertexInputAttributeDescs[3 + Idx].offset = offsetof(FInstanceBuffer, Model) + sizeof(glm::vec4) * Idx;
+			VertexInputAttributeDescs[4 + Idx].binding = 2;
+			VertexInputAttributeDescs[4 + Idx].location = 4 + Idx;
+			VertexInputAttributeDescs[4 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+			VertexInputAttributeDescs[4 + Idx].offset = offsetof(FInstanceBuffer, Model) + sizeof(glm::vec4) * Idx;
 		}
 
 		for (int Idx = 0; Idx < 4; ++Idx)
 		{
-			VertexInputAttributeDescs[7 + Idx].binding = 1;
-			VertexInputAttributeDescs[7 + Idx].location = 7 + Idx;
-			VertexInputAttributeDescs[7 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-			VertexInputAttributeDescs[7 + Idx].offset = offsetof(FInstanceBuffer, ModelView) + sizeof(glm::vec4) * Idx;
+			VertexInputAttributeDescs[8 + Idx].binding = 2;
+			VertexInputAttributeDescs[8 + Idx].location = 8 + Idx;
+			VertexInputAttributeDescs[8 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+			VertexInputAttributeDescs[8 + Idx].offset = offsetof(FInstanceBuffer, ModelView) + sizeof(glm::vec4) * Idx;
 		}
 
 		for (int Idx = 0; Idx < 4; ++Idx)
 		{
-			VertexInputAttributeDescs[11 + Idx].binding = 1;
-			VertexInputAttributeDescs[11 + Idx].location = 11 + Idx;
-			VertexInputAttributeDescs[11 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-			VertexInputAttributeDescs[11 + Idx].offset = offsetof(FInstanceBuffer, NormalMatrix) + sizeof(glm::vec4) * Idx;
+			VertexInputAttributeDescs[12 + Idx].binding = 2;
+			VertexInputAttributeDescs[12 + Idx].location = 12 + Idx;
+			VertexInputAttributeDescs[12 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+			VertexInputAttributeDescs[12 + Idx].offset = offsetof(FInstanceBuffer, NormalMatrix) + sizeof(glm::vec4) * Idx;
 		}
 
 		VkPipelineVertexInputStateCreateInfo VertexInputStateCI{};
@@ -699,12 +708,12 @@ void FVulkanMeshRenderer::Render()
 
 		vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipelines[CurrentPipelineIndex].Layout, 0, 1, &DescriptorSet, 0, nullptr);
 
-		VkBuffer VertexBuffers[] = { Mesh->GetVertexBuffer().Buffer, InstanceBuffer.Buffer };
-		VkDeviceSize Offsets[] = { 0, 0 };
-		vkCmdBindVertexBuffers(CommandBuffer, 0, 2, VertexBuffers, Offsets);
+		VkBuffer VertexBuffers[] = { Mesh->GetVertexBuffer().Buffer, Mesh->GetTangentBuffer().Buffer, InstanceBuffer.Buffer };
+		VkDeviceSize Offsets[] = { 0, 0, 0 };
+		vkCmdBindVertexBuffers(CommandBuffer, 0, 3, VertexBuffers, Offsets);
 
 		vkCmdBindIndexBuffer(CommandBuffer, Mesh->GetIndexBuffer().Buffer, 0, VK_INDEX_TYPE_UINT32);
 
-		vkCmdDrawIndexed(CommandBuffer, static_cast<uint32_t>(Mesh->GetNumIndices()), Models.size(), 0, 0, 0);
+		vkCmdDrawIndexed(CommandBuffer, static_cast<uint32_t>(Mesh->GetMeshAsset()->GetIndices().size()), Models.size(), 0, 0, 0);
 	}
 }
