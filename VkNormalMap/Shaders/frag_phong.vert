@@ -42,6 +42,7 @@ layout(location = 15) in vec4 inNormalMatrix_3;
 layout(location = 0) out vec4 outPosition;
 layout(location = 1) out vec3 outNormal;
 layout(location = 2) out vec2 outTexCoord;
+layout(location = 3) out vec3 outTangent;
 
 void main()
 {
@@ -51,5 +52,6 @@ void main()
     outPosition = modelView * vec4(inPosition, 1.0);
     outNormal = normalMatrix * inNormal;
     outTexCoord = inTexCoord;
+    outTangent = mat3(modelView) * inTangent;
     gl_Position = ubo.projection * outPosition;
 }

@@ -54,6 +54,8 @@ bool FMesh::LoadObj(const std::string& InFilename)
 					1.0f - Attributes.texcoords[2 * Index.texcoord_index + 1]);
 			}
 
+			NewVertex.Tangent = glm::vec3(0.0f);
+
 			const auto Iter = UniqueVertices.find(NewVertex);
 			if (Iter == UniqueVertices.end())
 			{
@@ -67,9 +69,9 @@ bool FMesh::LoadObj(const std::string& InFilename)
 
 	for (int Idx = 0; Idx < Indices.size(); Idx += 3)
 	{
-		const FVertex& V0 = Vertices[Indices[Idx]];
-		const FVertex& V1 = Vertices[Indices[Idx + 1]];
-		const FVertex& V2 = Vertices[Indices[Idx + 2]];
+		FVertex& V0 = Vertices[Indices[Idx]];
+		FVertex& V1 = Vertices[Indices[Idx + 1]];
+		FVertex& V2 = Vertices[Indices[Idx + 2]];
 
 		glm::vec3 DeltaPos1 = V1.Position - V0.Position;
 		glm::vec3 DeltaPos2 = V2.Position - V0.Position;
@@ -80,10 +82,9 @@ bool FMesh::LoadObj(const std::string& InFilename)
 		float R = 1.0f / (DeltaUV1.x * DeltaUV2.y - DeltaUV1.y * DeltaUV2.x);
 		glm::vec3 Tangent = (DeltaPos1 * DeltaUV2.y - DeltaPos2 * DeltaUV1.y) * R;
 
-		for (int i = 0; i < 3; ++i)
-		{
-			Tangents.push_back(Tangent);
-		}
+		V0.Tangent += Tangent;
+		V1.Tangent += Tangent;
+		V2.Tangent += Tangent;
 	}
 
 	return true;

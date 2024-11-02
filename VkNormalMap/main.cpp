@@ -139,8 +139,8 @@ private:
 
 FMainWidget::FMainWidget()
 	: bInitialized(false)
-	, ShaderItems({ "vert_phong", "frag_phong", "blinn_phong" })
-	, CurrentShaderItem(ShaderItems[2])
+	, ShaderItems({ "frag_phong", "blinn_phong" })
+	, CurrentShaderItem(ShaderItems[1])
 {
 	Light.Position = glm::vec3(1.0f);
 	Light.Ambient = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
@@ -199,17 +199,13 @@ void FMainWidget::Draw()
 void FMainWidget::OnShaderItemSelected(const std::string& NewSelectedItem)
 {
 	FVulkanMeshRenderer* MeshRenderer = GEngine->GetMeshRenderer();
-	if (NewSelectedItem == "vert_phong")
+	if (NewSelectedItem == "frag_phong")
 	{
 		MeshRenderer->SetPipelineIndex(0);
 	}
-	else if (NewSelectedItem == "frag_phong")
-	{
-		MeshRenderer->SetPipelineIndex(1);
-	}
 	else if (NewSelectedItem == "blinn_phong")
 	{
-		MeshRenderer->SetPipelineIndex(2);
+		MeshRenderer->SetPipelineIndex(1);
 	}
 }
 
@@ -315,7 +311,7 @@ void Run(int argc, char** argv)
 
 	FVulkanMeshRenderer* MeshRenderer = GEngine->GetMeshRenderer();
 	MeshRenderer->Ready();
-	MeshRenderer->SetPipelineIndex(2);
+	MeshRenderer->SetPipelineIndex(1);
 
 	float TargetFPS;
 	GConfig->Get("TargetFPS", TargetFPS);

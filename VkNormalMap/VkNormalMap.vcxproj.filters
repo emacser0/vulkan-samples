@@ -27,12 +27,6 @@
     <None Include="Shaders\frag_phong.vert">
       <Filter>리소스 파일</Filter>
     </None>
-    <None Include="Shaders\vert_phong.frag">
-      <Filter>리소스 파일</Filter>
-    </None>
-    <None Include="Shaders\vert_phong.vert">
-      <Filter>리소스 파일</Filter>
-    </None>
     <None Include="imgui.ini" />
   </ItemGroup>
   <ItemGroup>

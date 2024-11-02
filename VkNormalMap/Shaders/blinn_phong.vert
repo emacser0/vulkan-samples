@@ -42,16 +42,16 @@ layout(location = 15) in vec4 inNormalMatrix_3;
 layout(location = 0) out vec4 outPosition;
 layout(location = 1) out vec3 outNormal;
 layout(location = 2) out vec2 outTexCoord;
+layout(location = 3) out vec3 outTangent;
 
 void main()
 {
-    Light light = ubo.light;
-
     mat4 modelView = mat4(inModelView_0, inModelView_1, inModelView_2, inModelView_3);
     mat3 normalMatrix = mat3(mat4(inNormalMatrix_0, inNormalMatrix_1, inNormalMatrix_2, inNormalMatrix_3));
 
     outPosition = modelView * vec4(inPosition, 1.0);
     outNormal = normalMatrix * inNormal;
     outTexCoord = inTexCoord;
+    outTangent = mat3(modelView) * inTangent;
     gl_Position = ubo.projection * outPosition;
 }

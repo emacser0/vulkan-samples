@@ -176,12 +176,6 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 	std::string ShaderDirectory;
 	GConfig->Get("ShaderDirectory", ShaderDirectory);
 
-	FVulkanPipeline VertPhongPipeline;
-	VertPhongPipeline.VertexShader = Context->CreateObject<FVulkanShader>();
-	VertPhongPipeline.VertexShader->LoadFile(ShaderDirectory + "vert_phong.vert.spv");
-	VertPhongPipeline.FragmentShader = Context->CreateObject<FVulkanShader>();
-	VertPhongPipeline.FragmentShader->LoadFile(ShaderDirectory + "vert_phong.frag.spv");
-
 	FVulkanPipeline FragPhongPipeline;
 	FragPhongPipeline.VertexShader = Context->CreateObject<FVulkanShader>();
 	FragPhongPipeline.VertexShader->LoadFile(ShaderDirectory + "frag_phong.vert.spv");
@@ -194,7 +188,6 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 	BlinnPhongPipeline.FragmentShader = Context->CreateObject<FVulkanShader>();
 	BlinnPhongPipeline.FragmentShader->LoadFile(ShaderDirectory + "blinn_phong.frag.spv");
 
-	Pipelines.push_back(VertPhongPipeline);
 	Pipelines.push_back(FragPhongPipeline);
 	Pipelines.push_back(BlinnPhongPipeline);
 
@@ -224,14 +217,10 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 		VertexInputBindingDescs[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
 
 		VertexInputBindingDescs[1].binding = 1;
-		VertexInputBindingDescs[1].stride = sizeof(glm::vec3);
-		VertexInputBindingDescs[1].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		VertexInputBindingDescs[1].stride = sizeof(FInstanceBuffer);
+		VertexInputBindingDescs[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
 
-		VertexInputBindingDescs[2].binding = 2;
-		VertexInputBindingDescs[2].stride = sizeof(FInstanceBuffer);
-		VertexInputBindingDescs[2].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
-
-		std::array<VkVertexInputAttributeDescription, 15> VertexInputAttributeDescs{};
+		std::array<VkVertexInputAttributeDescription, 16> VertexInputAttributeDescs{};
 		VertexInputAttributeDescs[0].binding = 0;
 		VertexInputAttributeDescs[0].location = 0;
 		VertexInputAttributeDescs[0].format = VK_FORMAT_R32G32B32_SFLOAT;
@@ -247,14 +236,14 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 		VertexInputAttributeDescs[2].format = VK_FORMAT_R32G32_SFLOAT;
 		VertexInputAttributeDescs[2].offset = offsetof(FVertex, TexCoord);
 
-		VertexInputAttributeDescs[3].binding = 1;
+		VertexInputAttributeDescs[3].binding = 0;
 		VertexInputAttributeDescs[3].location = 3;
 		VertexInputAttributeDescs[3].format = VK_FORMAT_R32G32B32_SFLOAT;
-		VertexInputAttributeDescs[3].offset = 0;
+		VertexInputAttributeDescs[3].offset = offsetof(FVertex, Tangent);
 
 		for (int Idx = 0; Idx < 4; ++Idx)
 		{
-			VertexInputAttributeDescs[4 + Idx].binding = 2;
+			VertexInputAttributeDescs[4 + Idx].binding = 1;
 			VertexInputAttributeDescs[4 + Idx].location = 4 + Idx;
 			VertexInputAttributeDescs[4 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 			VertexInputAttributeDescs[4 + Idx].offset = offsetof(FInstanceBuffer, Model) + sizeof(glm::vec4) * Idx;
@@ -262,7 +251,7 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 
 		for (int Idx = 0; Idx < 4; ++Idx)
 		{
-			VertexInputAttributeDescs[8 + Idx].binding = 2;
+			VertexInputAttributeDescs[8 + Idx].binding = 1;
 			VertexInputAttributeDescs[8 + Idx].location = 8 + Idx;
 			VertexInputAttributeDescs[8 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 			VertexInputAttributeDescs[8 + Idx].offset = offsetof(FInstanceBuffer, ModelView) + sizeof(glm::vec4) * Idx;
@@ -270,7 +259,7 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 
 		for (int Idx = 0; Idx < 4; ++Idx)
 		{
-			VertexInputAttributeDescs[12 + Idx].binding = 2;
+			VertexInputAttributeDescs[12 + Idx].binding = 1;
 			VertexInputAttributeDescs[12 + Idx].location = 12 + Idx;
 			VertexInputAttributeDescs[12 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 			VertexInputAttributeDescs[12 + Idx].offset = offsetof(FInstanceBuffer, NormalMatrix) + sizeof(glm::vec4) * Idx;
@@ -708,9 +697,9 @@ void FVulkanMeshRenderer::Render()
 
 		vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipelines[CurrentPipelineIndex].Layout, 0, 1, &DescriptorSet, 0, nullptr);
 
-		VkBuffer VertexBuffers[] = { Mesh->GetVertexBuffer().Buffer, Mesh->GetTangentBuffer().Buffer, InstanceBuffer.Buffer };
-		VkDeviceSize Offsets[] = { 0, 0, 0 };
-		vkCmdBindVertexBuffers(CommandBuffer, 0, 3, VertexBuffers, Offsets);
+		VkBuffer VertexBuffers[] = { Mesh->GetVertexBuffer().Buffer, InstanceBuffer.Buffer };
+		VkDeviceSize Offsets[] = { 0, 0 };
+		vkCmdBindVertexBuffers(CommandBuffer, 0, 2, VertexBuffers, Offsets);
 
 		vkCmdBindIndexBuffer(CommandBuffer, Mesh->GetIndexBuffer().Buffer, 0, VK_INDEX_TYPE_UINT32);
 
