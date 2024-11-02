@@ -1,6 +1,5 @@
 #include "VulkanContext.h"
 #include "VulkanHelpers.h"
-#include "Engine.h"
 
 #include "Config.h"
 
@@ -10,6 +9,7 @@
 #include <iostream>
 #include <stdexcept>
 #include <algorithm>
+#include <unordered_map>
 
 #define MAX_CONCURRENT_FRAME 2
 
@@ -29,9 +29,23 @@ static const bool GEnableValidationLayers = false;
 static const bool GEnableValidationLayers = true;
 #endif
 
+static std::unordered_map<GLFWwindow*, FVulkanContext*> RenderContextMap;
+
 void FramebufferResizeCallback(GLFWwindow* InWindow, int InWidth, int InHeight)
 {
-	GEngine->GetRenderContext()->SetFramebufferResized(true);
+	const auto Iter = RenderContextMap.find(InWindow);
+	if (Iter == RenderContextMap.end())
+	{
+		return;
+	}
+
+	FVulkanContext* Context = Iter->second;
+	if (Context == nullptr)
+	{
+		return;
+	}
+
+	Context->SetFramebufferResized(true);
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugMessengerCallback(
@@ -48,6 +62,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugMessengerCallback(
 FVulkanContext::FVulkanContext(GLFWwindow* InWindow)
 	: Window(InWindow)
 {
+	RenderContextMap[InWindow] = this;
+
 	glfwSetFramebufferSizeCallback(Window, FramebufferResizeCallback);
 
 	CreateInstance();
@@ -68,6 +84,8 @@ FVulkanContext::FVulkanContext(GLFWwindow* InWindow)
 
 FVulkanContext::~FVulkanContext()
 {
+	RenderContextMap.erase(Window);
+
 	for (FVulkanObject* LiveObject : LiveObjects)
 	{
 		if (LiveObject != nullptr)
@@ -117,6 +135,7 @@ void FVulkanContext::DestroyObject(FVulkanObject* InObject)
 		{
 			LiveObjects[Idx] = nullptr;
 			delete InObject;
+			break;
 		}
 	}
 }
@@ -596,6 +615,7 @@ void FVulkanContext::CreateDescriptorPool()
 	DescriptorPoolCI.poolSizeCount = static_cast<uint32_t>(PoolSizes.size());
 	DescriptorPoolCI.pPoolSizes = PoolSizes.data();
 	DescriptorPoolCI.maxSets = 1000U;
+	DescriptorPoolCI.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
 	if (vkCreateDescriptorPool(Device, &DescriptorPoolCI, nullptr, &DescriptorPool) != VK_SUCCESS)
 	{

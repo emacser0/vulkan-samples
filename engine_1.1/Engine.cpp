@@ -4,7 +4,6 @@
 #include "VulkanContext.h"
 #include "VulkanScene.h"
 #include "VulkanUIRenderer.h"
-#include "VulkanMeshRenderer.h"
 #include "Camera.h"
 
 #include "glfw/glfw3.h"
@@ -19,14 +18,10 @@ FEngine* GEngine;
 void FEngine::Init()
 {
 	GEngine = new FEngine();
-
-	FAssetManager::Startup();
 }
 
 void FEngine::Exit()
 {
-	FAssetManager::Shutdown();
-
 	assert(GEngine != nullptr);
 	delete GEngine;
 
@@ -41,8 +36,9 @@ FEngine::FEngine()
 	RenderContext = new FVulkanContext(Window);
 	Scene = RenderContext->CreateObject<FVulkanScene>();
 	UIRenderer = RenderContext->CreateObject<FVulkanUIRenderer>();
-	MeshRenderer = RenderContext->CreateObject<FVulkanMeshRenderer>();
 	Camera = new FCamera();
+
+	FAssetManager::Startup();
 }
 
 FEngine::~FEngine()
@@ -52,6 +48,8 @@ FEngine::~FEngine()
 
 	glfwDestroyWindow(Window);
 	glfwTerminate();
+
+	FAssetManager::Shutdown();
 }
 
 GLFWwindow* FEngine::GetWindow() const
@@ -72,11 +70,6 @@ FVulkanScene* FEngine::GetScene() const
 FVulkanUIRenderer* FEngine::GetUIRenderer() const
 {
 	return UIRenderer;
-}
-
-FVulkanMeshRenderer* FEngine::GetMeshRenderer() const
-{
-	return MeshRenderer;
 }
 
 FCamera* FEngine::GetCamera() const

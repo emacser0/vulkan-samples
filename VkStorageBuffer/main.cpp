@@ -197,9 +197,10 @@ void FMainWidget::Draw()
 	ImGui::End();
 }
 
+FVulkanMeshRenderer* MeshRenderer;
+
 void FMainWidget::OnShaderItemSelected(const std::string& NewSelectedItem)
 {
-	FVulkanMeshRenderer* MeshRenderer = GEngine->GetMeshRenderer();
 	if (NewSelectedItem == "vert_phong")
 	{
 		MeshRenderer->SetPipelineIndex(0);
@@ -346,7 +347,7 @@ void Run(int argc, char** argv)
 		GEngine->GetScene()->AddModel(Model);
 	}
 
-	FVulkanMeshRenderer* MeshRenderer = GEngine->GetMeshRenderer();
+	MeshRenderer = RenderContext->CreateObject<FVulkanMeshRenderer>();
 	MeshRenderer->Ready();
 	MeshRenderer->SetPipelineIndex(2);
 

@@ -2,12 +2,10 @@
 #include "VulkanContext.h"
 #include "VulkanHelpers.h"
 
-#include "Engine.h"
 #include "TextureSource.h"
 
 #include <cassert>
 
-#pragma optimize("", off)
 FVulkanTexture::FVulkanTexture(FVulkanContext* InContext)
 	: FVulkanObject(InContext)
 	, Image(VK_NULL_HANDLE)
@@ -51,8 +49,6 @@ void FVulkanTexture::LoadSource(const FTextureSource& InSource)
 
 	Width = static_cast<uint32_t>(InSource.GetWidth());
 	Height = static_cast<uint32_t>(InSource.GetHeight());
-
-	FVulkanContext* Context = GEngine->GetRenderContext();
 
 	VkPhysicalDevice PhysicalDevice = Context->GetPhysicalDevice();
 	VkDevice Device = Context->GetDevice();
@@ -122,5 +118,3 @@ void FVulkanTexture::LoadSource(const FTextureSource& InSource)
 
 	bLoaded = true;
 }
-
-#pragma optimize("", on)
