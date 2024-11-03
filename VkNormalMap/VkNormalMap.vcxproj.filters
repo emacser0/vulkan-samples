@@ -21,10 +21,10 @@
     <None Include="Shaders\blinn_phong.vert">
       <Filter>리소스 파일</Filter>
     </None>
-    <None Include="Shaders\frag_phong.frag">
+    <None Include="Shaders\phong.frag">
       <Filter>리소스 파일</Filter>
     </None>
-    <None Include="Shaders\frag_phong.vert">
+    <None Include="Shaders\phong.vert">
       <Filter>리소스 파일</Filter>
     </None>
     <None Include="imgui.ini" />

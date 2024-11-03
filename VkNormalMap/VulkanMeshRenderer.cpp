@@ -9,7 +9,7 @@
 #include "Engine.h"
 #include "Config.h"
 #include "Mesh.h"
-#include "Camera.h"
+#include "World.h"
 
 #include "glm/gtc/matrix_transform.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
@@ -43,7 +43,11 @@ FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	: FVulkanObject(InContext)
 	, DescriptorSetLayout(VK_NULL_HANDLE)
 	, TextureSampler(VK_NULL_HANDLE)
+	, bInitialized(false)
 {
+	CreateTextureSampler();
+	CreateDescriptorSetLayout();
+	CreateGraphicsPipelines();
 }
 
 FVulkanMeshRenderer::~FVulkanMeshRenderer()
@@ -72,27 +76,6 @@ FVulkanMeshRenderer::~FVulkanMeshRenderer()
 			vkDestroyBuffer(Device, InstanceBuffer.Buffer, nullptr);
 		}
 	}
-
-	for (const FVulkanPipeline& Pipeline : Pipelines)
-	{
-		vkDestroyPipelineLayout(Device, Pipeline.Layout, nullptr);
-		vkDestroyPipeline(Device, Pipeline.Pipeline, nullptr);
-
-		Context->DestroyObject(Pipeline.VertexShader);
-		Context->DestroyObject(Pipeline.FragmentShader);
-	}
-}
-
-void FVulkanMeshRenderer::Ready()
-{	
-	GatherInstancedDrawingInfo();
-
-	CreateDescriptorSetLayout();
-	CreateGraphicsPipelines();
-	CreateTextureSampler();
-	CreateUniformBuffers();
-	CreateInstanceBuffers();
-	CreateDescriptorSets();
 }
 
 void FVulkanMeshRenderer::CreateDescriptorSetLayout()
@@ -138,9 +121,15 @@ void FVulkanMeshRenderer::CreateDescriptorSetLayout()
 	}
 }
 
-void FVulkanMeshRenderer::GatherInstancedDrawingInfo()
+void FVulkanMeshRenderer::GenerateInstancedDrawingInfo()
 {
-	FVulkanScene* Scene = GEngine->GetScene();
+	FWorld* World = GEngine->GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	FVulkanScene* Scene = World->GetRenderScene();
 	if (Scene == nullptr)
 	{
 		return;
@@ -177,19 +166,25 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 	std::string ShaderDirectory;
 	GConfig->Get("ShaderDirectory", ShaderDirectory);
 
-	FVulkanPipeline FragPhongPipeline;
-	FragPhongPipeline.VertexShader = Context->CreateObject<FVulkanShader>();
-	FragPhongPipeline.VertexShader->LoadFile(ShaderDirectory + "frag_phong.vert.spv");
-	FragPhongPipeline.FragmentShader = Context->CreateObject<FVulkanShader>();
-	FragPhongPipeline.FragmentShader->LoadFile(ShaderDirectory + "frag_phong.frag.spv");
+	FVulkanShader* PhongVS = Context->CreateObject<FVulkanShader>();
+	PhongVS->LoadFile(ShaderDirectory + "phong.vert.spv");
+	FVulkanShader* PhongFS = Context->CreateObject<FVulkanShader>();
+	PhongFS->LoadFile(ShaderDirectory + "phong.frag.spv");
 
-	FVulkanPipeline BlinnPhongPipeline;
-	BlinnPhongPipeline.VertexShader = Context->CreateObject<FVulkanShader>();
-	BlinnPhongPipeline.VertexShader->LoadFile(ShaderDirectory + "blinn_phong.vert.spv");
-	BlinnPhongPipeline.FragmentShader = Context->CreateObject<FVulkanShader>();
-	BlinnPhongPipeline.FragmentShader->LoadFile(ShaderDirectory + "blinn_phong.frag.spv");
+	FVulkanPipeline* PhongPipeline = Context->CreateObject<FVulkanPipeline>();
+	PhongPipeline->SetVertexShader(PhongVS);
+	PhongPipeline->SetFragmentShader(PhongFS);
 
-	Pipelines.push_back(FragPhongPipeline);
+	FVulkanShader* BlinnPhongVS = Context->CreateObject<FVulkanShader>();
+	BlinnPhongVS->LoadFile(ShaderDirectory + "blinn_phong.vert.spv");
+	FVulkanShader* BlinnPhongFS = Context->CreateObject<FVulkanShader>();
+	BlinnPhongFS->LoadFile(ShaderDirectory + "blinn_phong.frag.spv");
+
+	FVulkanPipeline* BlinnPhongPipeline = Context->CreateObject<FVulkanPipeline>();
+	BlinnPhongPipeline->SetVertexShader(BlinnPhongVS);
+	BlinnPhongPipeline->SetFragmentShader(BlinnPhongFS);
+
+	Pipelines.push_back(PhongPipeline);
 	Pipelines.push_back(BlinnPhongPipeline);
 
 	for (int32_t Idx = 0; Idx < Pipelines.size(); ++Idx)
@@ -197,13 +192,13 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 		VkPipelineShaderStageCreateInfo VertexShaderStageCI{};
 		VertexShaderStageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		VertexShaderStageCI.stage = VK_SHADER_STAGE_VERTEX_BIT;
-		VertexShaderStageCI.module = Pipelines[Idx].VertexShader->GetModule();
+		VertexShaderStageCI.module = Pipelines[Idx]->GetVertexShader()->GetModule();
 		VertexShaderStageCI.pName = "main";
 
 		VkPipelineShaderStageCreateInfo FragmentShaderStageCI{};
 		FragmentShaderStageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 		FragmentShaderStageCI.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-		FragmentShaderStageCI.module = Pipelines[Idx].FragmentShader->GetModule();
+		FragmentShaderStageCI.module = Pipelines[Idx]->GetFragmentShader()->GetModule();
 		FragmentShaderStageCI.pName = "main";
 
 		VkPipelineShaderStageCreateInfo ShaderStageCIs[] =
@@ -338,10 +333,7 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 		PipelineLayoutCI.setLayoutCount = 1;
 		PipelineLayoutCI.pSetLayouts = &DescriptorSetLayout;
 
-		if (vkCreatePipelineLayout(Device, &PipelineLayoutCI, nullptr, &Pipelines[Idx].Layout) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create pipeline layout.");
-		}
+		Pipelines[Idx]->CreateLayout(PipelineLayoutCI);
 
 		VkGraphicsPipelineCreateInfo PipelineCI{};
 		PipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -355,12 +347,12 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 		PipelineCI.pMultisampleState = &MultisampleStateCI;
 		PipelineCI.pColorBlendState = &ColorBlendStateCI;
 		PipelineCI.pDynamicState = &DynamicStateCI;
-		PipelineCI.layout = Pipelines[Idx].Layout;
+		PipelineCI.layout = Pipelines[Idx]->GetLayout();
 		PipelineCI.renderPass = Context->GetRenderPass();
 		PipelineCI.subpass = 0;
 		PipelineCI.basePipelineHandle = VK_NULL_HANDLE;
 
-		VK_ASSERT(vkCreateGraphicsPipelines(Device, VK_NULL_HANDLE, 1, &PipelineCI, nullptr, &Pipelines[Idx].Pipeline));
+		Pipelines[Idx]->CreatePipeline(PipelineCI);
 	}
 }
 
@@ -400,12 +392,6 @@ void FVulkanMeshRenderer::CreateUniformBuffers()
 
 	VkDeviceSize UniformBufferSize = sizeof(FUniformBufferObject);
 
-	FVulkanScene* Scene = GEngine->GetScene();
-	if (Scene == nullptr)
-	{
-		return;
-	}
-
 	UniformBuffers.resize(MAX_CONCURRENT_FRAME);
 	for (size_t Idx = 0; Idx < MAX_CONCURRENT_FRAME; ++Idx)
 	{
@@ -428,12 +414,6 @@ void FVulkanMeshRenderer::CreateInstanceBuffers()
 	VkDevice Device = Context->GetDevice();
 
 	VkDeviceSize UniformBufferSize = sizeof(FUniformBufferObject);
-
-	FVulkanScene* Scene = GEngine->GetScene();
-	if (Scene == nullptr)
-	{
-		return;
-	}
 
 	for (auto& Pair : InstancedDrawingMap)
 	{
@@ -508,22 +488,32 @@ void FVulkanMeshRenderer::SetPipelineIndex(int32_t Idx)
 
 void FVulkanMeshRenderer::UpdateUniformBuffer()
 {
-	FCamera* Camera = GEngine->GetCamera();
-	assert(Camera != nullptr);
+	FWorld* World = GEngine->GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	FVulkanScene* Scene = World->GetRenderScene();
+	if (Scene == nullptr)
+	{
+		return;
+	}
+
+	FVulkanCamera Camera = Scene->GetCamera();
 
 	VkExtent2D SwapchainExtent = Context->GetSwapchainExtent();
 
-	float FOVRadians = glm::radians(Camera->GetFOV());
+	float FOVRadians = glm::radians(Camera.FOV);
 	float AspectRatio = SwapchainExtent.width / (float)SwapchainExtent.height;
 
 	static const glm::mat4 IdentityMatrix(1.0f);
 
 	FUniformBufferObject UBO{};
-	UBO.View = Camera->GetViewMatrix();
-	UBO.Projection = glm::perspective(FOVRadians, AspectRatio, 0.1f, 100.0f);
-	UBO.CameraPosition = Camera->GetTransform().GetTranslation();
+	UBO.View = Camera.View;
+	UBO.Projection = glm::perspective(FOVRadians, AspectRatio, Camera.Near, Camera.Far);
+	UBO.CameraPosition = Camera.Position;
 
-	FVulkanScene* Scene = GEngine->GetScene();
 	if (Scene != nullptr)
 	{
 		UBO.Light = Scene->GetLight();
@@ -535,6 +525,18 @@ void FVulkanMeshRenderer::UpdateUniformBuffer()
 
 void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMesh* InMesh)
 {
+	FWorld* World = GEngine->GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	FVulkanScene* Scene = World->GetRenderScene();
+	if (Scene == nullptr)
+	{
+		return;
+	}
+
 	if (InMesh == nullptr)
 	{
 		return;
@@ -548,10 +550,9 @@ void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMesh* InMesh)
 
 	static const glm::mat4 IdentityMatrix(1.0f);
 
-	FCamera* Camera = GEngine->GetCamera();
-	assert(Camera != nullptr);
+	FVulkanCamera Camera = Scene->GetCamera();
 
-	glm::mat4 View = Camera->GetViewMatrix();
+	glm::mat4 View = Camera.View;
 
 	FVulkanBuffer& InstanceBuffer = Iter->second.InstanceBuffers[Context->GetCurrentFrame()];
 
@@ -573,7 +574,7 @@ void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMesh* InMesh)
 			}
 
 			FInstanceBuffer* InstanceBufferData = (FInstanceBuffer*)InstanceBuffer.Mapped + Idx;
-			InstanceBufferData->Model = Model->GetCachedModelMatrix();
+			InstanceBufferData->Model = Model->GetModelMatrix();
 			InstanceBufferData->ModelView = View * InstanceBufferData->Model;
 			InstanceBufferData->NormalMatrix = glm::transpose(glm::inverse(glm::mat3(InstanceBufferData->ModelView)));
 		});
@@ -654,6 +655,22 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 	}
 }
 
+void FVulkanMeshRenderer::PreRender()
+{
+	if (bInitialized)
+	{
+		return;
+	}
+
+	GenerateInstancedDrawingInfo();
+
+	CreateUniformBuffers();
+	CreateInstanceBuffers();
+	CreateDescriptorSets();
+
+	bInitialized = true;
+}
+
 void FVulkanMeshRenderer::Render()
 {
 	uint32_t CurrentFrame = Context->GetCurrentFrame();
@@ -664,7 +681,10 @@ void FVulkanMeshRenderer::Render()
 
 	VkExtent2D SwapchainExtent = Context->GetSwapchainExtent();
 
-	vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipelines[CurrentPipelineIndex].Pipeline);
+	FVulkanPipeline* Pipeline = Pipelines[CurrentPipelineIndex];
+	assert(Pipeline != nullptr);
+
+	vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipeline->GetPipeline());
 
 	VkViewport Viewport{};
 	Viewport.x = 0.0f;
@@ -696,7 +716,7 @@ void FVulkanMeshRenderer::Render()
 
 		UpdateInstanceBuffer(Mesh);
 
-		vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipelines[CurrentPipelineIndex].Layout, 0, 1, &DescriptorSet, 0, nullptr);
+		vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipeline->GetLayout(), 0, 1, &DescriptorSet, 0, nullptr);
 
 		VkBuffer VertexBuffers[] = { Mesh->GetVertexBuffer().Buffer, InstanceBuffer.Buffer };
 		VkDeviceSize Offsets[] = { 0, 0 };

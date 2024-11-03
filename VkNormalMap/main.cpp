@@ -10,8 +10,12 @@
 #include "VulkanMeshRenderer.h"
 #include "VulkanUIRenderer.h"
 
-#include "Camera.h"
 #include "Engine.h"
+#include "World.h"
+#include "Actor.h"
+#include "CameraActor.h"
+#include "LightActor.h"
+#include "MeshActor.h"
 
 #include <ctime>
 #include <chrono>
@@ -50,10 +54,19 @@ void OnMouseButtonEvent(GLFWwindow* Window, int Button, int Action, int Mods)
 
 void OnMouseWheelEvent(GLFWwindow* Window, double XOffset, double YOffset)
 {
+	FWorld* World = GEngine->GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+
 	if (abs(YOffset) >= DBL_EPSILON)
 	{
-		FCamera* Camera = GEngine->GetCamera();
-		assert(Camera != nullptr);
+		ACameraActor* Camera = World->GetCamera();
+		if (Camera == nullptr)
+		{
+			return;
+		}
 
 		glm::mat4 RotationMatrix = glm::toMat4(Camera->GetRotation());
 
@@ -135,7 +148,12 @@ private:
 	std::vector<std::string> ShaderItems;
 	std::string CurrentShaderItem = nullptr;
 
-	FVulkanLight Light;
+	glm::vec3 LightPosition;
+	glm::vec4 Ambient;
+	glm::vec4 Diffuse;
+	glm::vec4 Specular;
+	glm::vec4 Attenuation;
+	float Shininess;
 };
 
 FMainWidget::FMainWidget()
@@ -143,12 +161,12 @@ FMainWidget::FMainWidget()
 	, ShaderItems({ "phong", "blinn_phong" })
 	, CurrentShaderItem(ShaderItems[1])
 {
-	Light.Position = glm::vec3(1.0f);
-	Light.Ambient = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
-	Light.Diffuse = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
-	Light.Specular = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
-	Light.Attenuation = glm::vec4(1.0f, 0.1f, 0.1f, 1.0f);
-	Light.Shininess = 32;
+	LightPosition = glm::vec3(1.0f);
+	Ambient = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
+	Diffuse = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+	Specular = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+	Attenuation = glm::vec4(1.0f, 0.1f, 0.1f, 1.0f);
+	Shininess = 32;
 }
 
 void FMainWidget::Draw()
@@ -181,17 +199,26 @@ void FMainWidget::Draw()
 		ImGui::EndCombo();
 	}
 
-	ImGui::InputFloat3("LightPosition", &Light.Position[0]);
-	ImGui::SliderFloat4("Ambient", &Light.Ambient[0], 0.0f, 1.0f);
-	ImGui::SliderFloat4("Diffuse", &Light.Diffuse[0], 0.0f, 1.0f);
-	ImGui::SliderFloat4("Specular", &Light.Specular[0], 0.0f, 1.0f);
-	ImGui::SliderFloat4("Attenuation", &Light.Attenuation[0], 0.0f, 1.0f);
-	ImGui::SliderFloat("Shininess", &Light.Shininess, 1.0f, 128.0f);
+	ImGui::InputFloat3("LightPosition", &LightPosition[0]);
+	ImGui::SliderFloat4("Ambient", &Ambient[0], 0.0f, 1.0f);
+	ImGui::SliderFloat4("Diffuse", &Diffuse[0], 0.0f, 1.0f);
+	ImGui::SliderFloat4("Specular", &Specular[0], 0.0f, 1.0f);
+	ImGui::SliderFloat4("Attenuation", &Attenuation[0], 0.0f, 1.0f);
+	ImGui::SliderFloat("Shininess", &Shininess, 1.0f, 128.0f);
 
-	FVulkanScene* Scene = GEngine->GetScene();
-	if (Scene)
+	FWorld* World = GEngine->GetWorld();
+	if (World)
 	{
-		Scene->SetLight(Light);
+		ALightActor* LightActor = World->GetLight();
+		if (LightActor)
+		{
+			LightActor->SetLocation(LightPosition);
+			LightActor->SetAmbient(Ambient);
+			LightActor->SetDiffuse(Diffuse);
+			LightActor->SetSpecular(Specular);
+			LightActor->SetAttenuation(Ambient);
+			LightActor->SetShininess(Shininess);
+		}
 	}
 
 	ImGui::End();
@@ -268,8 +295,6 @@ void Run(int argc, char** argv)
 	std::string ImageDirectory;
 	GConfig->Get("ImageDirectory", ImageDirectory);
 
-	FVulkanContext* RenderContext = GEngine->GetRenderContext();
-
 	FMesh* SphereMeshAsset = FAssetManager::CreateAsset<FMesh>();
 	SphereMeshAsset->LoadObj(ResourceDirectory + "sphere.obj");
 
@@ -279,40 +304,25 @@ void Run(int argc, char** argv)
 	FTextureSource* BrickNormalTextureSource = FAssetManager::CreateAsset<FTextureSource>();
 	BrickNormalTextureSource->Load(ImageDirectory + "Brick_Normal.png");
 
-	FVulkanTexture* BrickBaseColorTexture = RenderContext->CreateObject<FVulkanTexture>();
-	BrickBaseColorTexture->LoadSource(*BrickBaseColorTextureSource);
-
-	FVulkanTexture* BrickNormalTexture = RenderContext->CreateObject<FVulkanTexture>();
-	BrickNormalTexture->LoadSource(*BrickNormalTextureSource);
-
 	FTextureSource* WhiteTextureSource = FAssetManager::CreateAsset<FTextureSource>();
 	WhiteTextureSource->Load(ImageDirectory + "white.png");
 
-	FVulkanTexture* WhiteTexture = RenderContext->CreateObject<FVulkanTexture>();
-	WhiteTexture->LoadSource(*WhiteTextureSource);
+	FWorld* World = GEngine->GetWorld();
 
-	FVulkanMesh* LightSourceMesh = RenderContext->CreateObject<FVulkanMesh>();
-	LightSourceMesh->Load(SphereMeshAsset);
-	LightSourceMesh->SetBaseColorTexture(WhiteTexture);
-	LightSourceMesh->SetNormalTexture(BrickNormalTexture);
+	AMeshActor* LightSourceActor = World->SpawnActor<AMeshActor>();
+	LightSourceActor->SetMeshAsset(SphereMeshAsset);
+	LightSourceActor->SetBaseColorTexture(WhiteTextureSource);
+	LightSourceActor->SetNormalTexture(BrickNormalTextureSource);
+	LightSourceActor->SetScale(glm::vec3(0.1f, 0.1f, 0.1f));
 
-	FVulkanMesh* SphereMesh = RenderContext->CreateObject<FVulkanMesh>();
-	SphereMesh->Load(SphereMeshAsset);
-	SphereMesh->SetBaseColorTexture(BrickBaseColorTexture);
-	SphereMesh->SetNormalTexture(BrickNormalTexture);
+	AMeshActor* SphereActor = World->SpawnActor<AMeshActor>();
+	SphereActor->SetMeshAsset(SphereMeshAsset);
+	SphereActor->SetBaseColorTexture(BrickBaseColorTextureSource);
+	SphereActor->SetNormalTexture(BrickNormalTextureSource);
+	SphereActor->SetLocation(glm::vec3(0.0f, 0.0f, -2.0f));
 
-	FVulkanModel* LightSourceModel = RenderContext->CreateObject<FVulkanModel>();
-	LightSourceModel->SetMesh(LightSourceMesh);
-	LightSourceModel->SetScale(glm::vec3(0.1f, 0.1f, 0.1f));
-	GEngine->GetScene()->AddModel(LightSourceModel);
-
-	FVulkanModel* SphereModel = RenderContext->CreateObject<FVulkanModel>();
-	SphereModel->SetMesh(SphereMesh);
-	SphereModel->SetLocation(glm::vec3(0.0f, 0.0f, -2.0f));
-	GEngine->GetScene()->AddModel(SphereModel);
-
+	FVulkanContext* RenderContext = GEngine->GetRenderContext();
 	MeshRenderer = RenderContext->CreateObject<FVulkanMeshRenderer>();
-	MeshRenderer->Ready();
 	MeshRenderer->SetPipelineIndex(1);
 
 	float TargetFPS;
@@ -331,6 +341,10 @@ void Run(int argc, char** argv)
 
 		glfwPollEvents();
 		Update(DeltaTime);
+
+		GEngine->Tick(DeltaTime);
+
+		MeshRenderer->PreRender();
 
 		RenderContext->BeginRender();
 		MeshRenderer->Render();
@@ -366,46 +380,53 @@ void Update(float InDeltaTime)
 		return;
 	}
 
+	FWorld* World = GEngine->GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+
 	glm::vec3 RotationDelta(0.0f);
 
 	double MouseX, MouseY;
 	glfwGetCursorPos(Window, &MouseX, &MouseY);
 
-	FCamera* Camera = GEngine->GetCamera();
-	assert(Camera != nullptr);
-
-	double MouseDeltaX = MouseX - PrevMouseX;
-	double MouseDeltaY = MouseY - PrevMouseY;
-
-	float MouseSensitivity;
-	GConfig->Get("MouseSensitivity", MouseSensitivity);
-
-	float PitchAmount = MouseDeltaY * MouseSensitivity * InDeltaTime;
-	float YawAmount = -MouseDeltaX * MouseSensitivity * InDeltaTime;
-
-	if (abs(PitchAmount) > FLT_EPSILON || abs(YawAmount) > FLT_EPSILON)
+	ACameraActor* Camera = World->GetCamera();
+	if (Camera)
 	{
-		glm::quat PitchRotation = glm::angleAxis(PitchAmount, glm::vec3(1.0f, 0.0f, 0.0f));
-		glm::quat YawRotation = glm::angleAxis(YawAmount, glm::vec3(0.0f, 1.0f, 0.0f));
+		double MouseDeltaX = MouseX - PrevMouseX;
+		double MouseDeltaY = MouseY - PrevMouseY;
 
-		Camera->SetRotation(YawRotation * Camera->GetRotation() * PitchRotation);
-	}
+		float MouseSensitivity;
+		GConfig->Get("MouseSensitivity", MouseSensitivity);
 
-	PrevMouseX = MouseX;
-	PrevMouseY = MouseY;
+		float PitchAmount = MouseDeltaY * MouseSensitivity * InDeltaTime;
+		float YawAmount = -MouseDeltaX * MouseSensitivity * InDeltaTime;
 
-	glm::mat4 RotationMatrix = glm::toMat4(Camera->GetRotation());
+		if (abs(PitchAmount) > FLT_EPSILON || abs(YawAmount) > FLT_EPSILON)
+		{
+			glm::quat PitchRotation = glm::angleAxis(PitchAmount, glm::vec3(1.0f, 0.0f, 0.0f));
+			glm::quat YawRotation = glm::angleAxis(YawAmount, glm::vec3(0.0f, 1.0f, 0.0f));
 
-	glm::vec4 MoveVector = RotationMatrix * glm::vec4(glm::normalize(CameraMoveDelta), 1.0f);
-	glm::vec3 FinalMoveDelta(MoveVector);
-	FinalMoveDelta = glm::normalize(FinalMoveDelta);
+			Camera->SetRotation(YawRotation * Camera->GetRotation() * PitchRotation);
+		}
 
-	float CameraMoveSpeed;
-	GConfig->Get("CameraMoveSpeed", CameraMoveSpeed);
+		PrevMouseX = MouseX;
+		PrevMouseY = MouseY;
 
-	if (glm::length(FinalMoveDelta) > FLT_EPSILON)
-	{
-		Camera->SetLocation(Camera->GetLocation() + FinalMoveDelta * CameraMoveSpeed * InDeltaTime);
+		glm::mat4 RotationMatrix = glm::toMat4(Camera->GetRotation());
+
+		glm::vec4 MoveVector = RotationMatrix * glm::vec4(glm::normalize(CameraMoveDelta), 1.0f);
+		glm::vec3 FinalMoveDelta(MoveVector);
+		FinalMoveDelta = glm::normalize(FinalMoveDelta);
+
+		float CameraMoveSpeed;
+		GConfig->Get("CameraMoveSpeed", CameraMoveSpeed);
+
+		if (glm::length(FinalMoveDelta) > FLT_EPSILON)
+		{
+			Camera->SetLocation(Camera->GetLocation() + FinalMoveDelta * CameraMoveSpeed * InDeltaTime);
+		}
 	}
 }
 

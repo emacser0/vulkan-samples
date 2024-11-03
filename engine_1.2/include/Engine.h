@@ -10,10 +10,11 @@ public:
 	virtual ~FEngine();
 
 	struct GLFWwindow* GetWindow() const;
+	class FWorld* GetWorld() const;
 	class FVulkanContext* GetRenderContext() const;
-	class FVulkanScene* GetScene() const;
 	class FVulkanUIRenderer* GetUIRenderer() const;
-	class FCamera* GetCamera() const;
+
+	void Tick(float DeltaTime);
 
 private:
 	void InitializeGLFW();
@@ -21,10 +22,9 @@ private:
 
 private:
 	struct GLFWwindow* Window;
+	class FWorld* World;
 	class FVulkanContext* RenderContext;
-	class FVulkanScene* Scene;
 	class FVulkanUIRenderer* UIRenderer;
-	class FCamera* Camera;
 };
 
 extern FEngine* GEngine;

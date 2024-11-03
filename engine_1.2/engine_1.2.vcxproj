@@ -19,12 +19,20 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Camera.cpp" />
+    <ClCompile Include="CameraActor.cpp" />
     <ClCompile Include="Engine.cpp" />
+    <ClCompile Include="include\Actor.cpp" />
+    <ClCompile Include="LightActor.cpp" />
+    <ClCompile Include="MeshActor.cpp" />
+    <ClCompile Include="World.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\Camera.h" />
+    <ClInclude Include="include\Actor.h" />
+    <ClInclude Include="include\CameraActor.h" />
     <ClInclude Include="include\Engine.h" />
+    <ClInclude Include="include\LightActor.h" />
+    <ClInclude Include="include\MeshActor.h" />
+    <ClInclude Include="include\World.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

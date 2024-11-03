@@ -1,10 +1,13 @@
 #include "Engine.h"
 #include "Config.h"
 #include "AssetManager.h"
+#include "Utils.h"
+#include "World.h"
+#include "LightActor.h"
+#include "MeshActor.h" 
+
 #include "VulkanContext.h"
-#include "VulkanScene.h"
 #include "VulkanUIRenderer.h"
-#include "Camera.h"
 
 #include "glfw/glfw3.h"
 #include "imgui/imgui.h"
@@ -33,10 +36,9 @@ FEngine::FEngine()
 	InitializeGLFW();
 	CreateGLFWWindow();
 
+	World = new FWorld();
 	RenderContext = new FVulkanContext(Window);
-	Scene = RenderContext->CreateObject<FVulkanScene>();
 	UIRenderer = RenderContext->CreateObject<FVulkanUIRenderer>();
-	Camera = new FCamera();
 
 	FAssetManager::Startup();
 }
@@ -44,7 +46,7 @@ FEngine::FEngine()
 FEngine::~FEngine()
 {
 	delete RenderContext;
-	delete Camera;
+	delete World;
 
 	glfwDestroyWindow(Window);
 	glfwTerminate();
@@ -57,14 +59,14 @@ GLFWwindow* FEngine::GetWindow() const
 	return Window;
 }
 
+FWorld* FEngine::GetWorld() const
+{
+	return World;
+}
+
 FVulkanContext* FEngine::GetRenderContext() const
 {
 	return RenderContext;
-}
-
-FVulkanScene* FEngine::GetScene() const
-{
-	return Scene;
 }
 
 FVulkanUIRenderer* FEngine::GetUIRenderer() const
@@ -72,9 +74,12 @@ FVulkanUIRenderer* FEngine::GetUIRenderer() const
 	return UIRenderer;
 }
 
-FCamera* FEngine::GetCamera() const
+void FEngine::Tick(float DeltaTime)
 {
-	return Camera;
+	if (World != nullptr)
+	{
+		World->Tick(DeltaTime);
+	}
 }
 
 void FEngine::InitializeGLFW()

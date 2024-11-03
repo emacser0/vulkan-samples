@@ -2,12 +2,10 @@
 #include "VulkanContext.h"
 #include "VulkanHelpers.h"
 
-#include "Engine.h"
 #include "TextureSource.h"
 
 #include <cassert>
 
-#pragma optimize("", off)
 FVulkanTexture::FVulkanTexture(FVulkanContext* InContext)
 	: FVulkanObject(InContext)
 	, Image(VK_NULL_HANDLE)
@@ -32,27 +30,30 @@ FVulkanTexture::~FVulkanTexture()
 	}
 }
 
-void FVulkanTexture::LoadSource(const FTextureSource& InSource)
+void FVulkanTexture::LoadSource(FTextureSource* InSource)
 {
-	if (InSource.GetWidth() <= 0)
+	if (InSource == nullptr)
 	{
 		return;
 	}
 
-	if (InSource.GetHeight() <= 0)
+	if (InSource->GetWidth() <= 0)
 	{
 		return;
 	}
 
-	if (InSource.GetPixels() == nullptr)
+	if (InSource->GetHeight() <= 0)
 	{
 		return;
 	}
 
-	Width = static_cast<uint32_t>(InSource.GetWidth());
-	Height = static_cast<uint32_t>(InSource.GetHeight());
+	if (InSource->GetPixels() == nullptr)
+	{
+		return;
+	}
 
-	FVulkanContext* Context = GEngine->GetRenderContext();
+	Width = static_cast<uint32_t>(InSource->GetWidth());
+	Height = static_cast<uint32_t>(InSource->GetHeight());
 
 	VkPhysicalDevice PhysicalDevice = Context->GetPhysicalDevice();
 	VkDevice Device = Context->GetDevice();
@@ -75,7 +76,7 @@ void FVulkanTexture::LoadSource(const FTextureSource& InSource)
 	void* Data = nullptr;
 
 	VK_ASSERT(vkMapMemory(Device, StagingBufferMemory, 0, ImageSize, 0, &Data));
-	memcpy(Data, InSource.GetPixels(), static_cast<size_t>(ImageSize));
+	memcpy(Data, InSource->GetPixels(), static_cast<size_t>(ImageSize));
 	vkUnmapMemory(Device, StagingBufferMemory);
 
 	Vk::CreateImage(
@@ -122,5 +123,3 @@ void FVulkanTexture::LoadSource(const FTextureSource& InSource)
 
 	bLoaded = true;
 }
-
-#pragma optimize("", on)

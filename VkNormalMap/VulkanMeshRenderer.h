@@ -11,6 +11,7 @@
 #include "VulkanMesh.h"
 #include "VulkanShader.h"
 #include "VulkanModel.h"
+#include "VulkanPipeline.h"
 
 #include "Vertex.h"
 
@@ -19,21 +20,13 @@
 
 #define MAX_CONCURRENT_FRAME 2
 
-struct FVulkanPipeline
-{
-	VkPipeline Pipeline;
-	VkPipelineLayout Layout;
-	FVulkanShader* VertexShader;
-	FVulkanShader* FragmentShader;
-};
-
 class FVulkanMeshRenderer : public FVulkanObject
 {
 public:
 	FVulkanMeshRenderer(FVulkanContext* InContext);
 	virtual ~FVulkanMeshRenderer();
 
-	void Ready();
+	void PreRender();
 	void Render();
 
 	void WaitIdle();
@@ -41,7 +34,7 @@ public:
 	void SetPipelineIndex(int32_t Idx);
 
 protected:
-	void GatherInstancedDrawingInfo();
+	void GenerateInstancedDrawingInfo();
 
 	void CreateGraphicsPipelines();
 	void CreateTextureSampler();
@@ -55,7 +48,7 @@ protected:
 	void UpdateDescriptorSets();
 
 protected:
-	std::vector<FVulkanPipeline> Pipelines;
+	std::vector<FVulkanPipeline*> Pipelines;
 	int32_t CurrentPipelineIndex = 0;
 
 	VkDescriptorSetLayout DescriptorSetLayout;
@@ -71,5 +64,7 @@ protected:
 	std::vector<FVulkanBuffer> UniformBuffers;
 
 	VkSampler TextureSampler;
+
+	bool bInitialized;
 };
 
