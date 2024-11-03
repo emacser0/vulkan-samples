@@ -18,6 +18,7 @@
 #include <thread>
 #include <iostream>
 #include <stdexcept>
+#include <filesystem>
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -237,6 +238,21 @@ void Run(int argc, char** argv)
 	GConfig->Set("ResourceDirectory", ProjectDirectory + "Resources/");
 
 	FEngine::Init();
+
+	for (const auto& Entry : std::filesystem::directory_iterator(ProjectDirectory + "Shaders"))
+	{
+		std::string Filename = Entry.path().string();
+		std::string Extension = Entry.path().extension().string();
+		if (Extension == ".vert" || Extension == ".frag")
+		{
+			std::string Command = "glslang -g -V ";
+			Command += Filename;
+			Command += " -o ";
+			Command += Filename + ".spv";
+
+			system(Command.c_str());
+		}
+	}
 
 	GLFWwindow* Window = GEngine->GetWindow();
 
