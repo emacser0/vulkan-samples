@@ -103,18 +103,20 @@ void Run(int argc, char** argv)
 {
 	FConfig::Startup();
 
-	GConfig->Set("ApplicationName", "VkObjLoader");
+	std::string ProjectDirectory = SOLUTION_DIRECTORY PROJECT_NAME "/";
+
+	GConfig->Set("ApplicationName", PROJECT_NAME);
 	GConfig->Set("EngineName", "No Engine");
 	GConfig->Set("WindowWidth", 800);
 	GConfig->Set("WindowHeight", 600);
-	GConfig->Set("WindowTitle", "VkObjLoader");
+	GConfig->Set("WindowTitle", PROJECT_NAME);
 	GConfig->Set("TargetFPS", 60.0f);
 	GConfig->Set("MaxConcurrentFrames", 2);
 	GConfig->Set("MouseSensitivity", 0.5f);
 	GConfig->Set("CameraMoveSpeed", 1.0f);
-	GConfig->Set("ShaderDirectory", SOLUTION_DIRECTORY "VkObjLoader/Shaders/");
-	GConfig->Set("ImageDirectory", SOLUTION_DIRECTORY "VkObjLoader/Images/");
-	GConfig->Set("ResourceDirectory", SOLUTION_DIRECTORY "VkObjLoader/Resources/");
+	GConfig->Set("ShaderDirectory", ProjectDirectory + "/Shaders/");
+	GConfig->Set("ImageDirectory", ProjectDirectory + "/Images/");
+	GConfig->Set("ResourceDirectory", ProjectDirectory + "/Resources/");
 
 	FEngine::Init();
 

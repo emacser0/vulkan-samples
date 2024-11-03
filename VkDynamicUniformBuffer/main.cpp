@@ -222,14 +222,13 @@ void Run(int argc, char** argv)
 
 	FConfig::Startup();
 
-	std::string ProjectName = "VkDynamicUniformBuffer";
-	std::string ProjectDirectory = SOLUTION_DIRECTORY + ProjectName + "/";
+	std::string ProjectDirectory = SOLUTION_DIRECTORY PROJECT_NAME "/";
 
-	GConfig->Set("ApplicationName", ProjectName);
+	GConfig->Set("ApplicationName", PROJECT_NAME);
 	GConfig->Set("EngineName", "No Engine");
 	GConfig->Set("WindowWidth", 800);
 	GConfig->Set("WindowHeight", 600);
-	GConfig->Set("WindowTitle", ProjectName);
+	GConfig->Set("WindowTitle", PROJECT_NAME);
 	GConfig->Set("TargetFPS", 60.0f);
 	GConfig->Set("MaxConcurrentFrames", 2);
 	GConfig->Set("MouseSensitivity", 0.5f);
