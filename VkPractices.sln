@@ -105,10 +105,14 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VkCubeMap", "VkCubeMap\VkCu
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rendering_1.1", "rendering_1.1\rendering_1.1.vcxproj", "{965F80CD-5020-4FA0-852C-1BF85A4912A8}"
 	ProjectSection(ProjectDependencies) = postProject
+		{57A05AF1-8B67-4F6A-BE52-E7A70D90DEE8} = {57A05AF1-8B67-4F6A-BE52-E7A70D90DEE8}
 		{C3428495-639B-4D61-813C-485C0F5FE2D7} = {C3428495-639B-4D61-813C-485C0F5FE2D7}
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rendering_1.2", "rendering_1.2\rendering_1.2.vcxproj", "{FA3FB4FE-909F-4143-8ABC-0F4736FAB120}"
+	ProjectSection(ProjectDependencies) = postProject
+		{57A05AF1-8B67-4F6A-BE52-E7A70D90DEE8} = {57A05AF1-8B67-4F6A-BE52-E7A70D90DEE8}
+	EndProjectSection
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
