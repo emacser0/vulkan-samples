@@ -7,7 +7,7 @@
 void ACameraActor::Initialize() 
 {
 	FOV = 90.0f;
-	Near = 0.1f;
+	Near = 0.01f;
 	Far = 100.0f;
 }
 

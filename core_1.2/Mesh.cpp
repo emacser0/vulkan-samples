@@ -80,7 +80,11 @@ bool FMesh::LoadObj(const std::string& InFilename)
 		glm::vec2 DeltaUV2 = V2.TexCoord - V0.TexCoord;
 
 		float R = 1.0f / (DeltaUV1.x * DeltaUV2.y - DeltaUV1.y * DeltaUV2.x);
-		glm::vec3 Tangent = (DeltaPos1 * DeltaUV2.y - DeltaPos2 * DeltaUV1.y) * R;
+		glm::vec3 Tangent;
+		Tangent.x = (DeltaUV2.y * DeltaPos1.x - DeltaUV1.y * DeltaPos2.x) * R;
+		Tangent.y = (DeltaUV2.y * DeltaPos1.y - DeltaUV1.y * DeltaPos2.y) * R;
+		Tangent.z = (DeltaUV2.y * DeltaPos1.z - DeltaUV1.y * DeltaPos2.z) * R;
+		Tangent = normalize(Tangent);
 
 		V0.Tangent += Tangent;
 		V1.Tangent += Tangent;

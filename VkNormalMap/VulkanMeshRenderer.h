@@ -37,6 +37,7 @@ protected:
 	void GenerateInstancedDrawingInfo();
 
 	void CreateGraphicsPipelines();
+	void CreateNormalVisualizationPipeline();
 	void CreateTextureSampler();
 	void CreateUniformBuffers();
 	void CreateInstanceBuffers();
@@ -47,9 +48,13 @@ protected:
 	void UpdateInstanceBuffer(FVulkanMesh* InMesh);
 	void UpdateDescriptorSets();
 
+	void Draw(FVulkanPipeline* InPipeline);
+
 protected:
 	std::vector<FVulkanPipeline*> Pipelines;
 	int32_t CurrentPipelineIndex = 0;
+
+	FVulkanPipeline* NormalVisualizationPipeline;
 
 	VkDescriptorSetLayout DescriptorSetLayout;
 

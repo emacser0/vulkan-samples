@@ -138,6 +138,9 @@
     <None Include="imgui.ini" />
     <None Include="Shaders\blinn_phong.frag" />
     <None Include="Shaders\blinn_phong.vert" />
+    <None Include="Shaders\normalVisualization.frag" />
+    <None Include="Shaders\normalVisualization.geom" />
+    <None Include="Shaders\NormalVisualization.vert" />
     <None Include="Shaders\phong.frag" />
     <None Include="Shaders\phong.vert" />
   </ItemGroup>
