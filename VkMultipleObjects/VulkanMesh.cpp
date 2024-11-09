@@ -27,7 +27,7 @@ FVulkanMesh::~FVulkanMesh()
 	vkFreeMemory(Device, IndexBuffer.Memory, nullptr);
 }
 
-bool FVulkanMesh::LoadObj(const std::string& InFilename)
+bool FVulkanMesh::Load(const std::string& InFilename)
 {
 	tinyobj::attrib_t Attributes;
 	std::vector<tinyobj::shape_t> Shapes;

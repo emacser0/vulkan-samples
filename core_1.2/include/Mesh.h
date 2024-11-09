@@ -14,7 +14,7 @@ public:
 	const std::vector<FVertex>& GetVertices() const { return Vertices; }
 	const std::vector<uint32_t>& GetIndices() const { return Indices; }
 
-	bool LoadObj(const std::string& InFilename);
+	bool Load(const std::string& InFilename);
 
 private:
 	std::vector<FVertex> Vertices;

@@ -274,10 +274,10 @@ void Run(int argc, char** argv)
 	FVulkanContext* RenderContext = GEngine->GetRenderContext();
 
 	FMesh* SphereMeshAsset = FAssetManager::CreateAsset<FMesh>();
-	SphereMeshAsset->LoadObj(ResourceDirectory + "sphere.obj");
+	SphereMeshAsset->Load(ResourceDirectory + "sphere.obj");
 
 	FMesh* MonkeyMeshAsset = FAssetManager::CreateAsset<FMesh>();
-	MonkeyMeshAsset->LoadObj(ResourceDirectory + "monkey.obj");
+	MonkeyMeshAsset->Load(ResourceDirectory + "monkey.obj");
 
 	std::vector<FTextureSource*> TextureSources;
 	{

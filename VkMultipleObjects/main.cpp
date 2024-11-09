@@ -161,7 +161,7 @@ void Run(int argc, char** argv)
 	Texture->LoadSource(TextureSource);
 
 	FVulkanMesh* Mesh = new FVulkanMesh(RenderContext);
-	Mesh->LoadObj(ResourceDirectory + "cube.obj");
+	Mesh->Load(ResourceDirectory + "cube.obj");
 	Mesh->SetTexture(Texture);
 
 	for (int32_t Idx = 0; Idx < 100; ++Idx)

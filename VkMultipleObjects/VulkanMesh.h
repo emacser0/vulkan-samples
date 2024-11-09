@@ -16,7 +16,7 @@ public:
 	FVulkanMesh(class FVulkanContext* InContext);
 	virtual ~FVulkanMesh();
 
-	bool LoadObj(const std::string& InFilename);
+	bool Load(const std::string& InFilename);
 
 	const std::vector<FVertex>& GetVertices() const { return Vertices; }
 	const std::vector<uint32_t>& GetIndices() const { return Indices; }

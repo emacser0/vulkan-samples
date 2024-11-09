@@ -304,7 +304,7 @@ void Run(int argc, char** argv)
 	GConfig->Get("ImageDirectory", ImageDirectory);
 
 	FMesh* SphereMeshAsset = FAssetManager::CreateAsset<FMesh>();
-	SphereMeshAsset->LoadObj(ResourceDirectory + "sphere.fbx");
+	SphereMeshAsset->Load(ResourceDirectory + "sphere.fbx");
 
 	FTextureSource* BrickBaseColorTextureSource = FAssetManager::CreateAsset<FTextureSource>();
 	BrickBaseColorTextureSource->Load(ImageDirectory + "Brick_BaseColor.jpg");
