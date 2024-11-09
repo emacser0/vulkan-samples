@@ -4,9 +4,6 @@
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include "tiny_obj_loader.h"
-
 #include "glm/glm.hpp"
 
 FMesh::FMesh()
@@ -69,9 +66,6 @@ bool FMesh::LoadObj(const std::string& InFilename)
 	{
 		return false;
 	}
-
-	std::vector<aiVector3D*> Vertices_ForImport;
-	std::vector<aiVector3D*> Indices_ForImport;
 
 	bool bHasTexCoords = Mesh->HasTextureCoords(0);
 	bool bHasNormals = Mesh->HasNormals();

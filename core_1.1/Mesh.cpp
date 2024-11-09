@@ -1,7 +1,8 @@
 #include "Mesh.h"
 
-#define TINYOBJLOADER_IMPLEMENTATION
-#include "tiny_obj_loader.h"
+#include "assimp/Importer.hpp"
+#include "assimp/scene.h"
+#include "assimp/postprocess.h"
 
 #include "glm/glm.hpp"
 
@@ -16,52 +17,87 @@ FMesh::~FMesh()
 
 }
 
+static aiMesh* FindFirstMesh(const aiScene* InScene, const aiNode* InNode)
+{
+	for (int Idx = 0; Idx < InNode->mNumMeshes; ++Idx)
+	{
+		aiMesh* Mesh = InScene->mMeshes[InNode->mMeshes[Idx]];
+		if (Mesh != nullptr)
+		{
+			return Mesh;
+		}
+	}
+
+	for (int Idx = 0; Idx < InNode->mNumChildren; ++Idx)
+	{
+		aiNode* ChildNode = InNode->mChildren[Idx];
+		if (ChildNode == nullptr)
+		{
+			continue;
+		}
+
+		aiMesh* FoundMesh = FindFirstMesh(InScene, ChildNode);
+		if (FoundMesh != nullptr)
+		{
+			return FoundMesh;
+		}
+	}
+
+	return nullptr;
+}
+
 bool FMesh::LoadObj(const std::string& InFilename)
 {
-	tinyobj::attrib_t Attributes;
-	std::vector<tinyobj::shape_t> Shapes;
-	std::vector<tinyobj::material_t> Materials;
-	std::string Warn, Error;
-
-	if (tinyobj::LoadObj(&Attributes, &Shapes, &Materials, &Warn, &Error, InFilename.c_str()) == false)
+	Assimp::Importer Importer;
+	const aiScene* Scene = Importer.ReadFile(InFilename, aiProcess_Triangulate | aiProcess_FlipUVs);
+	if (Scene == nullptr)
 	{
 		return false;
 	}
 
-	Vertices.clear();
-	Indices.clear();
-
-	std::unordered_map<FVertex, uint32_t> UniqueVertices;
-
-	for (const tinyobj::shape_t& Shape : Shapes)
+	aiNode* RootNode = Scene->mRootNode;
+	if (RootNode == nullptr)
 	{
-		for (const tinyobj::index_t& Index : Shape.mesh.indices)
+		return false;
+	}
+
+	aiMesh* Mesh = FindFirstMesh(Scene, RootNode);
+	if (Mesh == nullptr)
+	{
+		return false;
+	}
+
+	bool bHasTexCoords = Mesh->HasTextureCoords(0);
+	bool bHasNormals = Mesh->HasNormals();
+
+	for (int Idx = 0; Idx < Mesh->mNumVertices; ++Idx)
+	{
+		const aiVector3D& PositionData = Mesh->mVertices[Idx];
+
+		FVertex NewVertex;
+		NewVertex.Position = glm::vec3(PositionData.x, PositionData.y, PositionData.z);
+
+		if (bHasNormals)
 		{
-			FVertex NewVertex{};
-			NewVertex.Position = glm::vec3(
-				Attributes.vertices[3 * Index.vertex_index + 0],
-				Attributes.vertices[3 * Index.vertex_index + 1],
-				Attributes.vertices[3 * Index.vertex_index + 2]);
-			NewVertex.Normal = glm::vec3(
-				Attributes.normals[3 * Index.normal_index + 0],
-				Attributes.normals[3 * Index.normal_index + 1],
-				Attributes.normals[3 * Index.normal_index + 2]);
+			const aiVector3D& NormalData = Mesh->mNormals[Idx];
+			NewVertex.Normal = glm::vec3(NormalData.x, NormalData.y, NormalData.z);
+		}
 
-			if (Index.texcoord_index != -1)
-			{
-				NewVertex.TexCoords = glm::vec2(
-					Attributes.texcoords[2 * Index.texcoord_index + 0],
-					1.0f - Attributes.texcoords[2 * Index.texcoord_index + 1]);
-			}
+		if (bHasTexCoords)
+		{
+			const aiVector3D& TexCoordsData = Mesh->mTextureCoords[0][Idx];
+			NewVertex.TexCoords = glm::vec2(TexCoordsData.x, TexCoordsData.y);
+		}
 
-			const auto Iter = UniqueVertices.find(NewVertex);
-			if (Iter == UniqueVertices.end())
-			{
-				UniqueVertices[NewVertex] = static_cast<uint32_t>(UniqueVertices.size());
-				Vertices.push_back(NewVertex);
-			}
+		Vertices.push_back(NewVertex);
+	}
 
-			Indices.push_back(UniqueVertices[NewVertex]);
+	for (int FaceIdx = 0; FaceIdx < Mesh->mNumFaces; ++FaceIdx)
+	{
+		const aiFace& Face = Mesh->mFaces[FaceIdx];
+		for (int Idx = 0; Idx < Face.mNumIndices; ++Idx)
+		{
+			Indices.push_back(Face.mIndices[Idx]);
 		}
 	}
 
