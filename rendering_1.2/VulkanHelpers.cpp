@@ -295,7 +295,9 @@ namespace Vk
 		VkDevice InDevice,
 		uint32_t InWidth,
 		uint32_t InHeight,
+		uint32_t InDepth,
 		VkFormat InFormat,
+		VkImageType InImageType,
 		VkImageTiling InTiling,
 		VkImageUsageFlags InUsage,
 		VkMemoryPropertyFlags InProperties,
@@ -304,10 +306,10 @@ namespace Vk
 	{
 		VkImageCreateInfo ImageCI{};
 		ImageCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-		ImageCI.imageType = VK_IMAGE_TYPE_2D;
+		ImageCI.imageType = InImageType;
 		ImageCI.extent.width = InWidth;
 		ImageCI.extent.height = InHeight;
-		ImageCI.extent.depth = 1;
+		ImageCI.extent.depth = InDepth;
 		ImageCI.mipLevels = 1;
 		ImageCI.arrayLayers = 1;
 		ImageCI.format = InFormat;
@@ -411,7 +413,8 @@ namespace Vk
 		VkBuffer InBuffer,
 		VkImage InImage,
 		uint32_t InWidth,
-		uint32_t InHeight)
+		uint32_t InHeight,
+		uint32_t InDepth)
 	{
 		VkCommandBuffer CommandBuffer = BeginOneTimeCommandBuffer(InDevice, InCommandPool);
 
@@ -424,7 +427,7 @@ namespace Vk
 		CopyRegion.imageSubresource.baseArrayLayer = 0;
 		CopyRegion.imageSubresource.layerCount = 1;
 		CopyRegion.imageOffset = { 0, 0, 0 };
-		CopyRegion.imageExtent = { InWidth, InHeight, 1 };
+		CopyRegion.imageExtent = { InWidth, InHeight, InDepth };
 
 		vkCmdCopyBufferToImage(CommandBuffer, InBuffer, InImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &CopyRegion);
 
@@ -488,5 +491,102 @@ namespace Vk
 			1, &ImageMemoryBarrier);
 
 		EndOneTimeCommandBuffer(InDevice, InCommandPool, InCommandQueue, CommandBuffer);
+	}
+
+	VkPipelineVertexInputStateCreateInfo GetVertexInputStateCI(
+		const std::vector<VkVertexInputBindingDescription>& InBindingDescs,
+		const std::vector<VkVertexInputAttributeDescription>& InAttributeDescs)
+	{
+		VkPipelineVertexInputStateCreateInfo VertexInputStateCI{};
+		VertexInputStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+		VertexInputStateCI.vertexBindingDescriptionCount = static_cast<uint32_t>(InBindingDescs.size());
+		VertexInputStateCI.pVertexBindingDescriptions = InBindingDescs.data();
+		VertexInputStateCI.vertexAttributeDescriptionCount = static_cast<uint32_t>(InAttributeDescs.size());
+		VertexInputStateCI.pVertexAttributeDescriptions = InAttributeDescs.data();
+
+		return VertexInputStateCI;
+	}
+
+	VkPipelineInputAssemblyStateCreateInfo GetInputAssemblyStateCI()
+	{
+		VkPipelineInputAssemblyStateCreateInfo InputAssemblyStateCI{};
+		InputAssemblyStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+		InputAssemblyStateCI.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+		InputAssemblyStateCI.primitiveRestartEnable = VK_FALSE;
+
+		return InputAssemblyStateCI;
+	}
+
+	VkPipelineViewportStateCreateInfo GetViewportStateCI()
+	{
+		VkPipelineViewportStateCreateInfo ViewportStateCI{};
+		ViewportStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+		ViewportStateCI.viewportCount = 1;
+		ViewportStateCI.scissorCount = 1;
+
+		return ViewportStateCI;
+	}
+
+	VkPipelineRasterizationStateCreateInfo GetRasterizationStateCI()
+	{
+		VkPipelineRasterizationStateCreateInfo RasterizationStateCI{};
+		RasterizationStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+		RasterizationStateCI.depthClampEnable = VK_FALSE;
+		RasterizationStateCI.rasterizerDiscardEnable = VK_FALSE;
+		RasterizationStateCI.polygonMode = VK_POLYGON_MODE_FILL;
+		RasterizationStateCI.lineWidth = 1.0f;
+		RasterizationStateCI.cullMode = VK_CULL_MODE_BACK_BIT;
+		RasterizationStateCI.frontFace = VK_FRONT_FACE_CLOCKWISE;
+		RasterizationStateCI.depthBiasEnable = VK_FALSE;
+
+		return RasterizationStateCI;
+	}
+
+	VkPipelineMultisampleStateCreateInfo GetMultisampleStateCI()
+	{
+		VkPipelineMultisampleStateCreateInfo MultisampleStateCI{};
+		MultisampleStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+		MultisampleStateCI.sampleShadingEnable = VK_FALSE;
+		MultisampleStateCI.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+		MultisampleStateCI.flags = 0;
+
+		return MultisampleStateCI;
+	}
+
+	VkPipelineDepthStencilStateCreateInfo GetDepthStencilStateCI()
+	{
+		VkPipelineDepthStencilStateCreateInfo DepthStencilStateCI{};
+		DepthStencilStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+		DepthStencilStateCI.depthTestEnable = VK_TRUE;
+		DepthStencilStateCI.depthWriteEnable = VK_TRUE;
+		DepthStencilStateCI.depthCompareOp = VK_COMPARE_OP_LESS;
+		DepthStencilStateCI.depthBoundsTestEnable = VK_FALSE;
+		DepthStencilStateCI.stencilTestEnable = VK_FALSE;
+
+		return DepthStencilStateCI;
+	}
+
+	VkPipelineColorBlendStateCreateInfo GetColorBlendStateCI()
+	{
+		VkPipelineColorBlendStateCreateInfo ColorBlendStateCI{};
+		ColorBlendStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+		ColorBlendStateCI.logicOpEnable = VK_FALSE;
+		ColorBlendStateCI.logicOp = VK_LOGIC_OP_COPY;
+		ColorBlendStateCI.attachmentCount = 1;
+		ColorBlendStateCI.blendConstants[0] = 0.0f;
+		ColorBlendStateCI.blendConstants[1] = 0.0f;
+		ColorBlendStateCI.blendConstants[2] = 0.0f;
+		ColorBlendStateCI.blendConstants[3] = 0.0f;
+
+		return ColorBlendStateCI;
+	}
+
+	VkPipelineColorBlendAttachmentState GetColorBlendAttachment()
+	{
+		VkPipelineColorBlendAttachmentState ColorBlendAttachmentState{};
+		ColorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		ColorBlendAttachmentState.blendEnable = VK_FALSE;
+
+		return ColorBlendAttachmentState;
 	}
 }

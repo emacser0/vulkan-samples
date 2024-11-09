@@ -62,7 +62,9 @@ namespace Vk
 		VkDevice InDevice,
 		uint32_t InWidth,
 		uint32_t InHeight,
+		uint32_t InDepth,
 		VkFormat InFormat,
+		VkImageType InImageType,
 		VkImageTiling InTiling,
 		VkImageUsageFlags InUsage,
 		VkMemoryPropertyFlags InProperties,
@@ -90,7 +92,8 @@ namespace Vk
 		VkBuffer InBuffer,
 		VkImage InImage,
 		uint32_t InWidth,
-		uint32_t InHeight);
+		uint32_t InHeight,
+		uint32_t InDepth);
 
 	void TransitionImageLayout(
 		VkDevice InDevice,
@@ -100,4 +103,17 @@ namespace Vk
 		VkFormat InFormat,
 		VkImageLayout InOldLayout,
 		VkImageLayout InNewLayout);
+
+	void GetVertexInputBindings(std::vector<VkVertexInputBindingDescription>& OutDescs);
+	void GetVertexInputAttributes(std::vector<VkVertexInputAttributeDescription>& OutDescs);
+	VkPipelineVertexInputStateCreateInfo GetVertexInputStateCI(
+		const std::vector<VkVertexInputBindingDescription>& InBindingDescs,
+		const std::vector<VkVertexInputAttributeDescription>& InAttributeDescs);
+	VkPipelineInputAssemblyStateCreateInfo GetInputAssemblyStateCI();
+	VkPipelineViewportStateCreateInfo GetViewportStateCI();
+	VkPipelineRasterizationStateCreateInfo GetRasterizationStateCI();
+	VkPipelineMultisampleStateCreateInfo GetMultisampleStateCI();
+	VkPipelineDepthStencilStateCreateInfo GetDepthStencilStateCI();
+	VkPipelineColorBlendStateCreateInfo GetColorBlendStateCI();
+	VkPipelineColorBlendAttachmentState GetColorBlendAttachment();
 }

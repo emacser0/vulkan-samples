@@ -84,7 +84,9 @@ void FVulkanTexture::LoadSource(FTextureSource* InSource)
 		Device,
 		Width,
 		Height,
+		1,
 		Format,
+		VK_IMAGE_TYPE_2D,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
@@ -106,7 +108,8 @@ void FVulkanTexture::LoadSource(FTextureSource* InSource)
 		StagingBuffer,
 		Image,
 		Width,
-		Height);
+		Height,
+		1);
 	Vk::TransitionImageLayout(
 		Device,
 		CommandPool,

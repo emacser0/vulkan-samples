@@ -125,6 +125,29 @@ void OnKeyEvent(GLFWwindow* Window, int Key, int ScanCode, int Action, int Mods)
 			CameraMoveDelta.x = 0.0f;
 		}
 	}
+	else if (Key == GLFW_KEY_LEFT_CONTROL)
+	{
+		if (Action == GLFW_PRESS)
+		{
+			CameraMoveDelta.y = 1.0f;
+		}
+		else if (Action == GLFW_RELEASE && CameraMoveDelta.y == 1.0f)
+		{
+			CameraMoveDelta.y = 0.0f;
+		}
+	}
+	else if (Key == GLFW_KEY_SPACE)
+	{
+		if (Action == GLFW_PRESS)
+		{
+			CameraMoveDelta.y = -1.0f;
+		}
+		else if (Action == GLFW_RELEASE && CameraMoveDelta.y == -1.0f)
+		{
+			CameraMoveDelta.y = 0.0f;
+		}
+	}
+
 }
 
 void Update(float InDeltaTime); 
