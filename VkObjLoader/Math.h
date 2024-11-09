@@ -13,11 +13,11 @@ struct FVertex
 {
 	glm::vec3 Position;
 	glm::vec3 Color;
-	glm::vec2 TexCoord;
+	glm::vec2 TexCoords;
 
 	bool operator==(const FVertex& RHS) const
 	{
-		return Position == RHS.Position && Color == RHS.Color && TexCoord == RHS.TexCoord;
+		return Position == RHS.Position && Color == RHS.Color && TexCoords == RHS.TexCoords;
 	}
 };
 
@@ -27,7 +27,7 @@ namespace std
 	{
 		size_t operator()(const FVertex& InVertex) const
 		{
-            return ((hash<glm::vec3>()(InVertex.Position) ^ (hash<glm::vec3>()(InVertex.Color) << 1)) >> 1) ^ (hash<glm::vec2>()(InVertex.TexCoord) << 1);
+            return ((hash<glm::vec3>()(InVertex.Position) ^ (hash<glm::vec3>()(InVertex.Color) << 1)) >> 1) ^ (hash<glm::vec2>()(InVertex.TexCoords) << 1);
 		}
 	};
 }

@@ -2,5 +2,5 @@
 
 bool FVertex::operator==(const FVertex& RHS) const
 {
-	return Position == RHS.Position && Normal == RHS.Normal && TexCoord == RHS.TexCoord;
+	return Position == RHS.Position && Normal == RHS.Normal && TexCoords == RHS.TexCoords;
 }

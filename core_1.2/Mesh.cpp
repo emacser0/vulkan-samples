@@ -1,5 +1,9 @@
 #include "Mesh.h"
 
+#include "assimp/Importer.hpp"
+#include "assimp/scene.h"
+#include "assimp/postprocess.h"
+
 #define TINYOBJLOADER_IMPLEMENTATION
 #include "tiny_obj_loader.h"
 
@@ -16,79 +20,125 @@ FMesh::~FMesh()
 
 }
 
+static aiMesh* FindFirstMesh(const aiScene* InScene, const aiNode* InNode)
+{
+	for (int Idx = 0; Idx < InNode->mNumMeshes; ++Idx)
+	{
+		aiMesh* Mesh = InScene->mMeshes[InNode->mMeshes[Idx]];
+		if (Mesh != nullptr)
+		{
+			return Mesh;
+		}
+	}
+
+	for (int Idx = 0; Idx < InNode->mNumChildren; ++Idx)
+	{
+		aiNode* ChildNode = InNode->mChildren[Idx];
+		if (ChildNode == nullptr)
+		{
+			continue;
+		}
+
+		aiMesh* FoundMesh = FindFirstMesh(InScene, ChildNode);
+		if (FoundMesh != nullptr)
+		{
+			return FoundMesh;
+		}
+	}
+
+	return nullptr;
+}
+
 bool FMesh::LoadObj(const std::string& InFilename)
 {
-	tinyobj::attrib_t Attributes;
-	std::vector<tinyobj::shape_t> Shapes;
-	std::vector<tinyobj::material_t> Materials;
-	std::string Warn, Error;
-
-	if (tinyobj::LoadObj(&Attributes, &Shapes, &Materials, &Warn, &Error, InFilename.c_str()) == false)
+	Assimp::Importer Importer;
+	const aiScene* Scene = Importer.ReadFile(InFilename, aiProcess_Triangulate | aiProcess_FlipUVs);
+	if (Scene == nullptr)
 	{
 		return false;
 	}
 
-	Vertices.clear();
-	Indices.clear();
-
-	std::unordered_map<FVertex, uint32_t> UniqueVertices;
-
-	for (const tinyobj::shape_t& Shape : Shapes)
+	aiNode* RootNode = Scene->mRootNode;
+	if (RootNode == nullptr)
 	{
-		for (const tinyobj::index_t& Index : Shape.mesh.indices)
+		return false;
+	}
+
+	aiMesh* Mesh = FindFirstMesh(Scene, RootNode);
+	if (Mesh == nullptr)
+	{
+		return false;
+	}
+
+	std::vector<aiVector3D*> Vertices_ForImport;
+	std::vector<aiVector3D*> Indices_ForImport;
+
+	bool bHasTexCoords = Mesh->HasTextureCoords(0);
+	bool bHasNormals = Mesh->HasNormals();
+	bool bHasTangents = Mesh->HasTangentsAndBitangents();
+
+	for (int Idx = 0; Idx < Mesh->mNumVertices; ++Idx)
+	{
+		const aiVector3D& PositionData = Mesh->mVertices[Idx];
+
+		FVertex NewVertex;
+		NewVertex.Position = glm::vec3(PositionData.x, PositionData.y, PositionData.z);
+
+		if (bHasNormals)
 		{
-			FVertex NewVertex{};
-			NewVertex.Position = glm::vec3(
-				Attributes.vertices[3 * Index.vertex_index + 0],
-				Attributes.vertices[3 * Index.vertex_index + 1],
-				Attributes.vertices[3 * Index.vertex_index + 2]);
-			NewVertex.Normal = glm::vec3(
-				Attributes.normals[3 * Index.normal_index + 0],
-				Attributes.normals[3 * Index.normal_index + 1],
-				Attributes.normals[3 * Index.normal_index + 2]);
+			const aiVector3D& NormalData = Mesh->mNormals[Idx];
+			NewVertex.Normal = glm::vec3(NormalData.x, NormalData.y, NormalData.z);
+		}
 
-			if (Index.texcoord_index != -1)
-			{
-				NewVertex.TexCoord = glm::vec2(
-					Attributes.texcoords[2 * Index.texcoord_index + 0],
-					1.0f - Attributes.texcoords[2 * Index.texcoord_index + 1]);
-			}
+		if (bHasTexCoords)
+		{
+			const aiVector3D& TexCoordsData = Mesh->mTextureCoords[0][Idx];
+			NewVertex.TexCoords = glm::vec2(TexCoordsData.x, TexCoordsData.y);
+		}
 
-			NewVertex.Tangent = glm::vec3(0.0f);
+		if (bHasTangents)
+		{
+			const aiVector3D& TangentData = Mesh->mTangents[Idx];
+			NewVertex.Tangent = glm::vec3(TangentData.x, TangentData.y, TangentData.z);
+		}
 
-			const auto Iter = UniqueVertices.find(NewVertex);
-			if (Iter == UniqueVertices.end())
-			{
-				UniqueVertices[NewVertex] = static_cast<uint32_t>(UniqueVertices.size());
-				Vertices.push_back(NewVertex);
-			}
+		Vertices.push_back(NewVertex);
+	}
 
-			Indices.push_back(UniqueVertices[NewVertex]);
+	for (int FaceIdx = 0; FaceIdx < Mesh->mNumFaces; ++FaceIdx)
+	{
+		const aiFace& Face = Mesh->mFaces[FaceIdx];
+		for (int Idx = 0; Idx < Face.mNumIndices; ++Idx)
+		{
+			Indices.push_back(Face.mIndices[Idx]);
 		}
 	}
 
-	for (int Idx = 0; Idx < Indices.size(); Idx += 3)
+	if (bHasTangents == false)
 	{
-		FVertex& V0 = Vertices[Indices[Idx]];
-		FVertex& V1 = Vertices[Indices[Idx + 1]];
-		FVertex& V2 = Vertices[Indices[Idx + 2]];
+		for (int Idx = 0; Idx < Indices.size(); Idx += 3)
+		{
+			FVertex& V0 = Vertices[Indices[Idx]];
+			FVertex& V1 = Vertices[Indices[Idx + 1]];
+			FVertex& V2 = Vertices[Indices[Idx + 2]];
 
-		glm::vec3 DeltaPos1 = V1.Position - V0.Position;
-		glm::vec3 DeltaPos2 = V2.Position - V0.Position;
+			glm::vec3 DeltaPos1 = V1.Position - V0.Position;
+			glm::vec3 DeltaPos2 = V2.Position - V0.Position;
 
-		glm::vec2 DeltaUV1 = V1.TexCoord - V0.TexCoord;
-		glm::vec2 DeltaUV2 = V2.TexCoord - V0.TexCoord;
+			glm::vec2 DeltaUV1 = V1.TexCoords - V0.TexCoords;
+			glm::vec2 DeltaUV2 = V2.TexCoords - V0.TexCoords;
 
-		float R = 1.0f / (DeltaUV1.x * DeltaUV2.y - DeltaUV1.y * DeltaUV2.x);
-		glm::vec3 Tangent;
-		Tangent.x = (DeltaUV2.y * DeltaPos1.x - DeltaUV1.y * DeltaPos2.x) * R;
-		Tangent.y = (DeltaUV2.y * DeltaPos1.y - DeltaUV1.y * DeltaPos2.y) * R;
-		Tangent.z = (DeltaUV2.y * DeltaPos1.z - DeltaUV1.y * DeltaPos2.z) * R;
-		Tangent = normalize(Tangent);
+			float R = 1.0f / (DeltaUV1.x * DeltaUV2.y - DeltaUV1.y * DeltaUV2.x);
+			glm::vec3 Tangent;
+			Tangent.x = (DeltaUV2.y * DeltaPos1.x - DeltaUV1.y * DeltaPos2.x) * R;
+			Tangent.y = (DeltaUV2.y * DeltaPos1.y - DeltaUV1.y * DeltaPos2.y) * R;
+			Tangent.z = (DeltaUV2.y * DeltaPos1.z - DeltaUV1.y * DeltaPos2.z) * R;
+			Tangent = normalize(Tangent);
 
-		V0.Tangent += Tangent;
-		V1.Tangent += Tangent;
-		V2.Tangent += Tangent;
+			V0.Tangent += Tangent;
+			V1.Tangent += Tangent;
+			V2.Tangent += Tangent;
+		}
 	}
 
 	return true;

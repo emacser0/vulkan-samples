@@ -232,7 +232,7 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 		VertexInputAttributeDescs[2].binding = 0;
 		VertexInputAttributeDescs[2].location = 2;
 		VertexInputAttributeDescs[2].format = VK_FORMAT_R32G32_SFLOAT;
-		VertexInputAttributeDescs[2].offset = offsetof(FVertex, TexCoord);
+		VertexInputAttributeDescs[2].offset = offsetof(FVertex, TexCoords);
 
 		VertexInputAttributeDescs[3].binding = 0;
 		VertexInputAttributeDescs[3].location = 3;
@@ -415,7 +415,7 @@ void FVulkanMeshRenderer::CreateNormalVisualizationPipeline()
 	VertexInputAttributeDescs[2].binding = 0;
 	VertexInputAttributeDescs[2].location = 2;
 	VertexInputAttributeDescs[2].format = VK_FORMAT_R32G32_SFLOAT;
-	VertexInputAttributeDescs[2].offset = offsetof(FVertex, TexCoord);
+	VertexInputAttributeDescs[2].offset = offsetof(FVertex, TexCoords);
 
 	VertexInputAttributeDescs[3].binding = 0;
 	VertexInputAttributeDescs[3].location = 3;
