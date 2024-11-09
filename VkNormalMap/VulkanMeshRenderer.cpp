@@ -41,15 +41,16 @@ struct FInstanceBuffer
 
 FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	: FVulkanObject(InContext)
-	, NormalVisualizationPipeline(nullptr)
+	, TBNPipeline(nullptr)
 	, DescriptorSetLayout(VK_NULL_HANDLE)
 	, TextureSampler(VK_NULL_HANDLE)
 	, bInitialized(false)
+	, bTBNVisualizationEnabled(false)
 {
 	CreateTextureSampler();
 	CreateDescriptorSetLayout();
 	CreateGraphicsPipelines();
-	CreateNormalVisualizationPipeline();
+	CreateTBNPipeline();
 }
 
 FVulkanMeshRenderer::~FVulkanMeshRenderer()
@@ -358,7 +359,7 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 	}
 }
 
-void FVulkanMeshRenderer::CreateNormalVisualizationPipeline()
+void FVulkanMeshRenderer::CreateTBNPipeline()
 {
 	VkDevice Device = Context->GetDevice();
 
@@ -366,29 +367,39 @@ void FVulkanMeshRenderer::CreateNormalVisualizationPipeline()
 	GConfig->Get("ShaderDirectory", ShaderDirectory);
 
 	FVulkanShader* VS = Context->CreateObject<FVulkanShader>();
-	VS->LoadFile(ShaderDirectory + "normalVisualization.vert.spv");
+	VS->LoadFile(ShaderDirectory + "visualizeTBN.vert.spv");
+	FVulkanShader* GS = Context->CreateObject<FVulkanShader>();
+	GS->LoadFile(ShaderDirectory + "visualizeTBN.geom.spv");
 	FVulkanShader* FS = Context->CreateObject<FVulkanShader>();
-	FS->LoadFile(ShaderDirectory + "normalVisualization.frag.spv");
+	FS->LoadFile(ShaderDirectory + "visualizeTBN.frag.spv");
 
-	NormalVisualizationPipeline = Context->CreateObject<FVulkanPipeline>();
-	NormalVisualizationPipeline->SetVertexShader(VS);
-	NormalVisualizationPipeline->SetFragmentShader(FS);
+	TBNPipeline = Context->CreateObject<FVulkanPipeline>();
+	TBNPipeline->SetVertexShader(VS);
+	TBNPipeline->SetGeometryShader(GS);
+	TBNPipeline->SetFragmentShader(FS);
 
 	VkPipelineShaderStageCreateInfo VertexShaderStageCI{};
 	VertexShaderStageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	VertexShaderStageCI.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	VertexShaderStageCI.module = NormalVisualizationPipeline->GetVertexShader()->GetModule();
+	VertexShaderStageCI.module = TBNPipeline->GetVertexShader()->GetModule();
 	VertexShaderStageCI.pName = "main";
+
+	VkPipelineShaderStageCreateInfo GeometryShaderStageCI{};
+	GeometryShaderStageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	GeometryShaderStageCI.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+	GeometryShaderStageCI.module = TBNPipeline->GetGeometryShader()->GetModule();
+	GeometryShaderStageCI.pName = "main";
 
 	VkPipelineShaderStageCreateInfo FragmentShaderStageCI{};
 	FragmentShaderStageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	FragmentShaderStageCI.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	FragmentShaderStageCI.module = NormalVisualizationPipeline->GetFragmentShader()->GetModule();
+	FragmentShaderStageCI.module = TBNPipeline->GetFragmentShader()->GetModule();
 	FragmentShaderStageCI.pName = "main";
 
 	VkPipelineShaderStageCreateInfo ShaderStageCIs[] =
 	{
 		VertexShaderStageCI,
+		GeometryShaderStageCI,
 		FragmentShaderStageCI
 	};
 
@@ -518,11 +529,11 @@ void FVulkanMeshRenderer::CreateNormalVisualizationPipeline()
 	PipelineLayoutCI.setLayoutCount = 1;
 	PipelineLayoutCI.pSetLayouts = &DescriptorSetLayout;
 
-	NormalVisualizationPipeline->CreateLayout(PipelineLayoutCI);
+	TBNPipeline->CreateLayout(PipelineLayoutCI);
 
 	VkGraphicsPipelineCreateInfo PipelineCI{};
 	PipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	PipelineCI.stageCount = 2;
+	PipelineCI.stageCount = 3;
 	PipelineCI.pStages = ShaderStageCIs;
 	PipelineCI.pVertexInputState = &VertexInputStateCI;
 	PipelineCI.pInputAssemblyState = &InputAssemblyStateCI;
@@ -532,12 +543,12 @@ void FVulkanMeshRenderer::CreateNormalVisualizationPipeline()
 	PipelineCI.pMultisampleState = &MultisampleStateCI;
 	PipelineCI.pColorBlendState = &ColorBlendStateCI;
 	PipelineCI.pDynamicState = &DynamicStateCI;
-	PipelineCI.layout = NormalVisualizationPipeline->GetLayout();
+	PipelineCI.layout = TBNPipeline->GetLayout();
 	PipelineCI.renderPass = Context->GetRenderPass();
 	PipelineCI.subpass = 0;
 	PipelineCI.basePipelineHandle = VK_NULL_HANDLE;
 
-	NormalVisualizationPipeline->CreatePipeline(PipelineCI);
+	TBNPipeline->CreatePipeline(PipelineCI);
 }
 
 void FVulkanMeshRenderer::CreateTextureSampler()
@@ -868,8 +879,6 @@ void FVulkanMeshRenderer::Render()
 	FVulkanPipeline* Pipeline = Pipelines[CurrentPipelineIndex];
 	assert(Pipeline != nullptr);
 
-	vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, NormalVisualizationPipeline->GetPipeline());
-
 	VkViewport Viewport{};
 	Viewport.x = 0.0f;
 	Viewport.y = 0.0f;
@@ -877,28 +886,21 @@ void FVulkanMeshRenderer::Render()
 	Viewport.height = (float)SwapchainExtent.height;
 	Viewport.minDepth = 0.0f;
 	Viewport.maxDepth = 1.0f;
-	vkCmdSetViewport(CommandBuffer, 0, 1, &Viewport);
 
 	VkRect2D Scissor{};
 	Scissor.offset = { 0, 0 };
 	Scissor.extent = SwapchainExtent;
-	vkCmdSetScissor(CommandBuffer, 0, 1, &Scissor);
 
 	UpdateUniformBuffer();
 
-	Draw(NormalVisualizationPipeline);
-
-	vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipeline->GetPipeline());
-
-	vkCmdSetViewport(CommandBuffer, 0, 1, &Viewport);
-	vkCmdSetScissor(CommandBuffer, 0, 1, &Scissor);
-
-	UpdateUniformBuffer();
-
-	Draw(Pipeline);
+	if (bTBNVisualizationEnabled)
+	{
+		Draw(TBNPipeline, Viewport, Scissor);
+	}
+	Draw(Pipeline, Viewport, Scissor);
 }
 
-void FVulkanMeshRenderer::Draw(FVulkanPipeline* InPipeline)
+void FVulkanMeshRenderer::Draw(FVulkanPipeline* InPipeline, VkViewport& InViewport, VkRect2D& InScissor)
 {
 	if (InPipeline == nullptr)
 	{
@@ -909,6 +911,11 @@ void FVulkanMeshRenderer::Draw(FVulkanPipeline* InPipeline)
 
 	const std::vector<VkCommandBuffer>& CommandBuffers = Context->GetCommandBuffers();
 	VkCommandBuffer CommandBuffer = CommandBuffers[CurrentFrame];
+
+	vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, InPipeline->GetPipeline());
+
+	vkCmdSetViewport(CommandBuffer, 0, 1, &InViewport);
+	vkCmdSetScissor(CommandBuffer, 0, 1, &InScissor);
 
 	for (const auto& Pair : InstancedDrawingMap)
 	{

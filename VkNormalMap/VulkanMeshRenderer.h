@@ -32,12 +32,13 @@ public:
 	void WaitIdle();
 
 	void SetPipelineIndex(int32_t Idx);
+	void SetEnableTBNVisualization(bool bEnabled) { bTBNVisualizationEnabled = bEnabled; }
 
 protected:
 	void GenerateInstancedDrawingInfo();
 
 	void CreateGraphicsPipelines();
-	void CreateNormalVisualizationPipeline();
+	void CreateTBNPipeline();
 	void CreateTextureSampler();
 	void CreateUniformBuffers();
 	void CreateInstanceBuffers();
@@ -48,13 +49,13 @@ protected:
 	void UpdateInstanceBuffer(FVulkanMesh* InMesh);
 	void UpdateDescriptorSets();
 
-	void Draw(FVulkanPipeline* InPipeline);
+	void Draw(FVulkanPipeline* InPipeline, VkViewport& InViewport, VkRect2D& InScissor);
 
 protected:
 	std::vector<FVulkanPipeline*> Pipelines;
 	int32_t CurrentPipelineIndex = 0;
 
-	FVulkanPipeline* NormalVisualizationPipeline;
+	FVulkanPipeline* TBNPipeline;
 
 	VkDescriptorSetLayout DescriptorSetLayout;
 
@@ -71,5 +72,6 @@ protected:
 	VkSampler TextureSampler;
 
 	bool bInitialized;
+	bool bTBNVisualizationEnabled;
 };
 

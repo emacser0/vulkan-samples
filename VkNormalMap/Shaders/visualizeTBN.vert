@@ -39,21 +39,19 @@ layout(location = 13) in vec4 inNormalMatrix_1;
 layout(location = 14) in vec4 inNormalMatrix_2;
 layout(location = 15) in vec4 inNormalMatrix_3;
 
-layout(location = 0) out vec4 outPosition;
-layout(location = 1) out vec3 outNormal;
-layout(location = 2) out vec2 outTexCoord;
-layout(location = 3) out vec3 outTangent;
-
-out
+layout(location = 0) out vec3 outNormal;
+layout(location = 1) out vec3 outTangent;
+layout(location = 2) out vec3 outBitangent;
 
 void main()
 {
     mat4 modelView = mat4(inModelView_0, inModelView_1, inModelView_2, inModelView_3);
     mat3 normalMatrix = mat3(mat4(inNormalMatrix_0, inNormalMatrix_1, inNormalMatrix_2, inNormalMatrix_3));
 
-    outPosition = modelView * vec4(inPosition, 1.0);
-    outNormal = normalMatrix * inNormal;
-    outTexCoord = inTexCoord;
-    outTangent = mat3(modelView) * inTangent;
-    gl_Position = ubo.projection * outPosition;
+    vec4 position = modelView * vec4(inPosition, 1.0);
+    gl_Position = ubo.projection * position;
+
+    outNormal = normalize(vec3(ubo.projection * vec4(normalMatrix * inNormal, 0.0)));
+    outTangent = normalize(vec3(ubo.projection * vec4(normalMatrix * inTangent, 0.0)));
+    outBitangent = normalize(cross(outNormal, outTangent));
 }

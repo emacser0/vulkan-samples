@@ -134,6 +134,8 @@ int RandRange(int Min, int Max)
 	return rand() % (Max - Min + 1) + Min;
 }
 
+FVulkanMeshRenderer* MeshRenderer;
+
 class FMainWidget : public FWidget
 {
 public:
@@ -146,7 +148,7 @@ public:
 private:
 	bool bInitialized;
 	std::vector<std::string> ShaderItems;
-	std::string CurrentShaderItem = nullptr;
+	std::string CurrentShaderItem;
 
 	glm::vec3 LightPosition;
 	glm::vec4 Ambient;
@@ -154,12 +156,15 @@ private:
 	glm::vec4 Specular;
 	glm::vec4 Attenuation;
 	float Shininess;
+
+	bool bShowTBN;
 };
 
 FMainWidget::FMainWidget()
 	: bInitialized(false)
 	, ShaderItems({ "phong", "blinn_phong" })
 	, CurrentShaderItem(ShaderItems[1])
+	, bShowTBN(false)
 {
 	LightPosition = glm::vec3(1.0f);
 	Ambient = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
@@ -221,10 +226,14 @@ void FMainWidget::Draw()
 		}
 	}
 
+	ImGui::Checkbox("Show TBN", &bShowTBN);
+	if (MeshRenderer != nullptr)
+	{
+		MeshRenderer->SetEnableTBNVisualization(bShowTBN);
+	}
+
 	ImGui::End();
 }
-
-FVulkanMeshRenderer* MeshRenderer;
 
 void FMainWidget::OnShaderItemSelected(const std::string& NewSelectedItem)
 {
@@ -295,7 +304,7 @@ void Run(int argc, char** argv)
 	GConfig->Get("ImageDirectory", ImageDirectory);
 
 	FMesh* SphereMeshAsset = FAssetManager::CreateAsset<FMesh>();
-	SphereMeshAsset->LoadObj(ResourceDirectory + "cube.obj");
+	SphereMeshAsset->LoadObj(ResourceDirectory + "sphere.fbx");
 
 	FTextureSource* BrickBaseColorTextureSource = FAssetManager::CreateAsset<FTextureSource>();
 	BrickBaseColorTextureSource->Load(ImageDirectory + "Brick_BaseColor.jpg");
