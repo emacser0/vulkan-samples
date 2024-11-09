@@ -33,7 +33,7 @@ bool LoadModel(const std::string& InFilename, std::vector<FVertex>& OutVertices,
 				Attributes.vertices[3 * Index.vertex_index + 1],
 				Attributes.vertices[3 * Index.vertex_index + 2]);
 			NewVertex.Color = glm::vec3(1.0f, 1.0f, 1.0f);
-			NewVertex.TexCoord = glm::vec2(
+			NewVertex.TexCoords = glm::vec2(
 				Attributes.texcoords[2 * Index.texcoord_index + 0],
 				1.0f - Attributes.texcoords[2 * Index.texcoord_index + 1]);
 

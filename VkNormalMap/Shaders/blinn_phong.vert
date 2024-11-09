@@ -42,7 +42,7 @@ layout(location = 15) in vec4 inNormalMatrix_3;
 layout(location = 0) out vec4 outPosition;
 layout(location = 1) out vec3 outNormal;
 layout(location = 2) out vec2 outTexCoord;
-layout(location = 3) out vec3 outTangent;
+layout(location = 3) out mat3 outTBN;
 
 void main()
 {
@@ -50,8 +50,12 @@ void main()
     mat3 normalMatrix = mat3(mat4(inNormalMatrix_0, inNormalMatrix_1, inNormalMatrix_2, inNormalMatrix_3));
 
     outPosition = modelView * vec4(inPosition, 1.0);
-    outNormal = normalMatrix * inNormal;
+    outNormal = normalize(normalMatrix * inNormal);
     outTexCoord = inTexCoord;
-    outTangent = mat3(modelView) * inTangent;
+
+    vec3 tangent = normalize(normalMatrix * inTangent);
+    vec3 bitangent = normalize(normalMatrix * cross(outNormal, tangent));
+    outTBN = mat3(tangent, bitangent, outNormal);
+
     gl_Position = ubo.projection * outPosition;
 }

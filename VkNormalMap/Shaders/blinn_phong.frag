@@ -25,7 +25,7 @@ layout(binding = 2) uniform sampler2D normalSampler;
 layout(location = 0) in vec4 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inTexCoord;
-layout(location = 3) in vec3 inTangent;
+layout(location = 3) in mat3 inTBN;
 
 layout(location = 0) out vec4 outColor;
 
@@ -38,11 +38,8 @@ void main()
     vec3 V = normalize(-inPosition.xyz);
     vec3 H = normalize(L + V);
 
-    vec3 T = normalize(inTangent);
-    vec3 B = normalize(cross(N, T));
-
     vec3 tangentNormal = normalize(texture(normalSampler, inTexCoord).rgb * 2.0 - 1.0);
-    N = normalize(mat3(T, B, N) * tangentNormal);
+    N = normalize(inTBN * tangentNormal);
     
     vec4 ambient = light.ambient;
     float d = length(light.position - inPosition.xyz);

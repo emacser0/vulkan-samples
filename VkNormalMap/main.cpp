@@ -134,6 +134,8 @@ int RandRange(int Min, int Max)
 	return rand() % (Max - Min + 1) + Min;
 }
 
+FVulkanMeshRenderer* MeshRenderer;
+
 class FMainWidget : public FWidget
 {
 public:
@@ -146,7 +148,7 @@ public:
 private:
 	bool bInitialized;
 	std::vector<std::string> ShaderItems;
-	std::string CurrentShaderItem = nullptr;
+	std::string CurrentShaderItem;
 
 	glm::vec3 LightPosition;
 	glm::vec4 Ambient;
@@ -154,12 +156,15 @@ private:
 	glm::vec4 Specular;
 	glm::vec4 Attenuation;
 	float Shininess;
+
+	bool bShowTBN;
 };
 
 FMainWidget::FMainWidget()
 	: bInitialized(false)
 	, ShaderItems({ "phong", "blinn_phong" })
 	, CurrentShaderItem(ShaderItems[1])
+	, bShowTBN(false)
 {
 	LightPosition = glm::vec3(1.0f);
 	Ambient = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
@@ -216,15 +221,19 @@ void FMainWidget::Draw()
 			LightActor->SetAmbient(Ambient);
 			LightActor->SetDiffuse(Diffuse);
 			LightActor->SetSpecular(Specular);
-			LightActor->SetAttenuation(Ambient);
+			LightActor->SetAttenuation(Attenuation);
 			LightActor->SetShininess(Shininess);
 		}
 	}
 
+	ImGui::Checkbox("Show TBN", &bShowTBN);
+	if (MeshRenderer != nullptr)
+	{
+		MeshRenderer->SetEnableTBNVisualization(bShowTBN);
+	}
+
 	ImGui::End();
 }
-
-FVulkanMeshRenderer* MeshRenderer;
 
 void FMainWidget::OnShaderItemSelected(const std::string& NewSelectedItem)
 {
@@ -265,7 +274,7 @@ void Run(int argc, char** argv)
 	{
 		std::string Filename = Entry.path().string();
 		std::string Extension = Entry.path().extension().string();
-		if (Extension == ".vert" || Extension == ".frag")
+		if (Extension == ".vert" || Extension == ".frag" || Extension == ".geom")
 		{
 			std::string Command = "glslang -g -V ";
 			Command += Filename;
@@ -295,7 +304,7 @@ void Run(int argc, char** argv)
 	GConfig->Get("ImageDirectory", ImageDirectory);
 
 	FMesh* SphereMeshAsset = FAssetManager::CreateAsset<FMesh>();
-	SphereMeshAsset->LoadObj(ResourceDirectory + "sphere.obj");
+	SphereMeshAsset->LoadObj(ResourceDirectory + "sphere.fbx");
 
 	FTextureSource* BrickBaseColorTextureSource = FAssetManager::CreateAsset<FTextureSource>();
 	BrickBaseColorTextureSource->Load(ImageDirectory + "Brick_BaseColor.jpg");
@@ -319,6 +328,14 @@ void Run(int argc, char** argv)
 	SphereActor->SetBaseColorTexture(BrickBaseColorTextureSource);
 	SphereActor->SetNormalTexture(BrickNormalTextureSource);
 	SphereActor->SetLocation(glm::vec3(0.0f, 0.0f, -2.0f));
+	SphereActor->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
+
+	AMeshActor* SphereActor2 = World->SpawnActor<AMeshActor>();
+	SphereActor2->SetMeshAsset(SphereMeshAsset);
+	SphereActor2->SetBaseColorTexture(BrickBaseColorTextureSource);
+	SphereActor2->SetNormalTexture(BrickNormalTextureSource);
+	SphereActor2->SetLocation(glm::vec3(4.0f, 0.0f, -2.0f));
+	SphereActor2->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
 
 	FVulkanContext* RenderContext = GEngine->GetRenderContext();
 	MeshRenderer = RenderContext->CreateObject<FVulkanMeshRenderer>();

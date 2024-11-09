@@ -49,7 +49,7 @@ bool FMesh::LoadObj(const std::string& InFilename)
 
 			if (Index.texcoord_index != -1)
 			{
-				NewVertex.TexCoord = glm::vec2(
+				NewVertex.TexCoords = glm::vec2(
 					Attributes.texcoords[2 * Index.texcoord_index + 0],
 					1.0f - Attributes.texcoords[2 * Index.texcoord_index + 1]);
 			}

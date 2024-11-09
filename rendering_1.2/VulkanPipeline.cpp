@@ -7,6 +7,7 @@ FVulkanPipeline::FVulkanPipeline(FVulkanContext* InContext)
 	, Pipeline(VK_NULL_HANDLE)
 	, Layout(VK_NULL_HANDLE)
 	, VS(VK_NULL_HANDLE)
+	, GS(VK_NULL_HANDLE)
 	, FS(VK_NULL_HANDLE)
 {
 

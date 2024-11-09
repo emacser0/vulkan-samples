@@ -41,13 +41,16 @@ struct FInstanceBuffer
 
 FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	: FVulkanObject(InContext)
+	, TBNPipeline(nullptr)
 	, DescriptorSetLayout(VK_NULL_HANDLE)
 	, TextureSampler(VK_NULL_HANDLE)
 	, bInitialized(false)
+	, bTBNVisualizationEnabled(false)
 {
 	CreateTextureSampler();
 	CreateDescriptorSetLayout();
 	CreateGraphicsPipelines();
+	CreateTBNPipeline();
 }
 
 FVulkanMeshRenderer::~FVulkanMeshRenderer()
@@ -230,7 +233,7 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 		VertexInputAttributeDescs[2].binding = 0;
 		VertexInputAttributeDescs[2].location = 2;
 		VertexInputAttributeDescs[2].format = VK_FORMAT_R32G32_SFLOAT;
-		VertexInputAttributeDescs[2].offset = offsetof(FVertex, TexCoord);
+		VertexInputAttributeDescs[2].offset = offsetof(FVertex, TexCoords);
 
 		VertexInputAttributeDescs[3].binding = 0;
 		VertexInputAttributeDescs[3].location = 3;
@@ -354,6 +357,198 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 
 		Pipelines[Idx]->CreatePipeline(PipelineCI);
 	}
+}
+
+void FVulkanMeshRenderer::CreateTBNPipeline()
+{
+	VkDevice Device = Context->GetDevice();
+
+	std::string ShaderDirectory;
+	GConfig->Get("ShaderDirectory", ShaderDirectory);
+
+	FVulkanShader* VS = Context->CreateObject<FVulkanShader>();
+	VS->LoadFile(ShaderDirectory + "visualizeTBN.vert.spv");
+	FVulkanShader* GS = Context->CreateObject<FVulkanShader>();
+	GS->LoadFile(ShaderDirectory + "visualizeTBN.geom.spv");
+	FVulkanShader* FS = Context->CreateObject<FVulkanShader>();
+	FS->LoadFile(ShaderDirectory + "visualizeTBN.frag.spv");
+
+	TBNPipeline = Context->CreateObject<FVulkanPipeline>();
+	TBNPipeline->SetVertexShader(VS);
+	TBNPipeline->SetGeometryShader(GS);
+	TBNPipeline->SetFragmentShader(FS);
+
+	VkPipelineShaderStageCreateInfo VertexShaderStageCI{};
+	VertexShaderStageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	VertexShaderStageCI.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	VertexShaderStageCI.module = TBNPipeline->GetVertexShader()->GetModule();
+	VertexShaderStageCI.pName = "main";
+
+	VkPipelineShaderStageCreateInfo GeometryShaderStageCI{};
+	GeometryShaderStageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	GeometryShaderStageCI.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
+	GeometryShaderStageCI.module = TBNPipeline->GetGeometryShader()->GetModule();
+	GeometryShaderStageCI.pName = "main";
+
+	VkPipelineShaderStageCreateInfo FragmentShaderStageCI{};
+	FragmentShaderStageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	FragmentShaderStageCI.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
+	FragmentShaderStageCI.module = TBNPipeline->GetFragmentShader()->GetModule();
+	FragmentShaderStageCI.pName = "main";
+
+	VkPipelineShaderStageCreateInfo ShaderStageCIs[] =
+	{
+		VertexShaderStageCI,
+		GeometryShaderStageCI,
+		FragmentShaderStageCI
+	};
+
+	std::array<VkVertexInputBindingDescription, 2> VertexInputBindingDescs{};
+	VertexInputBindingDescs[0].binding = 0;
+	VertexInputBindingDescs[0].stride = sizeof(FVertex);
+	VertexInputBindingDescs[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+	VertexInputBindingDescs[1].binding = 1;
+	VertexInputBindingDescs[1].stride = sizeof(FInstanceBuffer);
+	VertexInputBindingDescs[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+
+	std::array<VkVertexInputAttributeDescription, 16> VertexInputAttributeDescs{};
+	VertexInputAttributeDescs[0].binding = 0;
+	VertexInputAttributeDescs[0].location = 0;
+	VertexInputAttributeDescs[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+	VertexInputAttributeDescs[0].offset = offsetof(FVertex, Position);
+
+	VertexInputAttributeDescs[1].binding = 0;
+	VertexInputAttributeDescs[1].location = 1;
+	VertexInputAttributeDescs[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+	VertexInputAttributeDescs[1].offset = offsetof(FVertex, Normal);
+
+	VertexInputAttributeDescs[2].binding = 0;
+	VertexInputAttributeDescs[2].location = 2;
+	VertexInputAttributeDescs[2].format = VK_FORMAT_R32G32_SFLOAT;
+	VertexInputAttributeDescs[2].offset = offsetof(FVertex, TexCoords);
+
+	VertexInputAttributeDescs[3].binding = 0;
+	VertexInputAttributeDescs[3].location = 3;
+	VertexInputAttributeDescs[3].format = VK_FORMAT_R32G32B32_SFLOAT;
+	VertexInputAttributeDescs[3].offset = offsetof(FVertex, Tangent);
+
+	for (int Idx = 0; Idx < 4; ++Idx)
+	{
+		VertexInputAttributeDescs[4 + Idx].binding = 1;
+		VertexInputAttributeDescs[4 + Idx].location = 4 + Idx;
+		VertexInputAttributeDescs[4 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		VertexInputAttributeDescs[4 + Idx].offset = offsetof(FInstanceBuffer, Model) + sizeof(glm::vec4) * Idx;
+	}
+
+	for (int Idx = 0; Idx < 4; ++Idx)
+	{
+		VertexInputAttributeDescs[8 + Idx].binding = 1;
+		VertexInputAttributeDescs[8 + Idx].location = 8 + Idx;
+		VertexInputAttributeDescs[8 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		VertexInputAttributeDescs[8 + Idx].offset = offsetof(FInstanceBuffer, ModelView) + sizeof(glm::vec4) * Idx;
+	}
+
+	for (int Idx = 0; Idx < 4; ++Idx)
+	{
+		VertexInputAttributeDescs[12 + Idx].binding = 1;
+		VertexInputAttributeDescs[12 + Idx].location = 12 + Idx;
+		VertexInputAttributeDescs[12 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		VertexInputAttributeDescs[12 + Idx].offset = offsetof(FInstanceBuffer, NormalMatrix) + sizeof(glm::vec4) * Idx;
+	}
+
+	VkPipelineVertexInputStateCreateInfo VertexInputStateCI{};
+	VertexInputStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
+	VertexInputStateCI.vertexBindingDescriptionCount = static_cast<uint32_t>(VertexInputBindingDescs.size());
+	VertexInputStateCI.pVertexBindingDescriptions = VertexInputBindingDescs.data();
+	VertexInputStateCI.vertexAttributeDescriptionCount = static_cast<uint32_t>(VertexInputAttributeDescs.size());
+	VertexInputStateCI.pVertexAttributeDescriptions = VertexInputAttributeDescs.data();
+
+	VkPipelineInputAssemblyStateCreateInfo InputAssemblyStateCI{};
+	InputAssemblyStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
+	InputAssemblyStateCI.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+	InputAssemblyStateCI.primitiveRestartEnable = VK_FALSE;
+
+	VkPipelineViewportStateCreateInfo ViewportStateCI{};
+	ViewportStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
+	ViewportStateCI.viewportCount = 1;
+	ViewportStateCI.scissorCount = 1;
+
+	VkPipelineRasterizationStateCreateInfo RasterizerCI{};
+	RasterizerCI.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
+	RasterizerCI.depthClampEnable = VK_FALSE;
+	RasterizerCI.rasterizerDiscardEnable = VK_FALSE;
+	RasterizerCI.polygonMode = VK_POLYGON_MODE_FILL;
+	RasterizerCI.lineWidth = 1.0f;
+	RasterizerCI.cullMode = VK_CULL_MODE_BACK_BIT;
+	RasterizerCI.frontFace = VK_FRONT_FACE_CLOCKWISE;
+	RasterizerCI.depthBiasEnable = VK_FALSE;
+
+	VkPipelineMultisampleStateCreateInfo MultisampleStateCI{};
+	MultisampleStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
+	MultisampleStateCI.sampleShadingEnable = VK_FALSE;
+	MultisampleStateCI.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+	MultisampleStateCI.flags = 0;
+
+	VkPipelineDepthStencilStateCreateInfo DepthStencilStateCI{};
+	DepthStencilStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
+	DepthStencilStateCI.depthTestEnable = VK_TRUE;
+	DepthStencilStateCI.depthWriteEnable = VK_TRUE;
+	DepthStencilStateCI.depthCompareOp = VK_COMPARE_OP_LESS;
+	DepthStencilStateCI.depthBoundsTestEnable = VK_FALSE;
+	DepthStencilStateCI.stencilTestEnable = VK_FALSE;
+
+	VkPipelineColorBlendAttachmentState ColorBlendAttachmentState{};
+	ColorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+	ColorBlendAttachmentState.blendEnable = VK_FALSE;
+
+	VkPipelineColorBlendStateCreateInfo ColorBlendStateCI{};
+	ColorBlendStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
+	ColorBlendStateCI.logicOpEnable = VK_FALSE;
+	ColorBlendStateCI.logicOp = VK_LOGIC_OP_COPY;
+	ColorBlendStateCI.attachmentCount = 1;
+	ColorBlendStateCI.pAttachments = &ColorBlendAttachmentState;
+	ColorBlendStateCI.blendConstants[0] = 0.0f;
+	ColorBlendStateCI.blendConstants[1] = 0.0f;
+	ColorBlendStateCI.blendConstants[2] = 0.0f;
+	ColorBlendStateCI.blendConstants[3] = 0.0f;
+
+	std::vector<VkDynamicState> DynamicStates =
+	{
+		VK_DYNAMIC_STATE_VIEWPORT,
+		VK_DYNAMIC_STATE_SCISSOR
+	};
+
+	VkPipelineDynamicStateCreateInfo DynamicStateCI{};
+	DynamicStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	DynamicStateCI.dynamicStateCount = static_cast<uint32_t>(DynamicStates.size());
+	DynamicStateCI.pDynamicStates = DynamicStates.data();
+
+	VkPipelineLayoutCreateInfo PipelineLayoutCI{};
+	PipelineLayoutCI.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	PipelineLayoutCI.setLayoutCount = 1;
+	PipelineLayoutCI.pSetLayouts = &DescriptorSetLayout;
+
+	TBNPipeline->CreateLayout(PipelineLayoutCI);
+
+	VkGraphicsPipelineCreateInfo PipelineCI{};
+	PipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	PipelineCI.stageCount = 3;
+	PipelineCI.pStages = ShaderStageCIs;
+	PipelineCI.pVertexInputState = &VertexInputStateCI;
+	PipelineCI.pInputAssemblyState = &InputAssemblyStateCI;
+	PipelineCI.pViewportState = &ViewportStateCI;
+	PipelineCI.pRasterizationState = &RasterizerCI;
+	PipelineCI.pDepthStencilState = &DepthStencilStateCI;
+	PipelineCI.pMultisampleState = &MultisampleStateCI;
+	PipelineCI.pColorBlendState = &ColorBlendStateCI;
+	PipelineCI.pDynamicState = &DynamicStateCI;
+	PipelineCI.layout = TBNPipeline->GetLayout();
+	PipelineCI.renderPass = Context->GetRenderPass();
+	PipelineCI.subpass = 0;
+	PipelineCI.basePipelineHandle = VK_NULL_HANDLE;
+
+	TBNPipeline->CreatePipeline(PipelineCI);
 }
 
 void FVulkanMeshRenderer::CreateTextureSampler()
@@ -684,8 +879,6 @@ void FVulkanMeshRenderer::Render()
 	FVulkanPipeline* Pipeline = Pipelines[CurrentPipelineIndex];
 	assert(Pipeline != nullptr);
 
-	vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipeline->GetPipeline());
-
 	VkViewport Viewport{};
 	Viewport.x = 0.0f;
 	Viewport.y = 0.0f;
@@ -693,14 +886,36 @@ void FVulkanMeshRenderer::Render()
 	Viewport.height = (float)SwapchainExtent.height;
 	Viewport.minDepth = 0.0f;
 	Viewport.maxDepth = 1.0f;
-	vkCmdSetViewport(CommandBuffer, 0, 1, &Viewport);
 
 	VkRect2D Scissor{};
 	Scissor.offset = { 0, 0 };
 	Scissor.extent = SwapchainExtent;
-	vkCmdSetScissor(CommandBuffer, 0, 1, &Scissor);
 
 	UpdateUniformBuffer();
+
+	if (bTBNVisualizationEnabled)
+	{
+		Draw(TBNPipeline, Viewport, Scissor);
+	}
+	Draw(Pipeline, Viewport, Scissor);
+}
+
+void FVulkanMeshRenderer::Draw(FVulkanPipeline* InPipeline, VkViewport& InViewport, VkRect2D& InScissor)
+{
+	if (InPipeline == nullptr)
+	{
+		return;
+	}
+
+	uint32_t CurrentFrame = Context->GetCurrentFrame();
+
+	const std::vector<VkCommandBuffer>& CommandBuffers = Context->GetCommandBuffers();
+	VkCommandBuffer CommandBuffer = CommandBuffers[CurrentFrame];
+
+	vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, InPipeline->GetPipeline());
+
+	vkCmdSetViewport(CommandBuffer, 0, 1, &InViewport);
+	vkCmdSetScissor(CommandBuffer, 0, 1, &InScissor);
 
 	for (const auto& Pair : InstancedDrawingMap)
 	{
@@ -716,7 +931,7 @@ void FVulkanMeshRenderer::Render()
 
 		UpdateInstanceBuffer(Mesh);
 
-		vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipeline->GetLayout(), 0, 1, &DescriptorSet, 0, nullptr);
+		vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, InPipeline->GetLayout(), 0, 1, &DescriptorSet, 0, nullptr);
 
 		VkBuffer VertexBuffers[] = { Mesh->GetVertexBuffer().Buffer, InstanceBuffer.Buffer };
 		VkDeviceSize Offsets[] = { 0, 0 };

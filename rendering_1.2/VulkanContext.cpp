@@ -283,6 +283,7 @@ void FVulkanContext::CreateLogicalDevice()
 
 	VkPhysicalDeviceFeatures DeviceFeatures{};
 	DeviceFeatures.samplerAnisotropy = VK_TRUE;
+	DeviceFeatures.geometryShader = VK_TRUE;
 
 	VkDeviceCreateInfo DeviceCI{};
 	DeviceCI.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;

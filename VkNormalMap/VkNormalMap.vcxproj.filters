@@ -28,6 +28,15 @@
       <Filter>리소스 파일</Filter>
     </None>
     <None Include="imgui.ini" />
+    <None Include="Shaders\visualizeTBN.frag">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Shaders\visualizeTBN.geom">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Shaders\visualizeTBN.vert">
+      <Filter>리소스 파일</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="VulkanMeshRenderer.h">

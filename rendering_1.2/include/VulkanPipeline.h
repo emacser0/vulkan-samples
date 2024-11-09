@@ -14,8 +14,10 @@ public:
 	VkPipelineLayout GetLayout() const { return Layout; }
 
 	FVulkanShader* GetVertexShader() const { return VS; }
+	FVulkanShader* GetGeometryShader() const { return GS; }
 	FVulkanShader* GetFragmentShader() const { return FS; }
 	void SetVertexShader(FVulkanShader* InVS) { VS = InVS; }
+	void SetGeometryShader(FVulkanShader* InGS) { GS = InGS; }
 	void SetFragmentShader(FVulkanShader* InFS) { FS = InFS; }
 
 	void CreateLayout(const VkPipelineLayoutCreateInfo& CI);
@@ -25,6 +27,7 @@ private:
 	VkPipeline Pipeline;
 	VkPipelineLayout Layout;
 	FVulkanShader* VS;
+	FVulkanShader* GS;
 	FVulkanShader* FS;
 };
 
