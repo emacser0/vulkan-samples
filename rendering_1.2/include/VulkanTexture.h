@@ -4,6 +4,8 @@
 
 #include "vulkan/vulkan.h"
 
+#include <vector>
+
 class FVulkanTexture : public FVulkanObject
 {
 public:
@@ -11,6 +13,7 @@ public:
 	virtual ~FVulkanTexture();
 
 	void LoadSource(class FTextureSource* InSource);
+	void LoadSource(const std::vector<FTextureSource*>& InSource);
 
 	uint32_t GetWidth() const { return Width; }
 	uint32_t GetHeight() const { return Height; }
@@ -27,6 +30,8 @@ private:
 
 	uint32_t Width;
 	uint32_t Height;
+	uint32_t Channel;
+	uint32_t Depth;
 	VkFormat Format;
 
 	bool bLoaded;

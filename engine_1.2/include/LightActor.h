@@ -5,9 +5,9 @@
 class ALightActor : public AActor
 {
 public:
-	DECLARE_ACTOR_BODY(ALightActor);
+	DECLARE_ACTOR_BODY(ALightActor, AActor);
 
-	virtual void Initialize() override;
+	ALightActor();
 
 	glm::vec4 GetAmbient() const { return Ambient; }
 	glm::vec4 GetDiffuse() const { return Diffuse; }

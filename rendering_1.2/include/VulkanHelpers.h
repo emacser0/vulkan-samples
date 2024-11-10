@@ -75,6 +75,7 @@ namespace Vk
 		VkDevice InDevice,
 		VkImage InImage,
 		VkFormat InFormat,
+		VkImageViewType InImageViewType,
 		VkImageAspectFlags InAspectFlags);
 
 	VkCommandBuffer BeginOneTimeCommandBuffer(VkDevice InDevice, VkCommandPool InCommandPool);

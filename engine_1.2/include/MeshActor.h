@@ -1,27 +1,24 @@
 #pragma once
 
-#include "Actor.h"
-#include "Mesh.h"
+#include "MeshActorBase.h"
 #include "TextureSource.h"
 
-class AMeshActor : public AActor
+class AMeshActor : public AMeshActorBase
 {
 public:
-	DECLARE_ACTOR_BODY(AMeshActor);
+	DECLARE_ACTOR_BODY(AMeshActor, AMeshActorBase);
 
-	virtual void Initialize() override;
+	AMeshActor();
 
-	FMesh* GetMeshAsset() const { return MeshAsset; }
-	void SetMeshAsset(FMesh* InMeshAsset) { MeshAsset = InMeshAsset; }
+	class FTextureSource* GetBaseColorTexture() const { return BaseColor; }
+	void SetBaseColorTexture(class FTextureSource* InTexture) { BaseColor = InTexture; }
 
-	FTextureSource* GetBaseColorTexture() const { return BaseColor; }
-	void SetBaseColorTexture(FTextureSource* InTexture) { BaseColor = InTexture; }
+	class FTextureSource* GetNormalTexture() const { return Normal; }
+	void SetNormalTexture(class FTextureSource* InTexture) { Normal = InTexture; }
 
-	FTextureSource* GetNormalTexture() const { return Normal; }
-	void SetNormalTexture(FTextureSource* InTexture) { Normal = InTexture; }
+	virtual class FVulkanModel* CreateRenderModel() override;
 
 protected:
-	FMesh* MeshAsset;
 	FTextureSource* BaseColor;
 	FTextureSource* Normal;
 };

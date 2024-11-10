@@ -14,7 +14,7 @@ public:
 	template <typename T = class AActor>
 	T* SpawnActor()
 	{
-		T* NewActor = new T(this);
+		T* NewActor = T::StaticSpawnActor(this);
 		Actors.push_back(NewActor);
 
 		NewActor->Initialize();
@@ -42,5 +42,4 @@ private:
 	class ALightActor* LightActor;
 
 	class FVulkanScene* RenderScene;
-	std::unordered_map<class AActor*, class FVulkanModel*> RenderModelMap;
 };

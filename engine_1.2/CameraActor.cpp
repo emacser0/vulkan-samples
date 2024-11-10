@@ -4,7 +4,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/quaternion.hpp"
 
-void ACameraActor::Initialize() 
+ACameraActor::ACameraActor() 
 {
 	FOV = 90.0f;
 	Near = 0.01f;

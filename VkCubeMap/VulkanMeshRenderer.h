@@ -12,6 +12,7 @@
 #include "VulkanShader.h"
 #include "VulkanModel.h"
 #include "VulkanPipeline.h"
+#include "VulkanSampler.h"
 
 #include "Vertex.h"
 
@@ -74,7 +75,7 @@ protected:
 
 	std::vector<FVulkanBuffer> UniformBuffers;
 
-	VkSampler TextureSampler;
+	FVulkanSampler* Sampler;
 
 	bool bInitialized;
 	bool bTBNVisualizationEnabled;

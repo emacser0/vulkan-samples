@@ -6,19 +6,34 @@
 
 #include <string>
 
+#define DECLARE_ACTOR_BODY_INTERNAL(ClassName) \
+	static std::string StaticTypeId() { return #ClassName; } \
+	static ClassName* StaticSpawnActor(class FWorld* InWorld) \
+	{ \
+		ClassName* NewActor = new ClassName(); \
+		NewActor->TypeId = ClassName::StaticTypeId(); \
+		NewActor->SetWorld(InWorld); \
+		return NewActor; \
+	} \
+
+#define DECLARE_ACTOR_BODY(ClassName, ParentClassName) \
+	DECLARE_ACTOR_BODY_INTERNAL(ClassName) \
+	using Super = ParentClassName; \
+
 class AActor
 {
 public:
-	static std::string StaticTypeId() { return "AActor"; }
+	DECLARE_ACTOR_BODY_INTERNAL(AActor);
 
-	AActor(class FWorld* InWorld);
-	AActor(class FWorld* InWorld, const std::string& InTypeId);
-
-	virtual ~AActor();
+	AActor() { }
+	virtual ~AActor() { }
 
 	virtual void Initialize();
 	virtual void Deinitialize();
 	virtual void Tick(float DeltaTime);
+
+	class FWorld* GetWorld() const;
+	void SetWorld(class FWorld* InWorld);
 
 	FTransform GetTransform() const { return Transform; }
 	void SetTransform(const FTransform& InTransform);
@@ -50,9 +65,4 @@ protected:
 	
 	std::string TypeId;
 };
-
-#define DECLARE_ACTOR_BODY(ClassName) static std::string StaticTypeId() { return #ClassName; } \
-	ClassName(class FWorld* InWorld) : AActor(InWorld, ClassName::StaticTypeId()) { } \
-
-
 

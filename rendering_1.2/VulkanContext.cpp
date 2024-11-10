@@ -651,6 +651,7 @@ void FVulkanContext::CreateDepthResources()
 		Device,
 		DepthImage,
 		DepthFormat,
+		VK_IMAGE_VIEW_TYPE_2D,
 		VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 

@@ -1,20 +1,14 @@
-#include "MeshActor.h"
-#include "World.h"
+#include "CubemapActor.h"
 #include "Engine.h"
+
+#include "VulkanModel.h"
 
 #include "VulkanContext.h"
 #include "VulkanModel.h"
 #include "VulkanMesh.h"
 #include "VulkanTexture.h"
 
-AMeshActor::AMeshActor()
-	: AMeshActorBase()
-	, BaseColor(nullptr)
-	, Normal(nullptr)
-{
-}
-
-FVulkanModel* AMeshActor::CreateRenderModel()
+FVulkanModel* ACubemapActor::CreateRenderModel()
 {
 	if (RenderModel != nullptr)
 	{
@@ -32,21 +26,19 @@ FVulkanModel* AMeshActor::CreateRenderModel()
 	FVulkanMesh* NewMesh = RenderContext->CreateObject<FVulkanMesh>();
 	NewMesh->Load(MeshAsset);
 
-	if (BaseColor != nullptr)
+	RenderModel->SetMesh(NewMesh);
+
+	if (CubemapTextures.size() > 0)
 	{
 		FVulkanTexture* NewTexture = RenderContext->CreateObject<FVulkanTexture>();
-		NewTexture->LoadSource(BaseColor);
+		NewTexture->LoadSource(CubemapTextures);
 		NewMesh->SetBaseColorTexture(NewTexture);
 	}
 
-	if (Normal != nullptr)
-	{
-		FVulkanTexture* NewTexture = RenderContext->CreateObject<FVulkanTexture>();
-		NewTexture->LoadSource(Normal);
-		NewMesh->SetNormalTexture(NewTexture);
-	}
-
-	RenderModel->SetMesh(NewMesh);
-
 	return RenderModel;
+}
+
+void ACubemapActor::SetCubemapTexture(const std::vector<FTextureSource*>& InCubemapTexture)
+{
+	CubemapTextures = InCubemapTexture;
 }

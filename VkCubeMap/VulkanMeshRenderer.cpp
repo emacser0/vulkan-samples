@@ -43,7 +43,6 @@ FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	: FVulkanObject(InContext)
 	, TBNPipeline(nullptr)
 	, DescriptorSetLayout(VK_NULL_HANDLE)
-	, TextureSampler(VK_NULL_HANDLE)
 	, bInitialized(false)
 	, bTBNVisualizationEnabled(false)
 {
@@ -59,8 +58,6 @@ FVulkanMeshRenderer::~FVulkanMeshRenderer()
 	VkDevice Device = Context->GetDevice();
 
 	vkDestroyDescriptorSetLayout(Device, DescriptorSetLayout, nullptr);
-
-	vkDestroySampler(Device, TextureSampler, nullptr);
 
 	for (FVulkanBuffer UniformBuffer : UniformBuffers)
 	{
@@ -429,31 +426,7 @@ void FVulkanMeshRenderer::CreateCubemapPipeline()
 
 void FVulkanMeshRenderer::CreateTextureSampler()
 {
-	VkPhysicalDevice PhysicalDevice = Context->GetPhysicalDevice();
-	VkDevice Device = Context->GetDevice();
-
-	VkPhysicalDeviceProperties Properties{};
-	vkGetPhysicalDeviceProperties(PhysicalDevice, &Properties);
-
-	VkSamplerCreateInfo SamplerCI{};
-	SamplerCI.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	SamplerCI.magFilter = VK_FILTER_LINEAR;
-	SamplerCI.minFilter = VK_FILTER_LINEAR;
-	SamplerCI.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	SamplerCI.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	SamplerCI.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	SamplerCI.anisotropyEnable = VK_TRUE;
-	SamplerCI.maxAnisotropy = Properties.limits.maxSamplerAnisotropy;
-	SamplerCI.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-	SamplerCI.unnormalizedCoordinates = VK_FALSE;
-	SamplerCI.compareEnable = VK_FALSE;
-	SamplerCI.compareOp = VK_COMPARE_OP_ALWAYS;
-	SamplerCI.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-
-	if (vkCreateSampler(Device, &SamplerCI, nullptr, &TextureSampler) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create texture sampler!");
-	}
+	Sampler = Context->CreateObject<FVulkanSampler>();
 }
 
 void FVulkanMeshRenderer::CreateUniformBuffers()
@@ -759,7 +732,7 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 			VkDescriptorImageInfo BaseColorImageInfo{};
 			BaseColorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			BaseColorImageInfo.imageView = BaseColorTexture->GetView();
-			BaseColorImageInfo.sampler = TextureSampler;
+			BaseColorImageInfo.sampler = Sampler->GetSampler();
 
 			DescriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			DescriptorWrites[1].dstSet = DescriptorSets[Idx];
@@ -772,7 +745,7 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 			VkDescriptorImageInfo NormalImageInfo{};
 			NormalImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			NormalImageInfo.imageView = NormalTexture->GetView();
-			NormalImageInfo.sampler = TextureSampler;
+			NormalImageInfo.sampler = Sampler->GetSampler();
 
 			DescriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			DescriptorWrites[2].dstSet = DescriptorSets[Idx];

@@ -1,25 +1,6 @@
 #include "Actor.h"
 #include "World.h"
 
-AActor::AActor(FWorld* InWorld)
-	: World(InWorld)
-	, TypeId(AActor::StaticTypeId())
-{
-
-}
-
-AActor::AActor(class FWorld* InWorld, const std::string& InTypeId)
-	: World(InWorld)
-	, TypeId(InTypeId)
-{
-
-}
-
-AActor::~AActor()
-{
-
-}
-
 void AActor::Initialize()
 {
 
@@ -33,6 +14,16 @@ void AActor::Deinitialize()
 void AActor::Tick(float DeltatTime)
 {
 
+}
+
+class FWorld* AActor::GetWorld() const
+{
+	return World;
+}
+
+void AActor::SetWorld(class FWorld* InWorld)
+{
+	World = InWorld;
 }
 
 void AActor::SetTransform(const FTransform& InTransform)

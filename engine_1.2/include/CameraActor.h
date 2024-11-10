@@ -8,9 +8,9 @@
 class ACameraActor : public AActor
 {
 public:
-	DECLARE_ACTOR_BODY(ACameraActor);
+	DECLARE_ACTOR_BODY(ACameraActor, AActor);
 
-	virtual void Initialize() override;
+	ACameraActor();
 
 	float GetFOV() const { return FOV; }
 	void SetFOV(float InFOV) { FOV = InFOV; }

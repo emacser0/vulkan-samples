@@ -125,31 +125,11 @@ void FWorld::GenerateRenderScene()
 			continue;
 		}
 
-		FVulkanModel* NewModel = RenderContext->CreateObject<FVulkanModel>();
-
-		RenderScene->AddModel(NewModel);
-		RenderModelMap[Actor] = NewModel;
-
-		FVulkanMesh* NewMesh = RenderContext->CreateObject<FVulkanMesh>();
-		NewMesh->Load(MeshAsset);
-
-		FTextureSource* BaseColorTexture = MeshActor->GetBaseColorTexture();
-		if (BaseColorTexture != nullptr)
+		FVulkanModel* Model = MeshActor->CreateRenderModel();
+		if (Model != nullptr)
 		{
-			FVulkanTexture* NewTexture = RenderContext->CreateObject<FVulkanTexture>();
-			NewTexture->LoadSource(BaseColorTexture);
-			NewMesh->SetBaseColorTexture(NewTexture);
+			RenderScene->AddModel(Model);
 		}
-
-		FTextureSource* NormalTexture = MeshActor->GetNormalTexture();
-		if (NormalTexture != nullptr)
-		{
-			FVulkanTexture* NewTexture = RenderContext->CreateObject<FVulkanTexture>();
-			NewTexture->LoadSource(NormalTexture);
-			NewMesh->SetNormalTexture(NewTexture);
-		}
-
-		NewModel->SetMesh(NewMesh);
 	}
 }
 
@@ -194,18 +174,17 @@ void FWorld::UpdateRenderScene()
 			continue;
 		}
 
-		auto ModelItr = RenderModelMap.find(Actor);
-		if (ModelItr == RenderModelMap.end())
+		if (Actor->GetTypeId() != AMeshActor::StaticTypeId())
 		{
 			continue;
 		}
 
-		FVulkanModel* Model = ModelItr->second;
-		if (Model == nullptr)
+		AMeshActor* MeshActor = Cast<AMeshActor>(Actor);
+		if (MeshActor == nullptr)
 		{
 			continue;
 		}
 
-		Model->SetModelMatrix(Actor->GetCachedModelMatrix());
+		MeshActor->UpdateRenderModel();
 	}
 }

@@ -1,6 +1,7 @@
 #include "LightActor.h"
 
-void ALightActor::Initialize()
+ALightActor::ALightActor()
+	: AActor()
 {
 	Ambient = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);
 	Diffuse = glm::vec4(0.0f, 0.0f, 0.0f, 1.0f);

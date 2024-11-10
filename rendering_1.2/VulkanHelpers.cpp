@@ -343,12 +343,12 @@ namespace Vk
 		}
 	}
 
-	VkImageView CreateImageView(VkDevice InDevice, VkImage InImage, VkFormat InFormat, VkImageAspectFlags InAspectFlags)
+	VkImageView CreateImageView(VkDevice InDevice, VkImage InImage, VkFormat InFormat, VkImageViewType InImageViewType, VkImageAspectFlags InAspectFlags)
 	{
 		VkImageViewCreateInfo ImageViewCI{};
 		ImageViewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
 		ImageViewCI.image = InImage;
-		ImageViewCI.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		ImageViewCI.viewType = InImageViewType;
 		ImageViewCI.format = InFormat;
 		ImageViewCI.subresourceRange.aspectMask = InAspectFlags;
 		ImageViewCI.subresourceRange.baseMipLevel = 0;

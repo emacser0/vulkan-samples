@@ -28,6 +28,7 @@
     <ClInclude Include="include\VulkanModel.h" />
     <ClInclude Include="include\VulkanObject.h" />
     <ClInclude Include="include\VulkanPipeline.h" />
+    <ClInclude Include="include\VulkanSampler.h" />
     <ClInclude Include="include\VulkanScene.h" />
     <ClInclude Include="include\VulkanShader.h" />
     <ClInclude Include="include\VulkanTexture.h" />
@@ -40,6 +41,7 @@
     <ClCompile Include="VulkanModel.cpp" />
     <ClCompile Include="VulkanObject.cpp" />
     <ClCompile Include="VulkanPipeline.cpp" />
+    <ClCompile Include="VulkanSampler.cpp" />
     <ClCompile Include="VulkanScene.cpp" />
     <ClCompile Include="VulkanShader.cpp" />
     <ClCompile Include="VulkanTexture.cpp" />
