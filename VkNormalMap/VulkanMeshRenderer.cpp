@@ -4,6 +4,7 @@
 #include "VulkanTexture.h"
 #include "VulkanScene.h"
 #include "VulkanLight.h"
+#include "VulkanMesh.h"
 
 #include "Utils.h"
 #include "Engine.h"
@@ -43,7 +44,6 @@ FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	: FVulkanObject(InContext)
 	, TBNPipeline(nullptr)
 	, DescriptorSetLayout(VK_NULL_HANDLE)
-	, TextureSampler(VK_NULL_HANDLE)
 	, bInitialized(false)
 	, bTBNVisualizationEnabled(false)
 {
@@ -58,27 +58,6 @@ FVulkanMeshRenderer::~FVulkanMeshRenderer()
 	VkDevice Device = Context->GetDevice();
 
 	vkDestroyDescriptorSetLayout(Device, DescriptorSetLayout, nullptr);
-
-	vkDestroySampler(Device, TextureSampler, nullptr);
-
-	for (FVulkanBuffer UniformBuffer : UniformBuffers)
-	{
-		vkFreeMemory(Device, UniformBuffer.Memory, nullptr);
-		vkDestroyBuffer(Device, UniformBuffer.Buffer, nullptr);
-	}
-
-	for (const auto& Pair : InstancedDrawingMap)
-	{
-		FVulkanMesh* Mesh = Pair.first;
-		const std::vector<FVulkanModel*>& Models = Pair.second.Models;
-		const std::vector<FVulkanBuffer>& InstanceBuffers = Pair.second.InstanceBuffers;
-
-		for (const FVulkanBuffer& InstanceBuffer : InstanceBuffers)
-		{
-			vkFreeMemory(Device, InstanceBuffer.Memory, nullptr);
-			vkDestroyBuffer(Device, InstanceBuffer.Buffer, nullptr);
-		}
-	}
 }
 
 void FVulkanMeshRenderer::CreateDescriptorSetLayout()
@@ -146,7 +125,7 @@ void FVulkanMeshRenderer::GenerateInstancedDrawingInfo()
 			continue;
 		}
 
-		FVulkanMesh* Mesh = Model->GetMesh();
+		FVulkanMeshBase* Mesh = Model->GetMesh();
 		if (Mesh == nullptr)
 		{
 			continue;
@@ -204,127 +183,25 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 		FragmentShaderStageCI.module = Pipelines[Idx]->GetFragmentShader()->GetModule();
 		FragmentShaderStageCI.pName = "main";
 
-		VkPipelineShaderStageCreateInfo ShaderStageCIs[] =
-		{
-			VertexShaderStageCI,
-			FragmentShaderStageCI
-		};
+		std::array<VkPipelineShaderStageCreateInfo, 2> ShaderStageCIs = { VertexShaderStageCI, FragmentShaderStageCI };
 
-		std::array<VkVertexInputBindingDescription, 2> VertexInputBindingDescs{};
-		VertexInputBindingDescs[0].binding = 0;
-		VertexInputBindingDescs[0].stride = sizeof(FVertex);
-		VertexInputBindingDescs[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+		std::vector<VkVertexInputBindingDescription> VertexInputBindingDescs;
+		std::vector<VkVertexInputAttributeDescription> VertexInputAttributeDescs;
+		GetVertexInputBindings(VertexInputBindingDescs);
+		GetVertexInputAttributes(VertexInputAttributeDescs);
 
-		VertexInputBindingDescs[1].binding = 1;
-		VertexInputBindingDescs[1].stride = sizeof(FInstanceBuffer);
-		VertexInputBindingDescs[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+		VkPipelineVertexInputStateCreateInfo VertexInputStateCI = Vk::GetVertexInputStateCI(VertexInputBindingDescs, VertexInputAttributeDescs);
+		VkPipelineInputAssemblyStateCreateInfo InputAssemblyStateCI = Vk::GetInputAssemblyStateCI();
+		VkPipelineViewportStateCreateInfo ViewportStateCI = Vk::GetViewportStateCI();
+		VkPipelineRasterizationStateCreateInfo RasterizerCI = Vk::GetRasterizationStateCI();
+		VkPipelineMultisampleStateCreateInfo MultisampleStateCI = Vk::GetMultisampleStateCI();
+		VkPipelineDepthStencilStateCreateInfo DepthStencilStateCI = Vk::GetDepthStencilStateCI();
 
-		std::array<VkVertexInputAttributeDescription, 16> VertexInputAttributeDescs{};
-		VertexInputAttributeDescs[0].binding = 0;
-		VertexInputAttributeDescs[0].location = 0;
-		VertexInputAttributeDescs[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-		VertexInputAttributeDescs[0].offset = offsetof(FVertex, Position);
-
-		VertexInputAttributeDescs[1].binding = 0;
-		VertexInputAttributeDescs[1].location = 1;
-		VertexInputAttributeDescs[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-		VertexInputAttributeDescs[1].offset = offsetof(FVertex, Normal);
-
-		VertexInputAttributeDescs[2].binding = 0;
-		VertexInputAttributeDescs[2].location = 2;
-		VertexInputAttributeDescs[2].format = VK_FORMAT_R32G32_SFLOAT;
-		VertexInputAttributeDescs[2].offset = offsetof(FVertex, TexCoords);
-
-		VertexInputAttributeDescs[3].binding = 0;
-		VertexInputAttributeDescs[3].location = 3;
-		VertexInputAttributeDescs[3].format = VK_FORMAT_R32G32B32_SFLOAT;
-		VertexInputAttributeDescs[3].offset = offsetof(FVertex, Tangent);
-
-		for (int Idx = 0; Idx < 4; ++Idx)
-		{
-			VertexInputAttributeDescs[4 + Idx].binding = 1;
-			VertexInputAttributeDescs[4 + Idx].location = 4 + Idx;
-			VertexInputAttributeDescs[4 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-			VertexInputAttributeDescs[4 + Idx].offset = offsetof(FInstanceBuffer, Model) + sizeof(glm::vec4) * Idx;
-		}
-
-		for (int Idx = 0; Idx < 4; ++Idx)
-		{
-			VertexInputAttributeDescs[8 + Idx].binding = 1;
-			VertexInputAttributeDescs[8 + Idx].location = 8 + Idx;
-			VertexInputAttributeDescs[8 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-			VertexInputAttributeDescs[8 + Idx].offset = offsetof(FInstanceBuffer, ModelView) + sizeof(glm::vec4) * Idx;
-		}
-
-		for (int Idx = 0; Idx < 4; ++Idx)
-		{
-			VertexInputAttributeDescs[12 + Idx].binding = 1;
-			VertexInputAttributeDescs[12 + Idx].location = 12 + Idx;
-			VertexInputAttributeDescs[12 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-			VertexInputAttributeDescs[12 + Idx].offset = offsetof(FInstanceBuffer, NormalMatrix) + sizeof(glm::vec4) * Idx;
-		}
-
-		VkPipelineVertexInputStateCreateInfo VertexInputStateCI{};
-		VertexInputStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-		VertexInputStateCI.vertexBindingDescriptionCount = static_cast<uint32_t>(VertexInputBindingDescs.size());
-		VertexInputStateCI.pVertexBindingDescriptions = VertexInputBindingDescs.data();
-		VertexInputStateCI.vertexAttributeDescriptionCount = static_cast<uint32_t>(VertexInputAttributeDescs.size());
-		VertexInputStateCI.pVertexAttributeDescriptions = VertexInputAttributeDescs.data();
-
-		VkPipelineInputAssemblyStateCreateInfo InputAssemblyStateCI{};
-		InputAssemblyStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-		InputAssemblyStateCI.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-		InputAssemblyStateCI.primitiveRestartEnable = VK_FALSE;
-
-		VkPipelineViewportStateCreateInfo ViewportStateCI{};
-		ViewportStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-		ViewportStateCI.viewportCount = 1;
-		ViewportStateCI.scissorCount = 1;
-
-		VkPipelineRasterizationStateCreateInfo RasterizerCI{};
-		RasterizerCI.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-		RasterizerCI.depthClampEnable = VK_FALSE;
-		RasterizerCI.rasterizerDiscardEnable = VK_FALSE;
-		RasterizerCI.polygonMode = VK_POLYGON_MODE_FILL;
-		RasterizerCI.lineWidth = 1.0f;
-		RasterizerCI.cullMode = VK_CULL_MODE_BACK_BIT;
-		RasterizerCI.frontFace = VK_FRONT_FACE_CLOCKWISE;
-		RasterizerCI.depthBiasEnable = VK_FALSE;
-
-		VkPipelineMultisampleStateCreateInfo MultisampleStateCI{};
-		MultisampleStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-		MultisampleStateCI.sampleShadingEnable = VK_FALSE;
-		MultisampleStateCI.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-		MultisampleStateCI.flags = 0;
-
-		VkPipelineDepthStencilStateCreateInfo DepthStencilStateCI{};
-		DepthStencilStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-		DepthStencilStateCI.depthTestEnable = VK_TRUE;
-		DepthStencilStateCI.depthWriteEnable = VK_TRUE;
-		DepthStencilStateCI.depthCompareOp = VK_COMPARE_OP_LESS;
-		DepthStencilStateCI.depthBoundsTestEnable = VK_FALSE;
-		DepthStencilStateCI.stencilTestEnable = VK_FALSE;
-
-		VkPipelineColorBlendAttachmentState ColorBlendAttachmentState{};
-		ColorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-		ColorBlendAttachmentState.blendEnable = VK_FALSE;
-
-		VkPipelineColorBlendStateCreateInfo ColorBlendStateCI{};
-		ColorBlendStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-		ColorBlendStateCI.logicOpEnable = VK_FALSE;
-		ColorBlendStateCI.logicOp = VK_LOGIC_OP_COPY;
-		ColorBlendStateCI.attachmentCount = 1;
+		VkPipelineColorBlendAttachmentState ColorBlendAttachmentState = Vk::GetColorBlendAttachment();
+		VkPipelineColorBlendStateCreateInfo ColorBlendStateCI = Vk::GetColorBlendStateCI();
 		ColorBlendStateCI.pAttachments = &ColorBlendAttachmentState;
-		ColorBlendStateCI.blendConstants[0] = 0.0f;
-		ColorBlendStateCI.blendConstants[1] = 0.0f;
-		ColorBlendStateCI.blendConstants[2] = 0.0f;
-		ColorBlendStateCI.blendConstants[3] = 0.0f;
 
-		std::vector<VkDynamicState> DynamicStates =
-		{
-			VK_DYNAMIC_STATE_VIEWPORT,
-			VK_DYNAMIC_STATE_SCISSOR
-		};
+		std::vector<VkDynamicState> DynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 
 		VkPipelineDynamicStateCreateInfo DynamicStateCI{};
 		DynamicStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -340,8 +217,8 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 
 		VkGraphicsPipelineCreateInfo PipelineCI{};
 		PipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-		PipelineCI.stageCount = 2;
-		PipelineCI.pStages = ShaderStageCIs;
+		PipelineCI.stageCount = static_cast<uint32_t>(ShaderStageCIs.size());
+		PipelineCI.pStages = ShaderStageCIs.data();
 		PipelineCI.pVertexInputState = &VertexInputStateCI;
 		PipelineCI.pInputAssemblyState = &InputAssemblyStateCI;
 		PipelineCI.pViewportState = &ViewportStateCI;
@@ -396,128 +273,25 @@ void FVulkanMeshRenderer::CreateTBNPipeline()
 	FragmentShaderStageCI.module = TBNPipeline->GetFragmentShader()->GetModule();
 	FragmentShaderStageCI.pName = "main";
 
-	VkPipelineShaderStageCreateInfo ShaderStageCIs[] =
-	{
-		VertexShaderStageCI,
-		GeometryShaderStageCI,
-		FragmentShaderStageCI
-	};
+	std::array<VkPipelineShaderStageCreateInfo, 3> ShaderStageCIs = { VertexShaderStageCI, GeometryShaderStageCI, FragmentShaderStageCI };
 
-	std::array<VkVertexInputBindingDescription, 2> VertexInputBindingDescs{};
-	VertexInputBindingDescs[0].binding = 0;
-	VertexInputBindingDescs[0].stride = sizeof(FVertex);
-	VertexInputBindingDescs[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+	std::vector<VkVertexInputBindingDescription> VertexInputBindingDescs;
+	std::vector<VkVertexInputAttributeDescription> VertexInputAttributeDescs;
+	GetVertexInputBindings(VertexInputBindingDescs);
+	GetVertexInputAttributes(VertexInputAttributeDescs);
 
-	VertexInputBindingDescs[1].binding = 1;
-	VertexInputBindingDescs[1].stride = sizeof(FInstanceBuffer);
-	VertexInputBindingDescs[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+	VkPipelineVertexInputStateCreateInfo VertexInputStateCI = Vk::GetVertexInputStateCI(VertexInputBindingDescs, VertexInputAttributeDescs);
+	VkPipelineInputAssemblyStateCreateInfo InputAssemblyStateCI = Vk::GetInputAssemblyStateCI();
+	VkPipelineViewportStateCreateInfo ViewportStateCI = Vk::GetViewportStateCI();
+	VkPipelineRasterizationStateCreateInfo RasterizerCI = Vk::GetRasterizationStateCI();
+	VkPipelineMultisampleStateCreateInfo MultisampleStateCI = Vk::GetMultisampleStateCI();
+	VkPipelineDepthStencilStateCreateInfo DepthStencilStateCI = Vk::GetDepthStencilStateCI();
 
-	std::array<VkVertexInputAttributeDescription, 16> VertexInputAttributeDescs{};
-	VertexInputAttributeDescs[0].binding = 0;
-	VertexInputAttributeDescs[0].location = 0;
-	VertexInputAttributeDescs[0].format = VK_FORMAT_R32G32B32_SFLOAT;
-	VertexInputAttributeDescs[0].offset = offsetof(FVertex, Position);
-
-	VertexInputAttributeDescs[1].binding = 0;
-	VertexInputAttributeDescs[1].location = 1;
-	VertexInputAttributeDescs[1].format = VK_FORMAT_R32G32B32_SFLOAT;
-	VertexInputAttributeDescs[1].offset = offsetof(FVertex, Normal);
-
-	VertexInputAttributeDescs[2].binding = 0;
-	VertexInputAttributeDescs[2].location = 2;
-	VertexInputAttributeDescs[2].format = VK_FORMAT_R32G32_SFLOAT;
-	VertexInputAttributeDescs[2].offset = offsetof(FVertex, TexCoords);
-
-	VertexInputAttributeDescs[3].binding = 0;
-	VertexInputAttributeDescs[3].location = 3;
-	VertexInputAttributeDescs[3].format = VK_FORMAT_R32G32B32_SFLOAT;
-	VertexInputAttributeDescs[3].offset = offsetof(FVertex, Tangent);
-
-	for (int Idx = 0; Idx < 4; ++Idx)
-	{
-		VertexInputAttributeDescs[4 + Idx].binding = 1;
-		VertexInputAttributeDescs[4 + Idx].location = 4 + Idx;
-		VertexInputAttributeDescs[4 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-		VertexInputAttributeDescs[4 + Idx].offset = offsetof(FInstanceBuffer, Model) + sizeof(glm::vec4) * Idx;
-	}
-
-	for (int Idx = 0; Idx < 4; ++Idx)
-	{
-		VertexInputAttributeDescs[8 + Idx].binding = 1;
-		VertexInputAttributeDescs[8 + Idx].location = 8 + Idx;
-		VertexInputAttributeDescs[8 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-		VertexInputAttributeDescs[8 + Idx].offset = offsetof(FInstanceBuffer, ModelView) + sizeof(glm::vec4) * Idx;
-	}
-
-	for (int Idx = 0; Idx < 4; ++Idx)
-	{
-		VertexInputAttributeDescs[12 + Idx].binding = 1;
-		VertexInputAttributeDescs[12 + Idx].location = 12 + Idx;
-		VertexInputAttributeDescs[12 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
-		VertexInputAttributeDescs[12 + Idx].offset = offsetof(FInstanceBuffer, NormalMatrix) + sizeof(glm::vec4) * Idx;
-	}
-
-	VkPipelineVertexInputStateCreateInfo VertexInputStateCI{};
-	VertexInputStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-	VertexInputStateCI.vertexBindingDescriptionCount = static_cast<uint32_t>(VertexInputBindingDescs.size());
-	VertexInputStateCI.pVertexBindingDescriptions = VertexInputBindingDescs.data();
-	VertexInputStateCI.vertexAttributeDescriptionCount = static_cast<uint32_t>(VertexInputAttributeDescs.size());
-	VertexInputStateCI.pVertexAttributeDescriptions = VertexInputAttributeDescs.data();
-
-	VkPipelineInputAssemblyStateCreateInfo InputAssemblyStateCI{};
-	InputAssemblyStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
-	InputAssemblyStateCI.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
-	InputAssemblyStateCI.primitiveRestartEnable = VK_FALSE;
-
-	VkPipelineViewportStateCreateInfo ViewportStateCI{};
-	ViewportStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO;
-	ViewportStateCI.viewportCount = 1;
-	ViewportStateCI.scissorCount = 1;
-
-	VkPipelineRasterizationStateCreateInfo RasterizerCI{};
-	RasterizerCI.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-	RasterizerCI.depthClampEnable = VK_FALSE;
-	RasterizerCI.rasterizerDiscardEnable = VK_FALSE;
-	RasterizerCI.polygonMode = VK_POLYGON_MODE_FILL;
-	RasterizerCI.lineWidth = 1.0f;
-	RasterizerCI.cullMode = VK_CULL_MODE_BACK_BIT;
-	RasterizerCI.frontFace = VK_FRONT_FACE_CLOCKWISE;
-	RasterizerCI.depthBiasEnable = VK_FALSE;
-
-	VkPipelineMultisampleStateCreateInfo MultisampleStateCI{};
-	MultisampleStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
-	MultisampleStateCI.sampleShadingEnable = VK_FALSE;
-	MultisampleStateCI.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
-	MultisampleStateCI.flags = 0;
-
-	VkPipelineDepthStencilStateCreateInfo DepthStencilStateCI{};
-	DepthStencilStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-	DepthStencilStateCI.depthTestEnable = VK_TRUE;
-	DepthStencilStateCI.depthWriteEnable = VK_TRUE;
-	DepthStencilStateCI.depthCompareOp = VK_COMPARE_OP_LESS;
-	DepthStencilStateCI.depthBoundsTestEnable = VK_FALSE;
-	DepthStencilStateCI.stencilTestEnable = VK_FALSE;
-
-	VkPipelineColorBlendAttachmentState ColorBlendAttachmentState{};
-	ColorBlendAttachmentState.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-	ColorBlendAttachmentState.blendEnable = VK_FALSE;
-
-	VkPipelineColorBlendStateCreateInfo ColorBlendStateCI{};
-	ColorBlendStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-	ColorBlendStateCI.logicOpEnable = VK_FALSE;
-	ColorBlendStateCI.logicOp = VK_LOGIC_OP_COPY;
-	ColorBlendStateCI.attachmentCount = 1;
+	VkPipelineColorBlendAttachmentState ColorBlendAttachmentState = Vk::GetColorBlendAttachment();
+	VkPipelineColorBlendStateCreateInfo ColorBlendStateCI = Vk::GetColorBlendStateCI();
 	ColorBlendStateCI.pAttachments = &ColorBlendAttachmentState;
-	ColorBlendStateCI.blendConstants[0] = 0.0f;
-	ColorBlendStateCI.blendConstants[1] = 0.0f;
-	ColorBlendStateCI.blendConstants[2] = 0.0f;
-	ColorBlendStateCI.blendConstants[3] = 0.0f;
 
-	std::vector<VkDynamicState> DynamicStates =
-	{
-		VK_DYNAMIC_STATE_VIEWPORT,
-		VK_DYNAMIC_STATE_SCISSOR
-	};
+	std::vector<VkDynamicState> DynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
 
 	VkPipelineDynamicStateCreateInfo DynamicStateCI{};
 	DynamicStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
@@ -533,8 +307,8 @@ void FVulkanMeshRenderer::CreateTBNPipeline()
 
 	VkGraphicsPipelineCreateInfo PipelineCI{};
 	PipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	PipelineCI.stageCount = 3;
-	PipelineCI.pStages = ShaderStageCIs;
+	PipelineCI.stageCount = static_cast<uint32_t>(ShaderStageCIs.size());
+	PipelineCI.pStages = ShaderStageCIs.data();
 	PipelineCI.pVertexInputState = &VertexInputStateCI;
 	PipelineCI.pInputAssemblyState = &InputAssemblyStateCI;
 	PipelineCI.pViewportState = &ViewportStateCI;
@@ -553,31 +327,7 @@ void FVulkanMeshRenderer::CreateTBNPipeline()
 
 void FVulkanMeshRenderer::CreateTextureSampler()
 {
-	VkPhysicalDevice PhysicalDevice = Context->GetPhysicalDevice();
-	VkDevice Device = Context->GetDevice();
-
-	VkPhysicalDeviceProperties Properties{};
-	vkGetPhysicalDeviceProperties(PhysicalDevice, &Properties);
-
-	VkSamplerCreateInfo SamplerCI{};
-	SamplerCI.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
-	SamplerCI.magFilter = VK_FILTER_LINEAR;
-	SamplerCI.minFilter = VK_FILTER_LINEAR;
-	SamplerCI.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	SamplerCI.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	SamplerCI.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
-	SamplerCI.anisotropyEnable = VK_TRUE;
-	SamplerCI.maxAnisotropy = Properties.limits.maxSamplerAnisotropy;
-	SamplerCI.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
-	SamplerCI.unnormalizedCoordinates = VK_FALSE;
-	SamplerCI.compareEnable = VK_FALSE;
-	SamplerCI.compareOp = VK_COMPARE_OP_ALWAYS;
-	SamplerCI.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
-
-	if (vkCreateSampler(Device, &SamplerCI, nullptr, &TextureSampler) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create texture sampler!");
-	}
+	Sampler = Context->CreateObject<FVulkanSampler>();
 }
 
 void FVulkanMeshRenderer::CreateUniformBuffers()
@@ -590,16 +340,11 @@ void FVulkanMeshRenderer::CreateUniformBuffers()
 	UniformBuffers.resize(MAX_CONCURRENT_FRAME);
 	for (size_t Idx = 0; Idx < MAX_CONCURRENT_FRAME; ++Idx)
 	{
-		Vk::CreateBuffer(
-			PhysicalDevice,
-			Device,
-			UniformBufferSize,
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			UniformBuffers[Idx].Buffer,
-			UniformBuffers[Idx].Memory);
-
-		vkMapMemory(Device, UniformBuffers[Idx].Memory, 0, UniformBufferSize, 0, &UniformBuffers[Idx].Mapped);
+		UniformBuffers[Idx] = Context->CreateObject<FVulkanBuffer>();
+		UniformBuffers[Idx]->SetUsage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+		UniformBuffers[Idx]->SetProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		UniformBuffers[Idx]->Allocate(UniformBufferSize);
+		UniformBuffers[Idx]->Map();
 	}
 }
 
@@ -612,8 +357,8 @@ void FVulkanMeshRenderer::CreateInstanceBuffers()
 
 	for (auto& Pair : InstancedDrawingMap)
 	{
-		FVulkanMesh* Mesh = Pair.first;
-		std::vector<FVulkanBuffer>& InstanceBuffers = Pair.second.InstanceBuffers;
+		FVulkanMeshBase* Mesh = Pair.first;
+		std::vector<FVulkanBuffer*>& InstanceBuffers = Pair.second.InstanceBuffers;
 		std::vector<FVulkanModel*>& Models = Pair.second.Models;
 
 		uint32_t InstanceBufferSize = sizeof(FInstanceBuffer) * Models.size();
@@ -621,18 +366,11 @@ void FVulkanMeshRenderer::CreateInstanceBuffers()
 		InstanceBuffers.resize(MAX_CONCURRENT_FRAME);
 		for (int Idx = 0; Idx < MAX_CONCURRENT_FRAME; ++Idx)
 		{
-			FVulkanBuffer& InstanceBuffer = InstanceBuffers[Idx];
-
-			Vk::CreateBuffer(
-				PhysicalDevice,
-				Device,
-				InstanceBufferSize,
-				VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-				InstanceBuffer.Buffer,
-				InstanceBuffer.Memory);
-
-			vkMapMemory(Device, InstanceBuffer.Memory, 0, InstanceBufferSize, 0, &InstanceBuffer.Mapped);
+			InstanceBuffers[Idx] = Context->CreateObject<FVulkanBuffer>();
+			InstanceBuffers[Idx]->SetUsage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+			InstanceBuffers[Idx]->SetProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+			InstanceBuffers[Idx]->Allocate(InstanceBufferSize);
+			InstanceBuffers[Idx]->Map();
 		}
 
 		UpdateInstanceBuffer(Mesh);
@@ -646,7 +384,7 @@ void FVulkanMeshRenderer::CreateDescriptorSets()
 
 	for (auto& Pair : InstancedDrawingMap)
 	{
-		FVulkanMesh* Mesh = Pair.first;
+		FVulkanMeshBase* Mesh = Pair.first;
 		std::vector<FVulkanModel*>& Models = Pair.second.Models;
 		std::vector<VkDescriptorSet>& DescriptorSets = Pair.second.DescriptorSets;
 
@@ -662,6 +400,67 @@ void FVulkanMeshRenderer::CreateDescriptorSets()
 	}
 
 	UpdateDescriptorSets();
+}
+
+void FVulkanMeshRenderer::GetVertexInputBindings(std::vector<VkVertexInputBindingDescription>& OutDescs)
+{
+	OutDescs.resize(2);
+
+	OutDescs[0].binding = 0;
+	OutDescs[0].stride = sizeof(FVertex);
+	OutDescs[0].inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+	OutDescs[1].binding = 1;
+	OutDescs[1].stride = sizeof(FInstanceBuffer);
+	OutDescs[1].inputRate = VK_VERTEX_INPUT_RATE_INSTANCE;
+}
+
+void FVulkanMeshRenderer::GetVertexInputAttributes(std::vector<VkVertexInputAttributeDescription>& OutDescs)
+{
+	OutDescs.resize(16);
+	OutDescs[0].binding = 0;
+	OutDescs[0].location = 0;
+	OutDescs[0].format = VK_FORMAT_R32G32B32_SFLOAT;
+	OutDescs[0].offset = offsetof(FVertex, Position);
+
+	OutDescs[1].binding = 0;
+	OutDescs[1].location = 1;
+	OutDescs[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+	OutDescs[1].offset = offsetof(FVertex, Normal);
+
+	OutDescs[2].binding = 0;
+	OutDescs[2].location = 2;
+	OutDescs[2].format = VK_FORMAT_R32G32_SFLOAT;
+	OutDescs[2].offset = offsetof(FVertex, TexCoords);
+
+	OutDescs[3].binding = 0;
+	OutDescs[3].location = 3;
+	OutDescs[3].format = VK_FORMAT_R32G32B32_SFLOAT;
+	OutDescs[3].offset = offsetof(FVertex, Tangent);
+
+	for (int Idx = 0; Idx < 4; ++Idx)
+	{
+		OutDescs[4 + Idx].binding = 1;
+		OutDescs[4 + Idx].location = 4 + Idx;
+		OutDescs[4 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		OutDescs[4 + Idx].offset = offsetof(FInstanceBuffer, Model) + sizeof(glm::vec4) * Idx;
+	}
+
+	for (int Idx = 0; Idx < 4; ++Idx)
+	{
+		OutDescs[8 + Idx].binding = 1;
+		OutDescs[8 + Idx].location = 8 + Idx;
+		OutDescs[8 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		OutDescs[8 + Idx].offset = offsetof(FInstanceBuffer, ModelView) + sizeof(glm::vec4) * Idx;
+	}
+
+	for (int Idx = 0; Idx < 4; ++Idx)
+	{
+		OutDescs[12 + Idx].binding = 1;
+		OutDescs[12 + Idx].location = 12 + Idx;
+		OutDescs[12 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
+		OutDescs[12 + Idx].offset = offsetof(FInstanceBuffer, NormalMatrix) + sizeof(glm::vec4) * Idx;
+	}
 }
 
 void FVulkanMeshRenderer::WaitIdle()
@@ -715,10 +514,10 @@ void FVulkanMeshRenderer::UpdateUniformBuffer()
 		UBO.Light.Position = UBO.View * glm::vec4(UBO.Light.Position, 1.0f);
 	}
 
-	memcpy(UniformBuffers[Context->GetCurrentFrame()].Mapped, &UBO, sizeof(FUniformBufferObject));
+	memcpy(UniformBuffers[Context->GetCurrentFrame()]->GetMappedAddress(), &UBO, sizeof(FUniformBufferObject));
 }
 
-void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMesh* InMesh)
+void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMeshBase* InMesh)
 {
 	FWorld* World = GEngine->GetWorld();
 	if (World == nullptr)
@@ -749,7 +548,7 @@ void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMesh* InMesh)
 
 	glm::mat4 View = Camera.View;
 
-	FVulkanBuffer& InstanceBuffer = Iter->second.InstanceBuffers[Context->GetCurrentFrame()];
+	FVulkanBuffer* InstanceBuffer = Iter->second.InstanceBuffers[Context->GetCurrentFrame()];
 
 	const std::vector<FVulkanModel*> Models = Iter->second.Models;
 	{
@@ -768,7 +567,7 @@ void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMesh* InMesh)
 				return;
 			}
 
-			FInstanceBuffer* InstanceBufferData = (FInstanceBuffer*)InstanceBuffer.Mapped + Idx;
+			FInstanceBuffer* InstanceBufferData = (FInstanceBuffer*)InstanceBuffer->GetMappedAddress()  + Idx;
 			InstanceBufferData->Model = Model->GetModelMatrix();
 			InstanceBufferData->ModelView = View * InstanceBufferData->Model;
 			InstanceBufferData->NormalMatrix = glm::transpose(glm::inverse(glm::mat3(InstanceBufferData->ModelView)));
@@ -782,7 +581,7 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 
 	for (const auto& Pair : InstancedDrawingMap)
 	{
-		FVulkanMesh* Mesh = Pair.first;
+		FVulkanMesh* Mesh = static_cast<FVulkanMesh*>(Pair.first);
 		if (Mesh == nullptr)
 		{
 			continue;
@@ -807,7 +606,7 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 			std::array<VkWriteDescriptorSet, 3> DescriptorWrites{};
 
 			VkDescriptorBufferInfo UniformBufferInfo{};
-			UniformBufferInfo.buffer = UniformBuffers[Idx].Buffer;
+			UniformBufferInfo.buffer = UniformBuffers[Idx]->GetBuffer();
 			UniformBufferInfo.offset = 0;
 			UniformBufferInfo.range = sizeof(FUniformBufferObject);
 
@@ -822,7 +621,7 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 			VkDescriptorImageInfo BaseColorImageInfo{};
 			BaseColorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			BaseColorImageInfo.imageView = BaseColorTexture->GetView();
-			BaseColorImageInfo.sampler = TextureSampler;
+			BaseColorImageInfo.sampler = Sampler->GetSampler();
 
 			DescriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			DescriptorWrites[1].dstSet = DescriptorSets[Idx];
@@ -835,7 +634,7 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 			VkDescriptorImageInfo NormalImageInfo{};
 			NormalImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			NormalImageInfo.imageView = NormalTexture->GetView();
-			NormalImageInfo.sampler = TextureSampler;
+			NormalImageInfo.sampler = Sampler->GetSampler();
 
 			DescriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
 			DescriptorWrites[2].dstSet = DescriptorSets[Idx];
@@ -919,25 +718,25 @@ void FVulkanMeshRenderer::Draw(FVulkanPipeline* InPipeline, VkViewport& InViewpo
 
 	for (const auto& Pair : InstancedDrawingMap)
 	{
-		FVulkanMesh* Mesh = Pair.first;
+		FVulkanMeshBase* Mesh = Pair.first;
 		if (Mesh == nullptr)
 		{
 			continue;
 		}
 
 		const std::vector<FVulkanModel*>& Models = Pair.second.Models;
-		const FVulkanBuffer& InstanceBuffer = Pair.second.InstanceBuffers[CurrentFrame];
+		FVulkanBuffer* InstanceBuffer = Pair.second.InstanceBuffers[CurrentFrame];
 		VkDescriptorSet DescriptorSet = Pair.second.DescriptorSets[CurrentFrame];
 
 		UpdateInstanceBuffer(Mesh);
 
 		vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, InPipeline->GetLayout(), 0, 1, &DescriptorSet, 0, nullptr);
 
-		VkBuffer VertexBuffers[] = { Mesh->GetVertexBuffer().Buffer, InstanceBuffer.Buffer };
+		VkBuffer VertexBuffers[] = { Mesh->GetVertexBuffer()->GetBuffer(), InstanceBuffer->GetBuffer() };
 		VkDeviceSize Offsets[] = { 0, 0 };
 		vkCmdBindVertexBuffers(CommandBuffer, 0, 2, VertexBuffers, Offsets);
 
-		vkCmdBindIndexBuffer(CommandBuffer, Mesh->GetIndexBuffer().Buffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdBindIndexBuffer(CommandBuffer, Mesh->GetIndexBuffer()->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
 		vkCmdDrawIndexed(CommandBuffer, static_cast<uint32_t>(Mesh->GetMeshAsset()->GetIndices().size()), Models.size(), 0, 0, 0);
 	}

@@ -12,7 +12,6 @@ class FVulkanScene : public FVulkanObject
 {
 public:
 	FVulkanScene(FVulkanContext* InContext);
-	virtual ~FVulkanScene();
 
 	const std::vector<class FVulkanModel*>& GetModels() const { return Models; }
 	void AddModel(class FVulkanModel* InModel);

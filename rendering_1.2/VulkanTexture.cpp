@@ -19,7 +19,7 @@ FVulkanTexture::FVulkanTexture(FVulkanContext* InContext)
 {
 }
 
-FVulkanTexture::~FVulkanTexture()
+void FVulkanTexture::Destroy()
 {
 	if (bLoaded)
 	{

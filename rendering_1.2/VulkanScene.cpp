@@ -8,10 +8,6 @@ FVulkanScene::FVulkanScene(FVulkanContext* InContext)
 
 }
 
-FVulkanScene::~FVulkanScene()
-{
-}
-
 void FVulkanScene::AddModel(FVulkanModel* InModel)
 {
 	if (InModel == nullptr)

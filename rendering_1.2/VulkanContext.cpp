@@ -90,6 +90,14 @@ FVulkanContext::~FVulkanContext()
 	{
 		if (LiveObject != nullptr)
 		{
+			LiveObject->Destroy();
+		}
+	}
+
+	for (FVulkanObject* LiveObject : LiveObjects)
+	{
+		if (LiveObject != nullptr)
+		{
 			delete LiveObject;
 		}
 	}
@@ -128,6 +136,8 @@ void FVulkanContext::DestroyObject(FVulkanObject* InObject)
 	{
 		return;
 	}
+
+	InObject->Destroy();
 
 	for (int Idx = 0; Idx < LiveObjects.size(); ++Idx)
 	{

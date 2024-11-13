@@ -10,7 +10,8 @@ class FVulkanTexture : public FVulkanObject
 {
 public:
 	FVulkanTexture(FVulkanContext* InContext);
-	virtual ~FVulkanTexture();
+
+	virtual void Destroy() override;
 
 	void LoadSource(class FTextureSource* InSource);
 	void LoadSource(const std::vector<FTextureSource*>& InSource);

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "VulkanObject.h"
+#include "VulkanMeshBase.h"
 #include "VulkanBuffer.h"
 
 #include "Vertex.h"
@@ -10,19 +10,15 @@
 #include <cstdint>
 #include <string>
 
-class FVulkanMesh : public FVulkanObject
+class FVulkanMesh : public FVulkanMeshBase
 {
 public:
 	FVulkanMesh(class FVulkanContext* InContext);
-	virtual ~FVulkanMesh();
 
-	bool Load(class FMesh* InMesh);
-	void Unload();
+	virtual void Destroy() override;
 
-	FVulkanBuffer GetVertexBuffer() const { return VertexBuffer; }
-	FVulkanBuffer GetIndexBuffer() const { return IndexBuffer; }
-
-	class FMesh* GetMeshAsset() const { return MeshAsset; }
+	virtual bool Load(class FMesh* InMesh) override;
+	virtual void Unload() override;
 
 	class FVulkanTexture* GetBaseColorTexture() const { return BaseColorTexture; }
 	void SetBaseColorTexture(class FVulkanTexture* InTexture) { BaseColorTexture = InTexture; }
@@ -31,15 +27,6 @@ public:
 	void SetNormalTexture(class FVulkanTexture* InTexture) { NormalTexture = InTexture; }
 
 private:
-	void CreateVertexBuffer(const std::vector<FVertex>& Vertices);
-	void CreateIndexBuffer(const std::vector<uint32_t>& Indices);
-	
-private:
-	class FMesh* MeshAsset;
-
-	FVulkanBuffer VertexBuffer;
-	FVulkanBuffer IndexBuffer;
-
 	class FVulkanTexture* BaseColorTexture;
 	class FVulkanTexture* NormalTexture;
 

@@ -4,6 +4,7 @@
 #include "VulkanTexture.h"
 #include "VulkanScene.h"
 #include "VulkanLight.h"
+#include "VulkanMesh.h"
 
 #include "Utils.h"
 #include "Engine.h"
@@ -58,25 +59,6 @@ FVulkanMeshRenderer::~FVulkanMeshRenderer()
 	VkDevice Device = Context->GetDevice();
 
 	vkDestroyDescriptorSetLayout(Device, DescriptorSetLayout, nullptr);
-
-	for (FVulkanBuffer UniformBuffer : UniformBuffers)
-	{
-		vkFreeMemory(Device, UniformBuffer.Memory, nullptr);
-		vkDestroyBuffer(Device, UniformBuffer.Buffer, nullptr);
-	}
-
-	for (const auto& Pair : InstancedDrawingMap)
-	{
-		FVulkanMesh* Mesh = Pair.first;
-		const std::vector<FVulkanModel*>& Models = Pair.second.Models;
-		const std::vector<FVulkanBuffer>& InstanceBuffers = Pair.second.InstanceBuffers;
-
-		for (const FVulkanBuffer& InstanceBuffer : InstanceBuffers)
-		{
-			vkFreeMemory(Device, InstanceBuffer.Memory, nullptr);
-			vkDestroyBuffer(Device, InstanceBuffer.Buffer, nullptr);
-		}
-	}
 }
 
 void FVulkanMeshRenderer::CreateDescriptorSetLayout()
@@ -144,7 +126,7 @@ void FVulkanMeshRenderer::GenerateInstancedDrawingInfo()
 			continue;
 		}
 
-		FVulkanMesh* Mesh = Model->GetMesh();
+		FVulkanMeshBase* Mesh = Model->GetMesh();
 		if (Mesh == nullptr)
 		{
 			continue;
@@ -439,16 +421,11 @@ void FVulkanMeshRenderer::CreateUniformBuffers()
 	UniformBuffers.resize(MAX_CONCURRENT_FRAME);
 	for (size_t Idx = 0; Idx < MAX_CONCURRENT_FRAME; ++Idx)
 	{
-		Vk::CreateBuffer(
-			PhysicalDevice,
-			Device,
-			UniformBufferSize,
-			VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT,
-			VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-			UniformBuffers[Idx].Buffer,
-			UniformBuffers[Idx].Memory);
-
-		vkMapMemory(Device, UniformBuffers[Idx].Memory, 0, UniformBufferSize, 0, &UniformBuffers[Idx].Mapped);
+		UniformBuffers[Idx] = Context->CreateObject<FVulkanBuffer>();
+		UniformBuffers[Idx]->SetUsage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+		UniformBuffers[Idx]->SetProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		UniformBuffers[Idx]->Allocate(UniformBufferSize);
+		UniformBuffers[Idx]->Map();
 	}
 }
 
@@ -461,8 +438,8 @@ void FVulkanMeshRenderer::CreateInstanceBuffers()
 
 	for (auto& Pair : InstancedDrawingMap)
 	{
-		FVulkanMesh* Mesh = Pair.first;
-		std::vector<FVulkanBuffer>& InstanceBuffers = Pair.second.InstanceBuffers;
+		FVulkanMeshBase* Mesh = Pair.first;
+		std::vector<FVulkanBuffer*>& InstanceBuffers = Pair.second.InstanceBuffers;
 		std::vector<FVulkanModel*>& Models = Pair.second.Models;
 
 		uint32_t InstanceBufferSize = sizeof(FInstanceBuffer) * Models.size();
@@ -470,18 +447,11 @@ void FVulkanMeshRenderer::CreateInstanceBuffers()
 		InstanceBuffers.resize(MAX_CONCURRENT_FRAME);
 		for (int Idx = 0; Idx < MAX_CONCURRENT_FRAME; ++Idx)
 		{
-			FVulkanBuffer& InstanceBuffer = InstanceBuffers[Idx];
-
-			Vk::CreateBuffer(
-				PhysicalDevice,
-				Device,
-				InstanceBufferSize,
-				VK_BUFFER_USAGE_VERTEX_BUFFER_BIT,
-				VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
-				InstanceBuffer.Buffer,
-				InstanceBuffer.Memory);
-
-			vkMapMemory(Device, InstanceBuffer.Memory, 0, InstanceBufferSize, 0, &InstanceBuffer.Mapped);
+			InstanceBuffers[Idx] = Context->CreateObject<FVulkanBuffer>();
+			InstanceBuffers[Idx]->SetUsage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
+			InstanceBuffers[Idx]->SetProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+			InstanceBuffers[Idx]->Allocate(InstanceBufferSize);
+			InstanceBuffers[Idx]->Map();
 		}
 
 		UpdateInstanceBuffer(Mesh);
@@ -495,7 +465,7 @@ void FVulkanMeshRenderer::CreateDescriptorSets()
 
 	for (auto& Pair : InstancedDrawingMap)
 	{
-		FVulkanMesh* Mesh = Pair.first;
+		FVulkanMeshBase* Mesh = Pair.first;
 		std::vector<FVulkanModel*>& Models = Pair.second.Models;
 		std::vector<VkDescriptorSet>& DescriptorSets = Pair.second.DescriptorSets;
 
@@ -625,10 +595,10 @@ void FVulkanMeshRenderer::UpdateUniformBuffer()
 		UBO.Light.Position = UBO.View * glm::vec4(UBO.Light.Position, 1.0f);
 	}
 
-	memcpy(UniformBuffers[Context->GetCurrentFrame()].Mapped, &UBO, sizeof(FUniformBufferObject));
+	memcpy(UniformBuffers[Context->GetCurrentFrame()]->GetMappedAddress(), &UBO, sizeof(FUniformBufferObject));
 }
 
-void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMesh* InMesh)
+void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMeshBase* InMesh)
 {
 	FWorld* World = GEngine->GetWorld();
 	if (World == nullptr)
@@ -659,7 +629,7 @@ void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMesh* InMesh)
 
 	glm::mat4 View = Camera.View;
 
-	FVulkanBuffer& InstanceBuffer = Iter->second.InstanceBuffers[Context->GetCurrentFrame()];
+	FVulkanBuffer* InstanceBuffer = Iter->second.InstanceBuffers[Context->GetCurrentFrame()];
 
 	const std::vector<FVulkanModel*> Models = Iter->second.Models;
 	{
@@ -678,7 +648,7 @@ void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMesh* InMesh)
 				return;
 			}
 
-			FInstanceBuffer* InstanceBufferData = (FInstanceBuffer*)InstanceBuffer.Mapped + Idx;
+			FInstanceBuffer* InstanceBufferData = (FInstanceBuffer*)InstanceBuffer->GetMappedAddress()  + Idx;
 			InstanceBufferData->Model = Model->GetModelMatrix();
 			InstanceBufferData->ModelView = View * InstanceBufferData->Model;
 			InstanceBufferData->NormalMatrix = glm::transpose(glm::inverse(glm::mat3(InstanceBufferData->ModelView)));
@@ -692,7 +662,7 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 
 	for (const auto& Pair : InstancedDrawingMap)
 	{
-		FVulkanMesh* Mesh = Pair.first;
+		FVulkanMesh* Mesh = static_cast<FVulkanMesh*>(Pair.first);
 		if (Mesh == nullptr)
 		{
 			continue;
@@ -717,7 +687,7 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 			std::array<VkWriteDescriptorSet, 3> DescriptorWrites{};
 
 			VkDescriptorBufferInfo UniformBufferInfo{};
-			UniformBufferInfo.buffer = UniformBuffers[Idx].Buffer;
+			UniformBufferInfo.buffer = UniformBuffers[Idx]->GetBuffer();
 			UniformBufferInfo.offset = 0;
 			UniformBufferInfo.range = sizeof(FUniformBufferObject);
 
@@ -829,25 +799,25 @@ void FVulkanMeshRenderer::Draw(FVulkanPipeline* InPipeline, VkViewport& InViewpo
 
 	for (const auto& Pair : InstancedDrawingMap)
 	{
-		FVulkanMesh* Mesh = Pair.first;
+		FVulkanMeshBase* Mesh = Pair.first;
 		if (Mesh == nullptr)
 		{
 			continue;
 		}
 
 		const std::vector<FVulkanModel*>& Models = Pair.second.Models;
-		const FVulkanBuffer& InstanceBuffer = Pair.second.InstanceBuffers[CurrentFrame];
+		FVulkanBuffer* InstanceBuffer = Pair.second.InstanceBuffers[CurrentFrame];
 		VkDescriptorSet DescriptorSet = Pair.second.DescriptorSets[CurrentFrame];
 
 		UpdateInstanceBuffer(Mesh);
 
 		vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, InPipeline->GetLayout(), 0, 1, &DescriptorSet, 0, nullptr);
 
-		VkBuffer VertexBuffers[] = { Mesh->GetVertexBuffer().Buffer, InstanceBuffer.Buffer };
+		VkBuffer VertexBuffers[] = { Mesh->GetVertexBuffer()->GetBuffer(), InstanceBuffer->GetBuffer() };
 		VkDeviceSize Offsets[] = { 0, 0 };
 		vkCmdBindVertexBuffers(CommandBuffer, 0, 2, VertexBuffers, Offsets);
 
-		vkCmdBindIndexBuffer(CommandBuffer, Mesh->GetIndexBuffer().Buffer, 0, VK_INDEX_TYPE_UINT32);
+		vkCmdBindIndexBuffer(CommandBuffer, Mesh->GetIndexBuffer()->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
 
 		vkCmdDrawIndexed(CommandBuffer, static_cast<uint32_t>(Mesh->GetMeshAsset()->GetIndices().size()), Models.size(), 0, 0, 0);
 	}

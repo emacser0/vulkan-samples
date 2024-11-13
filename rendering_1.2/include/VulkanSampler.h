@@ -8,7 +8,8 @@ class FVulkanSampler : public FVulkanObject
 {
 public:
 	FVulkanSampler(class FVulkanContext* InContext);
-	virtual ~FVulkanSampler();
+
+	virtual void Destroy() override;
 
 	VkSampler GetSampler() const { return Sampler; }
 

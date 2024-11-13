@@ -11,7 +11,8 @@ class FVulkanShader : public FVulkanObject
 {
 public:
 	FVulkanShader(class FVulkanContext* InContext);
-	virtual ~FVulkanShader();
+
+	virtual void Destroy() override;
 
 	bool LoadFile(const std::string& InFilename);
 	bool LoadBytes(const std::vector<char>& InBytes);

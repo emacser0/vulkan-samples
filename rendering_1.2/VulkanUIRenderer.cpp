@@ -45,7 +45,7 @@ FVulkanUIRenderer::FVulkanUIRenderer(FVulkanContext* InContext)
 	Style.ScaleAllSizes(1.0f);
 }
 
-FVulkanUIRenderer::~FVulkanUIRenderer()
+void FVulkanUIRenderer::Destroy()
 {
 	ImGui_ImplVulkan_Shutdown();
 	ImGui_ImplGlfw_Shutdown();

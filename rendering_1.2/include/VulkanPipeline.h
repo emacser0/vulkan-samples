@@ -8,10 +8,11 @@ class FVulkanPipeline : public FVulkanObject
 {
 public:
 	FVulkanPipeline(class FVulkanContext* InContext);
-	virtual ~FVulkanPipeline();
 
-	VkPipeline GetPipeline() const { return Pipeline; }
+	virtual void Destroy() override;
+
 	VkPipelineLayout GetLayout() const { return Layout; }
+	VkPipeline GetPipeline() const { return Pipeline; }
 
 	FVulkanShader* GetVertexShader() const { return VS; }
 	FVulkanShader* GetGeometryShader() const { return GS; }
@@ -24,8 +25,8 @@ public:
 	void CreatePipeline(const VkGraphicsPipelineCreateInfo& CI);
 
 private:
-	VkPipeline Pipeline;
 	VkPipelineLayout Layout;
+	VkPipeline Pipeline;
 	FVulkanShader* VS;
 	FVulkanShader* GS;
 	FVulkanShader* FS;

@@ -11,7 +11,7 @@ FVulkanShader::FVulkanShader(FVulkanContext* InContext)
 
 }
 
-FVulkanShader::~FVulkanShader()
+void FVulkanShader::Destroy()
 {
 	VkDevice Device = Context->GetDevice();
 

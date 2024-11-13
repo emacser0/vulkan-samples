@@ -8,10 +8,11 @@
 #include "VulkanObject.h"
 #include "VulkanContext.h"
 #include "VulkanBuffer.h"
-#include "VulkanMesh.h"
+#include "VulkanMeshBase.h"
 #include "VulkanShader.h"
 #include "VulkanModel.h"
 #include "VulkanPipeline.h"
+#include "VulkanSampler.h"
 
 #include "Vertex.h"
 
@@ -45,8 +46,11 @@ protected:
 	void CreateDescriptorSetLayout();
 	void CreateDescriptorSets();
 
+	void GetVertexInputBindings(std::vector<VkVertexInputBindingDescription>& OutDescs);
+	void GetVertexInputAttributes(std::vector<VkVertexInputAttributeDescription>& OutDescs);
+
 	void UpdateUniformBuffer();
-	void UpdateInstanceBuffer(FVulkanMesh* InMesh);
+	void UpdateInstanceBuffer(FVulkanMeshBase* InMesh);
 	void UpdateDescriptorSets();
 
 	void Draw(FVulkanPipeline* InPipeline, VkViewport& InViewport, VkRect2D& InScissor);
@@ -62,14 +66,14 @@ protected:
 	struct FInstancedDrawingInfo
 	{
 		std::vector<FVulkanModel*> Models;
-		std::vector<FVulkanBuffer> InstanceBuffers;
+		std::vector<FVulkanBuffer*> InstanceBuffers;
 		std::vector<VkDescriptorSet> DescriptorSets;
 	};
-	std::unordered_map<FVulkanMesh*, FInstancedDrawingInfo> InstancedDrawingMap;
+	std::unordered_map<FVulkanMeshBase*, FInstancedDrawingInfo> InstancedDrawingMap;
 
-	std::vector<FVulkanBuffer> UniformBuffers;
+	std::vector<FVulkanBuffer*> UniformBuffers;
 
-	VkSampler TextureSampler;
+	FVulkanSampler* Sampler;
 
 	bool bInitialized;
 	bool bTBNVisualizationEnabled;

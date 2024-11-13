@@ -15,7 +15,7 @@ class FVulkanUIRenderer : public FVulkanObject
 {
 public:
 	FVulkanUIRenderer(class FVulkanContext* InContext);
-	virtual ~FVulkanUIRenderer();
+	virtual void Destroy() override;
 
 	void Ready();
 	void Render();

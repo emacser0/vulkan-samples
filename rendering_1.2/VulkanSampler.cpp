@@ -29,7 +29,7 @@ FVulkanSampler::FVulkanSampler(class FVulkanContext* InContext)
 	VK_ASSERT(vkCreateSampler(Device, &SamplerCI, nullptr, &Sampler));
 }
 
-FVulkanSampler::~FVulkanSampler()
+void FVulkanSampler::Destroy()
 {
 	VkDevice Device = Context->GetDevice();
 	
