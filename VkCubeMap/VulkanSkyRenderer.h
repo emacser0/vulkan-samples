@@ -21,59 +21,40 @@
 
 #define MAX_CONCURRENT_FRAME 2
 
-class FVulkanMeshRenderer : public FVulkanObject
+class FVulkanSkyRenderer : public FVulkanObject
 {
 public:
-	FVulkanMeshRenderer(FVulkanContext* InContext);
-	virtual ~FVulkanMeshRenderer();
+	FVulkanSkyRenderer(FVulkanContext* InContext);
+	virtual ~FVulkanSkyRenderer();
 
 	void PreRender();
 	void Render();
 
-	void SetPipelineIndex(int32_t Idx);
-	void SetEnableTBNVisualization(bool bEnabled) { bTBNVisualizationEnabled = bEnabled; }
-
 protected:
-	void GenerateInstancedDrawingInfo();
-
 	void CreateGraphicsPipelines();
-	void CreateTBNPipeline();
 	void CreateTextureSampler();
-	void CreateUniformBuffers();
-	void CreateInstanceBuffers();
 	void CreateDescriptorSetLayout();
 	void CreateDescriptorSets();
+	void CreateUniformBuffers();
 
 	void GetVertexInputBindings(std::vector<VkVertexInputBindingDescription>& OutDescs);
 	void GetVertexInputAttributes(std::vector<VkVertexInputAttributeDescription>& OutDescs);
 
-	void UpdateUniformBuffer();
-	void UpdateInstanceBuffer(FVulkanMeshBase* InMesh);
 	void UpdateDescriptorSets();
+	void UpdateUniformBuffer();
 
-	void Draw(FVulkanPipeline* InPipeline, VkViewport& InViewport, VkRect2D& InScissor);
+	class FVulkanSkyMesh* GetSkyMesh() const;
 
 protected:
-	std::vector<FVulkanPipeline*> Pipelines;
-	int32_t CurrentPipelineIndex = 0;
-
-	FVulkanPipeline* TBNPipeline;
+	FVulkanPipeline* Pipeline;
 
 	VkDescriptorSetLayout DescriptorSetLayout;
-
-	struct FInstancedDrawingInfo
-	{
-		std::vector<FVulkanModel*> Models;
-		std::vector<FVulkanBuffer*> InstanceBuffers;
-		std::vector<VkDescriptorSet> DescriptorSets;
-	};
-	std::unordered_map<FVulkanMeshBase*, FInstancedDrawingInfo> InstancedDrawingMap;
+	std::vector<VkDescriptorSet> DescriptorSets;
 
 	std::vector<FVulkanBuffer*> UniformBuffers;
 
 	FVulkanSampler* Sampler;
 
 	bool bInitialized;
-	bool bTBNVisualizationEnabled;
 };
 

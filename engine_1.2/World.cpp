@@ -3,6 +3,7 @@
 #include "Engine.h"
 #include "CameraActor.h"
 #include "LightActor.h"
+#include "SkyActor.h"
 #include "MeshActor.h"
 
 #include "VulkanContext.h"
@@ -20,6 +21,7 @@ FWorld::FWorld()
 {
 	CameraActor = SpawnActor<ACameraActor>();
 	LightActor = SpawnActor<ALightActor>();
+	SkyActor = SpawnActor<ASkyActor>();
 }
 
 FWorld::~FWorld()
@@ -72,6 +74,11 @@ void FWorld::Tick(float DeltaTime)
 const std::vector<class AActor*>& FWorld::GetActors()
 {
 	return Actors;
+}
+
+ASkyActor* FWorld::GetSky() const
+{
+	return SkyActor;
 }
 
 ACameraActor* FWorld::GetCamera() const
@@ -131,6 +138,15 @@ void FWorld::GenerateRenderScene()
 			RenderScene->AddModel(Model);
 		}
 	}
+
+	if (SkyActor != nullptr)
+	{
+		FVulkanModel* Model = SkyActor->CreateRenderModel();
+		if (Model != nullptr)
+		{
+			RenderScene->SetSky(Model);
+		}
+	}
 }
 
 void FWorld::UpdateRenderScene()
@@ -159,6 +175,7 @@ void FWorld::UpdateRenderScene()
 	{
 		FVulkanCamera Camera;
 		Camera.Position = CameraActor->GetLocation();
+		Camera.Rotation = CameraActor->GetRotation();
 		Camera.FOV = CameraActor->GetFOV();
 		Camera.Far = CameraActor->GetFar();
 		Camera.Near = CameraActor->GetNear();
@@ -186,5 +203,10 @@ void FWorld::UpdateRenderScene()
 		}
 
 		MeshActor->UpdateRenderModel();
+	}
+
+	if (SkyActor != nullptr)
+	{
+		SkyActor->UpdateRenderModel();
 	}
 }

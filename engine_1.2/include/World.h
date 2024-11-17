@@ -29,6 +29,7 @@ public:
 	const std::vector<class AActor*>& GetActors();
 	class ACameraActor* GetCamera() const;
 	class ALightActor* GetLight() const;
+	class ASkyActor* GetSky() const;
 
 	class FVulkanScene* GetRenderScene() const;
 
@@ -40,6 +41,7 @@ private:
 	std::vector<class AActor*> Actors;
 	class ACameraActor* CameraActor;
 	class ALightActor* LightActor;
+	class ASkyActor* SkyActor;
 
 	class FVulkanScene* RenderScene;
 };

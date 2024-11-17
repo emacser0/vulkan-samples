@@ -97,10 +97,7 @@ void FVulkanMeshRenderer::CreateDescriptorSetLayout()
 	DescriptorSetLayoutCI.bindingCount = static_cast<uint32_t>(Bindings.size());
 	DescriptorSetLayoutCI.pBindings = Bindings.data();
 
-	if (vkCreateDescriptorSetLayout(Device, &DescriptorSetLayoutCI, nullptr, &DescriptorSetLayout) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create descriptor set layout.");
-	}
+	VK_ASSERT(vkCreateDescriptorSetLayout(Device, &DescriptorSetLayoutCI, nullptr, &DescriptorSetLayout));
 }
 
 void FVulkanMeshRenderer::GenerateInstancedDrawingInfo()

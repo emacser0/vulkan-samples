@@ -57,27 +57,6 @@ namespace Vk
 		VkBuffer InDstBuffer,
 		VkDeviceSize InSize);
 
-	void CreateImage(
-		VkPhysicalDevice InPhysicalDevice,
-		VkDevice InDevice,
-		uint32_t InWidth,
-		uint32_t InHeight,
-		uint32_t InDepth,
-		VkFormat InFormat,
-		VkImageType InImageType,
-		VkImageTiling InTiling,
-		VkImageUsageFlags InUsage,
-		VkMemoryPropertyFlags InProperties,
-		VkImage& OutImage,
-		VkDeviceMemory& OutImageMemory);
-
-	VkImageView CreateImageView(
-		VkDevice InDevice,
-		VkImage InImage,
-		VkFormat InFormat,
-		VkImageViewType InImageViewType,
-		VkImageAspectFlags InAspectFlags);
-
 	VkCommandBuffer BeginOneTimeCommandBuffer(VkDevice InDevice, VkCommandPool InCommandPool);
 
 	void EndOneTimeCommandBuffer(
@@ -92,15 +71,17 @@ namespace Vk
 		VkQueue InCommandQueue,
 		VkBuffer InBuffer,
 		VkImage InImage,
-		uint32_t InWidth,
-		uint32_t InHeight,
-		uint32_t InDepth);
+		uint32_t InMipLevel,
+		uint32_t InArrayLayers,
+		VkExtent3D InExtent);
 
 	void TransitionImageLayout(
 		VkDevice InDevice,
 		VkCommandPool InCommandPool,
 		VkQueue InCommandQueue,
 		VkImage InImage,
+		uint32_t InMipLevels,
+		uint32_t InArrayLayers,
 		VkFormat InFormat,
 		VkImageLayout InOldLayout,
 		VkImageLayout InNewLayout);

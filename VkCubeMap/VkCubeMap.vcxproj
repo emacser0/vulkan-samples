@@ -139,6 +139,8 @@
     <None Include="Shaders\blinn_phong.vert" />
     <None Include="Shaders\phong.frag" />
     <None Include="Shaders\phong.vert" />
+    <None Include="Shaders\sky.frag" />
+    <None Include="Shaders\sky.vert" />
     <None Include="Shaders\visualizeTBN.frag" />
     <None Include="Shaders\visualizeTBN.geom" />
     <None Include="Shaders\visualizeTBN.vert" />
@@ -146,9 +148,11 @@
   <ItemGroup>
     <ClCompile Include="main.cpp" />
     <ClCompile Include="VulkanMeshRenderer.cpp" />
+    <ClCompile Include="VulkanSkyRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="VulkanMeshRenderer.h" />
+    <ClInclude Include="VulkanSkyRenderer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

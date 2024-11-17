@@ -33,6 +33,8 @@ public:
 	bool IsFramebufferResized() const { return bFramebufferResized; }
 	void SetFramebufferResized(bool InbFramebufferResized) { bFramebufferResized = InbFramebufferResized; }
 
+	void WaitIdle();
+
 	template<typename T = FVulkanObject>
 	T* CreateObject()
 	{
@@ -88,9 +90,7 @@ protected:
 	std::vector<VkImageView> SwapchainImageViews;
 	std::vector<VkFramebuffer> SwapchainFramebuffers;
 
-	VkImage DepthImage;
-	VkDeviceMemory DepthImageMemory;
-	VkImageView DepthImageView;
+	class FVulkanImage* DepthImage;
 
 	VkRenderPass RenderPass;
 	VkCommandPool CommandPool;

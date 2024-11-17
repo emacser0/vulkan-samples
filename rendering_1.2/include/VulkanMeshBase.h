@@ -8,8 +8,10 @@ class FVulkanMeshBase : public FVulkanObject
 public:
 	FVulkanMeshBase(class FVulkanContext* InContext);
 
-	virtual bool Load(class FMesh* InMesh) { return false; }
-	virtual void Unload() { }
+	virtual void Destroy() override;
+
+	virtual bool Load(class FMesh* InMesh);
+	virtual void Unload();
 
 	FVulkanBuffer* GetVertexBuffer() const { return VertexBuffer; }
 	FVulkanBuffer* GetIndexBuffer() const { return IndexBuffer; }

@@ -21,7 +21,7 @@
   <ItemGroup>
     <ClCompile Include="Actor.cpp" />
     <ClCompile Include="CameraActor.cpp" />
-    <ClCompile Include="CubemapActor.cpp" />
+    <ClCompile Include="SkyActor.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="LightActor.cpp" />
     <ClCompile Include="MeshActor.cpp" />
@@ -31,7 +31,7 @@
   <ItemGroup>
     <ClInclude Include="include\Actor.h" />
     <ClInclude Include="include\CameraActor.h" />
-    <ClInclude Include="include\CubemapActor.h" />
+    <ClInclude Include="include\SkyActor.h" />
     <ClInclude Include="include\Engine.h" />
     <ClInclude Include="include\LightActor.h" />
     <ClInclude Include="include\MeshActor.h" />

@@ -405,7 +405,7 @@ void Run(int argc, char** argv)
 		std::this_thread::sleep_for(std::chrono::milliseconds((int)(MaxFrameTime)));
 	}
 
-	MeshRenderer->WaitIdle();
+	RenderContext->WaitIdle();
 
 	FEngine::Exit();
 	FConfig::Shutdown();

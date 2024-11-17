@@ -30,7 +30,7 @@
     <ClCompile Include="MeshActor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="CubemapActor.cpp">
+    <ClCompile Include="SkyActor.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Actor.cpp">
@@ -62,7 +62,7 @@
     <ClInclude Include="include\MeshActorBase.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="include\CubemapActor.h">
+    <ClInclude Include="include\SkyActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

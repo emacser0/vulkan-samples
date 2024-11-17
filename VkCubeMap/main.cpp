@@ -8,6 +8,7 @@
 #include "VulkanModel.h"
 #include "VulkanScene.h"
 #include "VulkanMeshRenderer.h"
+#include "VulkanSkyRenderer.h"
 #include "VulkanUIRenderer.h"
 
 #include "Engine.h"
@@ -16,6 +17,7 @@
 #include "CameraActor.h"
 #include "LightActor.h"
 #include "MeshActor.h"
+#include "SkyActor.h"
 
 #include <ctime>
 #include <chrono>
@@ -157,6 +159,7 @@ int RandRange(int Min, int Max)
 }
 
 FVulkanMeshRenderer* MeshRenderer;
+FVulkanSkyRenderer* SkyRenderer;
 
 class FMainWidget : public FWidget
 {
@@ -370,6 +373,12 @@ void Run(int argc, char** argv)
 	MeshRenderer = RenderContext->CreateObject<FVulkanMeshRenderer>();
 	MeshRenderer->SetPipelineIndex(1);
 
+	ASkyActor* SkyActor = World->GetSky();
+	SkyActor->SetMeshAsset(SphereMeshAsset);
+	SkyActor->SetCubemap(EarthTextureSources);
+
+	SkyRenderer = RenderContext->CreateObject<FVulkanSkyRenderer>();
+
 	float TargetFPS;
 	GConfig->Get("TargetFPS", TargetFPS);
 
@@ -390,8 +399,10 @@ void Run(int argc, char** argv)
 		GEngine->Tick(DeltaTime);
 
 		MeshRenderer->PreRender();
+		SkyRenderer->PreRender();
 
 		RenderContext->BeginRender();
+		SkyRenderer->Render();
 		MeshRenderer->Render();
 		UIRenderer->Render();
 		RenderContext->EndRender();
@@ -411,7 +422,7 @@ void Run(int argc, char** argv)
 		std::this_thread::sleep_for(std::chrono::milliseconds((int)(MaxFrameTime)));
 	}
 
-	MeshRenderer->WaitIdle();
+	RenderContext->WaitIdle();
 
 	FEngine::Exit();
 	FConfig::Shutdown();

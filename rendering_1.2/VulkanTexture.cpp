@@ -1,6 +1,7 @@
 #include "VulkanTexture.h"
 #include "VulkanContext.h"
 #include "VulkanHelpers.h"
+#include "VulkanImage.h"
 
 #include "TextureSource.h"
 
@@ -8,27 +9,17 @@
 
 FVulkanTexture::FVulkanTexture(FVulkanContext* InContext)
 	: FVulkanObject(InContext)
-	, Image(VK_NULL_HANDLE)
-	, Memory(VK_NULL_HANDLE)
-	, View(VK_NULL_HANDLE)
+	, Image(nullptr)
 	, Width(0)
 	, Height(0)
-	, Channel(4)
+	, Channel(4U)
 	, Format(VK_FORMAT_R8G8B8A8_SRGB)
-	, bLoaded(false)
 {
 }
 
 void FVulkanTexture::Destroy()
 {
-	if (bLoaded)
-	{
-		VkDevice Device = Context->GetDevice();
-
-		vkDestroyImage(Device, Image, nullptr);
-		vkFreeMemory(Device, Memory, nullptr);
-		vkDestroyImageView(Device, View, nullptr);
-	}
+	Unload();
 }
 
 void FVulkanTexture::LoadSource(FTextureSource* InSource)
@@ -46,6 +37,7 @@ void FVulkanTexture::LoadSource(FTextureSource* InSource)
 	Width = static_cast<uint32_t>(InSource->GetWidth());
 	Height = static_cast<uint32_t>(InSource->GetHeight());
 	Depth = 1U;
+	Channel = 4U;
 
 	VkPhysicalDevice PhysicalDevice = Context->GetPhysicalDevice();
 	VkDevice Device = Context->GetDevice();
@@ -71,25 +63,25 @@ void FVulkanTexture::LoadSource(FTextureSource* InSource)
 	memcpy(Data, InSource->GetPixels(), static_cast<size_t>(ImageSize));
 	vkUnmapMemory(Device, StagingBufferMemory);
 
-	Vk::CreateImage(
-		PhysicalDevice,
-		Device,
-		Width,
-		Height,
-		Depth,
+	Image = Context->CreateObject<FVulkanImage>();
+	Image->CreateImage(
+		{ Width, Height, Depth },
+		1,
+		1,
 		Format,
 		VK_IMAGE_TYPE_2D,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		Image,
-		Memory);
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+	Image->CreateView(VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	Vk::TransitionImageLayout(
 		Device,
 		CommandPool,
 		GfxQueue,
-		Image,
+		Image->GetImage(),
+		1,
+		1,
 		Format,
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -98,30 +90,28 @@ void FVulkanTexture::LoadSource(FTextureSource* InSource)
 		CommandPool,
 		GfxQueue,
 		StagingBuffer,
-		Image,
-		Width,
-		Height,
-		Depth);
+		Image->GetImage(),
+		0,
+		1,
+		{ Width, Height, Depth });
 	Vk::TransitionImageLayout(
 		Device,
 		CommandPool,
 		GfxQueue,
-		Image,
+		Image->GetImage(),
+		1,
+		1,
 		Format,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 	vkDestroyBuffer(Device, StagingBuffer, nullptr);
 	vkFreeMemory(Device, StagingBufferMemory, nullptr);
-
-	View = Vk::CreateImageView(Device, Image, Format, VK_IMAGE_VIEW_TYPE_2D, VK_IMAGE_ASPECT_COLOR_BIT);
-
-	bLoaded = true;
 }
 
 void FVulkanTexture::LoadSource(const std::vector<FTextureSource*>& InSource)
 {
-	if (InSource.size() == 0)
+	if (InSource.size() != 6)
 	{
 		return;
 	}
@@ -137,17 +127,20 @@ void FVulkanTexture::LoadSource(const std::vector<FTextureSource*>& InSource)
 		return;
 	}
 
+	Width = static_cast<uint32_t>(FirstSource->GetWidth());
+	Height = static_cast<uint32_t>(FirstSource->GetHeight());
+	Depth = 1U;
+	Channel = 4U;
+
+	uint32_t ArrayLayers = static_cast<uint32_t>(InSource.size());
+
 	VkPhysicalDevice PhysicalDevice = Context->GetPhysicalDevice();
 	VkDevice Device = Context->GetDevice();
 	VkQueue GfxQueue = Context->GetGfxQueue();
 	VkCommandPool CommandPool = Context->GetCommandPool();
 
-	VkDeviceSize SliceSize = Width * Height * Channel;
-	VkDeviceSize ImageSize = SliceSize * Depth;
-
-	Width = static_cast<uint32_t>(FirstSource->GetWidth());
-	Height = static_cast<uint32_t>(FirstSource->GetHeight());
-	Depth = static_cast<uint32_t>(InSource.size());
+	VkDeviceSize SliceSize = Width * Height * Depth * Channel;
+	VkDeviceSize ImageSize = SliceSize * ArrayLayers;
 
 	VkBuffer StagingBuffer = VK_NULL_HANDLE;
 	VkDeviceMemory StagingBufferMemory = VK_NULL_HANDLE;
@@ -163,7 +156,7 @@ void FVulkanTexture::LoadSource(const std::vector<FTextureSource*>& InSource)
 	void* Data = nullptr;
 
 	VK_ASSERT(vkMapMemory(Device, StagingBufferMemory, 0, ImageSize, 0, &Data));
-	for (int Idx = 0; Idx < Depth; ++Idx)
+	for (int Idx = 0; Idx < ArrayLayers; ++Idx)
 	{
 		FTextureSource* Source = InSource[Idx];
 		if (Source == nullptr)
@@ -171,29 +164,30 @@ void FVulkanTexture::LoadSource(const std::vector<FTextureSource*>& InSource)
 			continue;
 		}
 
-		memcpy((uint8_t*)Data + SliceSize, Source->GetPixels(), static_cast<size_t>(ImageSize));
+		memcpy((uint8_t*)Data + SliceSize * Idx, Source->GetPixels(), static_cast<size_t>(SliceSize));
 	}
 	vkUnmapMemory(Device, StagingBufferMemory);
 
-	Vk::CreateImage(
-		PhysicalDevice,
-		Device,
-		Width,
-		Height,
-		Depth,
+	Image = Context->CreateObject<FVulkanImage>();
+	Image->CreateImage(
+		{ Width, Height, Depth },
+		1,
+		ArrayLayers,
 		Format,
-		VK_IMAGE_TYPE_3D,
+		VK_IMAGE_TYPE_2D,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		Image,
-		Memory);
+		VK_IMAGE_CREATE_CUBE_COMPATIBLE_BIT);
+	Image->CreateView(VK_IMAGE_VIEW_TYPE_CUBE, VK_IMAGE_ASPECT_COLOR_BIT);
 
 	Vk::TransitionImageLayout(
 		Device,
 		CommandPool,
 		GfxQueue,
-		Image,
+		Image->GetImage(),
+		1,
+		ArrayLayers,
 		Format,
 		VK_IMAGE_LAYOUT_UNDEFINED,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL);
@@ -202,24 +196,31 @@ void FVulkanTexture::LoadSource(const std::vector<FTextureSource*>& InSource)
 		CommandPool,
 		GfxQueue,
 		StagingBuffer,
-		Image,
-		Width,
-		Height,
-		Depth);
+		Image->GetImage(),
+		0,
+		ArrayLayers,
+		{ Width, Height, Depth });
 	Vk::TransitionImageLayout(
 		Device,
 		CommandPool,
 		GfxQueue,
-		Image,
+		Image->GetImage(),
+		1,
+		ArrayLayers,
 		Format,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
 		VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 	vkDestroyBuffer(Device, StagingBuffer, nullptr);
 	vkFreeMemory(Device, StagingBufferMemory, nullptr);
-
-	View = Vk::CreateImageView(Device, Image, Format, VK_IMAGE_VIEW_TYPE_3D, VK_IMAGE_ASPECT_COLOR_BIT);
-
-	bLoaded = true;
 }
 
+
+void FVulkanTexture::Unload()
+{
+	if (Image != nullptr)
+	{
+		Context->DestroyObject(Image);
+		Image = nullptr;
+	}
+}

@@ -3,6 +3,7 @@
 #include "VulkanObject.h"
 #include "VulkanLight.h"
 #include "VulkanCamera.h"
+#include "VulkanModel.h"
 
 #include <vector>
 
@@ -18,6 +19,9 @@ public:
 	void RemoveModel(class FVulkanModel* InModel);
 	void ClearModels();
 
+	FVulkanModel* GetSky() const { return Sky; }
+	void SetSky(FVulkanModel* InMesh) { Sky = InMesh; }
+
 	FVulkanLight GetLight() const { return Light; }
 	void SetLight(const FVulkanLight& InLight) { Light = InLight; }
 
@@ -26,6 +30,8 @@ public:
 
 private:
 	std::vector<class FVulkanModel*> Models;
+	FVulkanModel* Sky;
+
 	FVulkanLight Light;
 	FVulkanCamera Camera;
 };

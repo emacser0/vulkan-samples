@@ -1,5 +1,6 @@
 #include "VulkanContext.h"
 #include "VulkanHelpers.h"
+#include "VulkanImage.h"
 
 #include "Config.h"
 
@@ -61,6 +62,12 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugMessengerCallback(
 
 FVulkanContext::FVulkanContext(GLFWwindow* InWindow)
 	: Window(InWindow)
+	, Instance(VK_NULL_HANDLE)
+	, DebugMessenger(VK_NULL_HANDLE)
+	, Surface(VK_NULL_HANDLE)
+	, PhysicalDevice(VK_NULL_HANDLE)
+	, Device(VK_NULL_HANDLE)
+	, DepthImage(nullptr)
 {
 	RenderContextMap[InWindow] = this;
 
@@ -128,6 +135,11 @@ FVulkanContext::~FVulkanContext()
 
 	vkDestroySurfaceKHR(Instance, Surface, nullptr);
 	vkDestroyInstance(Instance, nullptr);
+}
+
+void FVulkanContext::WaitIdle()
+{
+	vkDeviceWaitIdle(Device);
 }
 
 void FVulkanContext::DestroyObject(FVulkanObject* InObject)
@@ -464,14 +476,14 @@ void FVulkanContext::CreateImageViews()
 
 void FVulkanContext::CreateFramebuffers()
 {
-	SwapchainFramebuffers.resize(SwapchainImageViews.size());
+	SwapchainFramebuffers.resize(SwapchainImages.size());
 
-	for (size_t Idx = 0; Idx < SwapchainImageViews.size(); ++Idx)
+	for (size_t Idx = 0; Idx < SwapchainImages.size(); ++Idx)
 	{
 		std::array<VkImageView, 2> Attachments =
 		{
 			SwapchainImageViews[Idx],
-			DepthImageView
+			DepthImage->GetView()
 		};
 
 		VkFramebufferCreateInfo FramebufferCI{};
@@ -643,33 +655,32 @@ void FVulkanContext::CreateDepthResources()
 {
 	VkFormat DepthFormat = Vk::FindDepthFormat(PhysicalDevice);
 
-	Vk::CreateImage(
-		PhysicalDevice,
-		Device,
-		SwapchainExtent.width,
-		SwapchainExtent.height,
+	if (DepthImage != nullptr)
+	{
+		DestroyObject(DepthImage);
+		DepthImage = nullptr;
+	}
+
+	DepthImage = CreateObject<FVulkanImage>();
+	DepthImage->CreateImage(
+		{ SwapchainExtent.width, SwapchainExtent.height, 1 },
+		1,
 		1,
 		DepthFormat,
 		VK_IMAGE_TYPE_2D,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT,
-		DepthImage,
-		DepthImageMemory);
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
-	DepthImageView = Vk::CreateImageView(
-		Device,
-		DepthImage,
-		DepthFormat,
+	DepthImage->CreateView(
 		VK_IMAGE_VIEW_TYPE_2D,
 		VK_IMAGE_ASPECT_DEPTH_BIT);
 }
 
 void FVulkanContext::CleanupSwapchain()
 {
-	vkDestroyImageView(Device, DepthImageView, nullptr);
-	vkDestroyImage(Device, DepthImage, nullptr);
-	vkFreeMemory(Device, DepthImageMemory, nullptr);
+	DestroyObject(DepthImage);
+	DepthImage = nullptr;
 
 	for (VkFramebuffer Framebuffer : SwapchainFramebuffers)
 	{

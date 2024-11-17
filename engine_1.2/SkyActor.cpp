@@ -1,14 +1,14 @@
-#include "CubemapActor.h"
+#include "SkyActor.h"
 #include "Engine.h"
 
 #include "VulkanModel.h"
 
 #include "VulkanContext.h"
 #include "VulkanModel.h"
-#include "VulkanMesh.h"
+#include "VulkanSkyMesh.h"
 #include "VulkanTexture.h"
 
-FVulkanModel* ACubemapActor::CreateRenderModel()
+FVulkanModel* ASkyActor::CreateRenderModel()
 {
 	if (RenderModel != nullptr)
 	{
@@ -23,22 +23,22 @@ FVulkanModel* ACubemapActor::CreateRenderModel()
 
 	RenderModel = RenderContext->CreateObject<FVulkanModel>();
 
-	FVulkanMesh* NewMesh = RenderContext->CreateObject<FVulkanMesh>();
+	FVulkanSkyMesh* NewMesh = RenderContext->CreateObject<FVulkanSkyMesh>();
 	NewMesh->Load(MeshAsset);
 
 	RenderModel->SetMesh(NewMesh);
 
-	if (CubemapTextures.size() > 0)
+	if (Cubemap.size() > 0)
 	{
 		FVulkanTexture* NewTexture = RenderContext->CreateObject<FVulkanTexture>();
-		NewTexture->LoadSource(CubemapTextures);
-		NewMesh->SetBaseColorTexture(NewTexture);
+		NewTexture->LoadSource(Cubemap);
+		NewMesh->SetCubemapTexture(NewTexture);
 	}
 
 	return RenderModel;
 }
 
-void ACubemapActor::SetCubemapTexture(const std::vector<FTextureSource*>& InCubemapTexture)
+void ASkyActor::SetCubemap(const std::vector<FTextureSource*>& InSkyTexture)
 {
-	CubemapTextures = InCubemapTexture;
+	Cubemap = InSkyTexture;
 }

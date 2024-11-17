@@ -18,8 +18,6 @@
 
 #include <vector>
 #include <array>
-#include <iostream>
-#include <stdexcept>
 #include <algorithm>
 #include <execution>
 #include <unordered_map>
@@ -51,7 +49,6 @@ FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	CreateDescriptorSetLayout();
 	CreateGraphicsPipelines();
 	CreateTBNPipeline();
-	CreateCubemapPipeline();
 }
 
 FVulkanMeshRenderer::~FVulkanMeshRenderer()
@@ -59,49 +56,6 @@ FVulkanMeshRenderer::~FVulkanMeshRenderer()
 	VkDevice Device = Context->GetDevice();
 
 	vkDestroyDescriptorSetLayout(Device, DescriptorSetLayout, nullptr);
-}
-
-void FVulkanMeshRenderer::CreateDescriptorSetLayout()
-{
-	VkDevice Device = Context->GetDevice();
-
-	VkDescriptorSetLayoutBinding UBOBinding{};
-	UBOBinding.binding = 0;
-	UBOBinding.descriptorCount = 1;
-	UBOBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	UBOBinding.pImmutableSamplers = nullptr;
-	UBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-
-	VkDescriptorSetLayoutBinding BaseColorSamplerBinding{};
-	BaseColorSamplerBinding.binding = 1;
-	BaseColorSamplerBinding.descriptorCount = 1;
-	BaseColorSamplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	BaseColorSamplerBinding.pImmutableSamplers = nullptr;
-	BaseColorSamplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-	VkDescriptorSetLayoutBinding NormalSamplerBinding{};
-	NormalSamplerBinding.binding = 2;
-	NormalSamplerBinding.descriptorCount = 1;
-	NormalSamplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	NormalSamplerBinding.pImmutableSamplers = nullptr;
-	NormalSamplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-	std::vector<VkDescriptorSetLayoutBinding> Bindings =
-	{
-		UBOBinding,
-		BaseColorSamplerBinding,
-		NormalSamplerBinding
-	};
-
-	VkDescriptorSetLayoutCreateInfo DescriptorSetLayoutCI{};
-	DescriptorSetLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	DescriptorSetLayoutCI.bindingCount = static_cast<uint32_t>(Bindings.size());
-	DescriptorSetLayoutCI.pBindings = Bindings.data();
-
-	if (vkCreateDescriptorSetLayout(Device, &DescriptorSetLayoutCI, nullptr, &DescriptorSetLayout) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create descriptor set layout.");
-	}
 }
 
 void FVulkanMeshRenderer::GenerateInstancedDrawingInfo()
@@ -326,86 +280,6 @@ void FVulkanMeshRenderer::CreateTBNPipeline()
 	TBNPipeline->CreatePipeline(PipelineCI);
 }
 
-void FVulkanMeshRenderer::CreateCubemapPipeline()
-{
-	VkDevice Device = Context->GetDevice();
-
-	std::string ShaderDirectory;
-	GConfig->Get("ShaderDirectory", ShaderDirectory);
-
-	FVulkanShader* VS = Context->CreateObject<FVulkanShader>();
-	VS->LoadFile(ShaderDirectory + "cubemap.vert.spv");
-	FVulkanShader* FS = Context->CreateObject<FVulkanShader>();
-	FS->LoadFile(ShaderDirectory + "cubemap.frag.spv");
-
-	CubemapPipeline = Context->CreateObject<FVulkanPipeline>();
-	CubemapPipeline->SetVertexShader(VS);
-	CubemapPipeline->SetFragmentShader(FS);
-
-	VkPipelineShaderStageCreateInfo VertexShaderStageCI{};
-	VertexShaderStageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	VertexShaderStageCI.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	VertexShaderStageCI.module = CubemapPipeline->GetVertexShader()->GetModule();
-	VertexShaderStageCI.pName = "main";
-
-	VkPipelineShaderStageCreateInfo FragmentShaderStageCI{};
-	FragmentShaderStageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-	FragmentShaderStageCI.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	FragmentShaderStageCI.module = CubemapPipeline->GetFragmentShader()->GetModule();
-	FragmentShaderStageCI.pName = "main";
-
-	std::array<VkPipelineShaderStageCreateInfo, 2> ShaderStageCIs = { VertexShaderStageCI, FragmentShaderStageCI };
-
-	std::vector<VkVertexInputBindingDescription> VertexInputBindingDescs;
-	std::vector<VkVertexInputAttributeDescription> VertexInputAttributeDescs;
-	GetVertexInputBindings(VertexInputBindingDescs);
-	GetVertexInputAttributes(VertexInputAttributeDescs);
-
-	VkPipelineVertexInputStateCreateInfo VertexInputStateCI = Vk::GetVertexInputStateCI(VertexInputBindingDescs, VertexInputAttributeDescs);
-	VkPipelineInputAssemblyStateCreateInfo InputAssemblyStateCI = Vk::GetInputAssemblyStateCI();
-	VkPipelineViewportStateCreateInfo ViewportStateCI = Vk::GetViewportStateCI();
-	VkPipelineRasterizationStateCreateInfo RasterizerCI = Vk::GetRasterizationStateCI();
-	VkPipelineMultisampleStateCreateInfo MultisampleStateCI = Vk::GetMultisampleStateCI();
-	VkPipelineDepthStencilStateCreateInfo DepthStencilStateCI = Vk::GetDepthStencilStateCI();
-
-	VkPipelineColorBlendAttachmentState ColorBlendAttachmentState = Vk::GetColorBlendAttachment();
-	VkPipelineColorBlendStateCreateInfo ColorBlendStateCI = Vk::GetColorBlendStateCI();
-	ColorBlendStateCI.pAttachments = &ColorBlendAttachmentState;
-
-	std::vector<VkDynamicState> DynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
-
-	VkPipelineDynamicStateCreateInfo DynamicStateCI{};
-	DynamicStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
-	DynamicStateCI.dynamicStateCount = static_cast<uint32_t>(DynamicStates.size());
-	DynamicStateCI.pDynamicStates = DynamicStates.data();
-
-	VkPipelineLayoutCreateInfo PipelineLayoutCI{};
-	PipelineLayoutCI.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
-	PipelineLayoutCI.setLayoutCount = 1;
-	PipelineLayoutCI.pSetLayouts = &DescriptorSetLayout;
-
-	CubemapPipeline->CreateLayout(PipelineLayoutCI);
-
-	VkGraphicsPipelineCreateInfo PipelineCI{};
-	PipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
-	PipelineCI.stageCount = static_cast<uint32_t>(ShaderStageCIs.size());
-	PipelineCI.pStages = ShaderStageCIs.data();
-	PipelineCI.pVertexInputState = &VertexInputStateCI;
-	PipelineCI.pInputAssemblyState = &InputAssemblyStateCI;
-	PipelineCI.pViewportState = &ViewportStateCI;
-	PipelineCI.pRasterizationState = &RasterizerCI;
-	PipelineCI.pDepthStencilState = &DepthStencilStateCI;
-	PipelineCI.pMultisampleState = &MultisampleStateCI;
-	PipelineCI.pColorBlendState = &ColorBlendStateCI;
-	PipelineCI.pDynamicState = &DynamicStateCI;
-	PipelineCI.layout = CubemapPipeline->GetLayout();
-	PipelineCI.renderPass = Context->GetRenderPass();
-	PipelineCI.subpass = 0;
-	PipelineCI.basePipelineHandle = VK_NULL_HANDLE;
-
-	CubemapPipeline->CreatePipeline(PipelineCI);
-}
-
 void FVulkanMeshRenderer::CreateTextureSampler()
 {
 	Sampler = Context->CreateObject<FVulkanSampler>();
@@ -456,6 +330,46 @@ void FVulkanMeshRenderer::CreateInstanceBuffers()
 
 		UpdateInstanceBuffer(Mesh);
 	}
+}
+
+void FVulkanMeshRenderer::CreateDescriptorSetLayout()
+{
+	VkDevice Device = Context->GetDevice();
+
+	VkDescriptorSetLayoutBinding UBOBinding{};
+	UBOBinding.binding = 0;
+	UBOBinding.descriptorCount = 1;
+	UBOBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	UBOBinding.pImmutableSamplers = nullptr;
+	UBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	VkDescriptorSetLayoutBinding BaseColorSamplerBinding{};
+	BaseColorSamplerBinding.binding = 1;
+	BaseColorSamplerBinding.descriptorCount = 1;
+	BaseColorSamplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	BaseColorSamplerBinding.pImmutableSamplers = nullptr;
+	BaseColorSamplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	VkDescriptorSetLayoutBinding NormalSamplerBinding{};
+	NormalSamplerBinding.binding = 2;
+	NormalSamplerBinding.descriptorCount = 1;
+	NormalSamplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	NormalSamplerBinding.pImmutableSamplers = nullptr;
+	NormalSamplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	std::vector<VkDescriptorSetLayoutBinding> Bindings =
+	{
+		UBOBinding,
+		BaseColorSamplerBinding,
+		NormalSamplerBinding
+	};
+
+	VkDescriptorSetLayoutCreateInfo DescriptorSetLayoutCI{};
+	DescriptorSetLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	DescriptorSetLayoutCI.bindingCount = static_cast<uint32_t>(Bindings.size());
+	DescriptorSetLayoutCI.pBindings = Bindings.data();
+
+	VK_ASSERT(vkCreateDescriptorSetLayout(Device, &DescriptorSetLayoutCI, nullptr, &DescriptorSetLayout));
 }
 
 void FVulkanMeshRenderer::CreateDescriptorSets()
@@ -542,13 +456,6 @@ void FVulkanMeshRenderer::GetVertexInputAttributes(std::vector<VkVertexInputAttr
 		OutDescs[12 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 		OutDescs[12 + Idx].offset = offsetof(FInstanceBuffer, NormalMatrix) + sizeof(glm::vec4) * Idx;
 	}
-}
-
-void FVulkanMeshRenderer::WaitIdle()
-{
-	VkDevice Device = Context->GetDevice();
-
-	vkDeviceWaitIdle(Device);
 }
 
 void FVulkanMeshRenderer::SetPipelineIndex(int32_t Idx)
@@ -701,7 +608,7 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 
 			VkDescriptorImageInfo BaseColorImageInfo{};
 			BaseColorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			BaseColorImageInfo.imageView = BaseColorTexture->GetView();
+			BaseColorImageInfo.imageView = BaseColorTexture->GetImage()->GetView();
 			BaseColorImageInfo.sampler = Sampler->GetSampler();
 
 			DescriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -714,7 +621,7 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 
 			VkDescriptorImageInfo NormalImageInfo{};
 			NormalImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			NormalImageInfo.imageView = NormalTexture->GetView();
+			NormalImageInfo.imageView = NormalTexture->GetImage()->GetView();
 			NormalImageInfo.sampler = Sampler->GetSampler();
 
 			DescriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

@@ -14,9 +14,9 @@ public:
 	const std::vector<FVertex>& GetVertices() const { return Vertices; }
 	const std::vector<uint32_t>& GetIndices() const { return Indices; }
 
-	bool Load(const std::string& InFilename);
+	virtual bool Load(const std::string& InFilename);
 
-private:
+protected:
 	std::vector<FVertex> Vertices;
 	std::vector<uint32_t> Indices;
 };

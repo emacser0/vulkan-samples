@@ -186,7 +186,7 @@ namespace Vk
 
 		}
 
-		std::runtime_error("Failed to find supported format.");
+		throw std::runtime_error("Failed to find supported format.");
 
 		return VK_FORMAT_UNDEFINED;
 	}
@@ -290,81 +290,6 @@ namespace Vk
 		vkFreeCommandBuffers(InDevice, InCommandPool, 1, &CommandBuffer);
 	}
 
-	void CreateImage(
-		VkPhysicalDevice InPhysicalDevice,
-		VkDevice InDevice,
-		uint32_t InWidth,
-		uint32_t InHeight,
-		uint32_t InDepth,
-		VkFormat InFormat,
-		VkImageType InImageType,
-		VkImageTiling InTiling,
-		VkImageUsageFlags InUsage,
-		VkMemoryPropertyFlags InProperties,
-		VkImage& OutImage,
-		VkDeviceMemory& OutImageMemory)
-	{
-		VkImageCreateInfo ImageCI{};
-		ImageCI.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-		ImageCI.imageType = InImageType;
-		ImageCI.extent.width = InWidth;
-		ImageCI.extent.height = InHeight;
-		ImageCI.extent.depth = InDepth;
-		ImageCI.mipLevels = 1;
-		ImageCI.arrayLayers = 1;
-		ImageCI.format = InFormat;
-		ImageCI.tiling = InTiling;
-		ImageCI.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		ImageCI.usage = InUsage;
-		ImageCI.samples = VK_SAMPLE_COUNT_1_BIT;
-		ImageCI.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
-
-		if (vkCreateImage(InDevice, &ImageCI, nullptr, &OutImage) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create image.");
-		}
-
-		VkMemoryRequirements MemoryReqs{};
-		vkGetImageMemoryRequirements(InDevice, OutImage, &MemoryReqs);
-
-		VkMemoryAllocateInfo MemoryAllocInfo{};
-		MemoryAllocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
-		MemoryAllocInfo.allocationSize = MemoryReqs.size;
-		MemoryAllocInfo.memoryTypeIndex = FindMemoryType(InPhysicalDevice, MemoryReqs.memoryTypeBits, InProperties);
-
-		if (vkAllocateMemory(InDevice, &MemoryAllocInfo, nullptr, &OutImageMemory) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to allocate image memory.");
-		}
-
-		if (vkBindImageMemory(InDevice, OutImage, OutImageMemory, 0) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to bind image memory.");
-		}
-	}
-
-	VkImageView CreateImageView(VkDevice InDevice, VkImage InImage, VkFormat InFormat, VkImageViewType InImageViewType, VkImageAspectFlags InAspectFlags)
-	{
-		VkImageViewCreateInfo ImageViewCI{};
-		ImageViewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		ImageViewCI.image = InImage;
-		ImageViewCI.viewType = InImageViewType;
-		ImageViewCI.format = InFormat;
-		ImageViewCI.subresourceRange.aspectMask = InAspectFlags;
-		ImageViewCI.subresourceRange.baseMipLevel = 0;
-		ImageViewCI.subresourceRange.levelCount = 1;
-		ImageViewCI.subresourceRange.baseArrayLayer = 0;
-		ImageViewCI.subresourceRange.layerCount = 1;
-
-		VkImageView ImageView;
-		if (vkCreateImageView(InDevice, &ImageViewCI, nullptr, &ImageView) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create image view.");
-		}
-
-		return ImageView;
-	}
-
 	VkCommandBuffer BeginOneTimeCommandBuffer(VkDevice InDevice, VkCommandPool InCommandPool)
 	{
 		VkCommandBufferAllocateInfo CommandBufferAllocInfo{};
@@ -412,9 +337,9 @@ namespace Vk
 		VkQueue InCommandQueue,
 		VkBuffer InBuffer,
 		VkImage InImage,
-		uint32_t InWidth,
-		uint32_t InHeight,
-		uint32_t InDepth)
+		uint32_t InMipLevel,
+		uint32_t InArrayLayers,
+		VkExtent3D InExtent)
 	{
 		VkCommandBuffer CommandBuffer = BeginOneTimeCommandBuffer(InDevice, InCommandPool);
 
@@ -423,11 +348,11 @@ namespace Vk
 		CopyRegion.bufferRowLength = 0;
 		CopyRegion.bufferImageHeight = 0;
 		CopyRegion.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		CopyRegion.imageSubresource.mipLevel = 0;
+		CopyRegion.imageSubresource.mipLevel = InMipLevel;
 		CopyRegion.imageSubresource.baseArrayLayer = 0;
-		CopyRegion.imageSubresource.layerCount = 1;
+		CopyRegion.imageSubresource.layerCount = InArrayLayers;
 		CopyRegion.imageOffset = { 0, 0, 0 };
-		CopyRegion.imageExtent = { InWidth, InHeight, InDepth };
+		CopyRegion.imageExtent = InExtent;
 
 		vkCmdCopyBufferToImage(CommandBuffer, InBuffer, InImage, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &CopyRegion);
 
@@ -439,6 +364,8 @@ namespace Vk
 		VkCommandPool InCommandPool,
 		VkQueue InCommandQueue,
 		VkImage InImage,
+		uint32_t InMipLevels,
+		uint32_t InArrayLayers,
 		VkFormat InFormat,
 		VkImageLayout InOldLayout,
 		VkImageLayout InNewLayout)
@@ -454,9 +381,9 @@ namespace Vk
 		ImageMemoryBarrier.image = InImage;
 		ImageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		ImageMemoryBarrier.subresourceRange.baseMipLevel = 0;
-		ImageMemoryBarrier.subresourceRange.levelCount = 1;
+		ImageMemoryBarrier.subresourceRange.levelCount = InMipLevels;
 		ImageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
-		ImageMemoryBarrier.subresourceRange.layerCount = 1;
+		ImageMemoryBarrier.subresourceRange.layerCount = InArrayLayers;
 
 		VkPipelineStageFlags SrcStage;
 		VkPipelineStageFlags DstStage;

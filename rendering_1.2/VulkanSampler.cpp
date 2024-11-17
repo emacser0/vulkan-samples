@@ -18,6 +18,7 @@ FVulkanSampler::FVulkanSampler(class FVulkanContext* InContext)
 	SamplerCI.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 	SamplerCI.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
 	SamplerCI.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+	SamplerCI.mipLodBias = 0.0f;
 	SamplerCI.anisotropyEnable = VK_TRUE;
 	SamplerCI.maxAnisotropy = Properties.limits.maxSamplerAnisotropy;
 	SamplerCI.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
