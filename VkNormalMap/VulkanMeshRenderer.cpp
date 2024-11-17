@@ -30,7 +30,7 @@ struct FUniformBufferObject
 	alignas(16) glm::mat4 Projection;
 	alignas(16) glm::vec3 CameraPosition;
 
-	FVulkanLight Light;
+	FVulkanPointLight Light;
 };
 
 struct FInstanceBuffer
@@ -617,7 +617,7 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 
 			VkDescriptorImageInfo BaseColorImageInfo{};
 			BaseColorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			BaseColorImageInfo.imageView = BaseColorTexture->GetView();
+			BaseColorImageInfo.imageView = BaseColorTexture->GetImage()->GetView();
 			BaseColorImageInfo.sampler = Sampler->GetSampler();
 
 			DescriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -630,7 +630,7 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 
 			VkDescriptorImageInfo NormalImageInfo{};
 			NormalImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-			NormalImageInfo.imageView = NormalTexture->GetView();
+			NormalImageInfo.imageView = NormalTexture->GetImage()->GetView();
 			NormalImageInfo.sampler = Sampler->GetSampler();
 
 			DescriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;

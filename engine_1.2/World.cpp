@@ -160,7 +160,7 @@ void FWorld::UpdateRenderScene()
 
 	if (LightActor != nullptr)
 	{
-		FVulkanLight Light;
+		FVulkanPointLight Light;
 		Light.Position = LightActor->GetLocation();
 		Light.Ambient = LightActor->GetAmbient();
 		Light.Diffuse = LightActor->GetDiffuse();

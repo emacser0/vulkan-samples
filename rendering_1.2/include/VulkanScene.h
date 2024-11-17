@@ -22,8 +22,8 @@ public:
 	FVulkanModel* GetSky() const { return Sky; }
 	void SetSky(FVulkanModel* InMesh) { Sky = InMesh; }
 
-	FVulkanLight GetLight() const { return Light; }
-	void SetLight(const FVulkanLight& InLight) { Light = InLight; }
+	FVulkanPointLight GetLight() const { return Light; }
+	void SetLight(const FVulkanPointLight& InLight) { Light = InLight; }
 
 	FVulkanCamera GetCamera() const { return Camera; }
 	void SetCamera(const FVulkanCamera& InCamera) { Camera = InCamera; }
@@ -32,6 +32,6 @@ private:
 	std::vector<class FVulkanModel*> Models;
 	FVulkanModel* Sky;
 
-	FVulkanLight Light;
+	FVulkanPointLight Light;
 	FVulkanCamera Camera;
 };

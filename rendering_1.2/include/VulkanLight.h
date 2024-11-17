@@ -2,7 +2,7 @@
 
 #include "glm/glm.hpp"
 
-struct FVulkanLight
+struct FVulkanPointLight
 {
 	alignas(16) glm::vec3 Position;
 	alignas(16) glm::vec4 Ambient;
