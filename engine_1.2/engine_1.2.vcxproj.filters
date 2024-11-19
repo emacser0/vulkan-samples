@@ -39,6 +39,12 @@
     <ClCompile Include="MeshActorBase.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="PointLightActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="DirectionalLightActor.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="include\CameraActor.h">
@@ -63,6 +69,12 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
     <ClInclude Include="include\SkyActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="include\PointLightActor.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="include\DirectionalLightActor.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

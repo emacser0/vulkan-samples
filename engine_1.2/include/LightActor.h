@@ -2,6 +2,8 @@
 
 #include "Actor.h"
 
+#include "glm/glm.hpp"
+
 class ALightActor : public AActor
 {
 public:

@@ -3,6 +3,8 @@
 #include "Engine.h"
 #include "CameraActor.h"
 #include "LightActor.h"
+#include "PointLightActor.h"
+#include "DirectionalLightActor.h"
 #include "SkyActor.h"
 #include "MeshActor.h"
 
@@ -16,11 +18,9 @@
 
 FWorld::FWorld()
 	: CameraActor(nullptr)
-	, LightActor(nullptr)
 	, RenderScene(nullptr)
 {
 	CameraActor = SpawnActor<ACameraActor>();
-	LightActor = SpawnActor<ALightActor>();
 	SkyActor = SpawnActor<ASkyActor>();
 }
 
@@ -86,11 +86,6 @@ ACameraActor* FWorld::GetCamera() const
 	return CameraActor;
 }
 
-ALightActor* FWorld::GetLight() const
-{
-	return LightActor;
-}
-
 FVulkanScene* FWorld::GetRenderScene() const
 {
 	return RenderScene;
@@ -115,27 +110,22 @@ void FWorld::GenerateRenderScene()
 			continue;
 		}
 
-		if (Actor->GetTypeId() != AMeshActor::StaticTypeId())
+		if (Actor->GetTypeId() == AMeshActor::StaticTypeId())
 		{
-			continue;
-		}
+			if (AMeshActor* MeshActor = Cast<AMeshActor>(Actor))
+			{
+				FMesh* MeshAsset = MeshActor->GetMeshAsset();
+				if (MeshAsset == nullptr)
+				{
+					continue;
+				}
 
-		AMeshActor* MeshActor = Cast<AMeshActor>(Actor);
-		if (MeshActor == nullptr)
-		{
-			continue;
-		}
-
-		FMesh* MeshAsset = MeshActor->GetMeshAsset();
-		if (MeshAsset == nullptr)
-		{
-			continue;
-		}
-
-		FVulkanModel* Model = MeshActor->CreateRenderModel();
-		if (Model != nullptr)
-		{
-			RenderScene->AddModel(Model);
+				FVulkanModel* Model = MeshActor->CreateRenderModel();
+				if (Model != nullptr)
+				{
+					RenderScene->AddModel(Model);
+				}
+			}
 		}
 	}
 
@@ -158,18 +148,8 @@ void FWorld::UpdateRenderScene()
 		return;
 	}
 
-	if (LightActor != nullptr)
-	{
-		FVulkanPointLight Light;
-		Light.Position = LightActor->GetLocation();
-		Light.Ambient = LightActor->GetAmbient();
-		Light.Diffuse = LightActor->GetDiffuse();
-		Light.Specular = LightActor->GetSpecular();
-		Light.Attenuation = LightActor->GetAttenuation();
-		Light.Shininess = LightActor->GetShininess();
-
-		RenderScene->SetLight(Light);
-	}
+	std::vector<FVulkanPointLight> PointLights;
+	std::vector<FVulkanDirectionalLight> DirectionalLights;
 
 	if (CameraActor != nullptr)
 	{
@@ -191,19 +171,47 @@ void FWorld::UpdateRenderScene()
 			continue;
 		}
 
-		if (Actor->GetTypeId() != AMeshActor::StaticTypeId())
+		if (Actor->GetTypeId() == AMeshActor::StaticTypeId())
 		{
-			continue;
+			if (AMeshActor* MeshActor = Cast<AMeshActor>(Actor))
+			{
+				MeshActor->UpdateRenderModel();
+			}
 		}
-
-		AMeshActor* MeshActor = Cast<AMeshActor>(Actor);
-		if (MeshActor == nullptr)
+		else if (Actor->GetTypeId() == APointLightActor::StaticTypeId())
 		{
-			continue;
-		}
+			if (APointLightActor* PointLight = Cast<APointLightActor>(Actor))
+			{
+				FVulkanPointLight Light;
+				Light.Position = PointLight->GetLocation();
+				Light.Ambient = PointLight->GetAmbient();
+				Light.Diffuse = PointLight->GetDiffuse();
+				Light.Specular = PointLight->GetSpecular();
+				Light.Attenuation = PointLight->GetAttenuation();
+				Light.Shininess = PointLight->GetShininess();
 
-		MeshActor->UpdateRenderModel();
+				PointLights.push_back(Light);
+			}
+		}
+		else if (Actor->GetTypeId() == APointLightActor::StaticTypeId())
+		{
+			if (ADirectionalLightActor* DirectionalLight = Cast<ADirectionalLightActor>(Actor))
+			{
+				FVulkanDirectionalLight Light;
+				Light.Direction = DirectionalLight->GetDirection();
+				Light.Ambient = DirectionalLight->GetAmbient();
+				Light.Diffuse = DirectionalLight->GetDiffuse();
+				Light.Specular = DirectionalLight->GetSpecular();
+				Light.Attenuation = DirectionalLight->GetAttenuation();
+				Light.Shininess = DirectionalLight->GetShininess();
+
+				DirectionalLights.push_back(Light);
+			}
+		}
 	}
+
+	RenderScene->SetPointLights(PointLights);
+	RenderScene->SetDirectionalLights(DirectionalLights);
 
 	if (SkyActor != nullptr)
 	{

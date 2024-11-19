@@ -101,13 +101,15 @@ FVulkanContext::~FVulkanContext()
 		}
 	}
 
-	for (FVulkanObject* LiveObject : LiveObjects)
+	for (int Idx = 0; Idx < LiveObjects.size(); ++Idx)
 	{
-		if (LiveObject != nullptr)
+		if (LiveObjects[Idx] != nullptr)
 		{
-			delete LiveObject;
+			delete LiveObjects[Idx];
 		}
 	}
+
+	DepthImage = nullptr;
 
 	CleanupSwapchain();
 
@@ -160,11 +162,6 @@ void FVulkanContext::DestroyObject(FVulkanObject* InObject)
 			break;
 		}
 	}
-
-	std::remove_if(LiveObjects.begin(), LiveObjects.end(), [this](FVulkanObject* Object)
-	{
-		return Object == nullptr;
-	});
 }
 
 void FVulkanContext::CreateInstance()
@@ -679,8 +676,11 @@ void FVulkanContext::CreateDepthResources()
 
 void FVulkanContext::CleanupSwapchain()
 {
-	DestroyObject(DepthImage);
-	DepthImage = nullptr;
+	if (DepthImage != nullptr)
+	{
+		DestroyObject(DepthImage);
+		DepthImage = nullptr;
+	}
 
 	for (VkFramebuffer Framebuffer : SwapchainFramebuffers)
 	{
