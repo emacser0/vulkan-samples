@@ -69,7 +69,8 @@ protected:
 	};
 	std::unordered_map<FVulkanMeshBase*, FInstancedDrawingInfo> InstancedDrawingMap;
 
-	std::vector<FVulkanBuffer*> UniformBuffers;
+	std::vector<FVulkanBuffer*> TransformBuffers;
+	std::vector<FVulkanBuffer*> LightBuffers;
 
 	FVulkanSampler* Sampler;
 

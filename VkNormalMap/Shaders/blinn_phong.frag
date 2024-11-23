@@ -25,7 +25,7 @@ layout(std140, binding = 1) uniform LightBuffer
     uint numPointLights;
     PointLight pointLights[16];
 
-    uint numDirectionalLight;
+    uint numDirectionalLights;
     DirectionalLight directionalLights[16];
 } lightBuffer;
 
@@ -65,6 +65,18 @@ void main()
 
 		diffuse += max(dot(L, N), 0.0) * light.diffuse / denom;
 		specular += pow(max(dot(N, H), 0.0), 3 * light.shininess) * light.specular / denom;
+    }
+
+    for (int i = 0; i < lightBuffer.numDirectionalLights; ++i)
+    {
+        DirectionalLight light = lightBuffer.directionalLights[i];
+
+        vec3 L = normalize(light.direction);
+        vec3 H = normalize(L + V);
+
+		vec4 ambient = light.ambient;
+		diffuse += max(dot(L, N), 0.0) * light.diffuse;
+		specular += pow(max(dot(N, H), 0.0), 3 * light.shininess) * light.specular;
     }
 
     outColor = (ambient + diffuse) * texture(baseColorSampler, inTexCoord) + specular;

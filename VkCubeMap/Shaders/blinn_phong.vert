@@ -1,23 +1,11 @@
 #version 450
 
-struct Light
-{
-    vec3 position;
-    vec4 ambient;
-    vec4 diffuse;
-    vec4 specular;
-    vec4 attenuation;
-    float shininess;
-};
-
-layout(std140, binding = 0) uniform UniformBufferObject
+layout(std140, binding = 0) uniform TransformBuffer
 {
     mat4 view;
     mat4 projection;
     vec3 cameraPosition;
-
-    Light light;
-} ubo;
+} transformBuffer;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
@@ -45,5 +33,5 @@ void main()
     vec3 bitangent = normalize(normalMatrix * cross(outNormal, tangent));
     outTBN = mat3(tangent, bitangent, outNormal);
 
-    gl_Position = ubo.projection * outPosition;
+    gl_Position = transformBuffer.projection * outPosition;
 }

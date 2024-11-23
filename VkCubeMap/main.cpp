@@ -15,7 +15,8 @@
 #include "World.h"
 #include "Actor.h"
 #include "CameraActor.h"
-#include "LightActor.h"
+#include "PointLightActor.h"
+#include "DirectionalLightActor.h"
 #include "MeshActor.h"
 #include "SkyActor.h"
 
@@ -161,6 +162,8 @@ int RandRange(int Min, int Max)
 FVulkanMeshRenderer* MeshRenderer;
 FVulkanSkyRenderer* SkyRenderer;
 
+APointLightActor* PointLight;
+
 class FMainWidget : public FWidget
 {
 public:
@@ -236,19 +239,14 @@ void FMainWidget::Draw()
 	ImGui::SliderFloat4("Attenuation", &Attenuation[0], 0.0f, 1.0f);
 	ImGui::SliderFloat("Shininess", &Shininess, 1.0f, 128.0f);
 
-	FWorld* World = GEngine->GetWorld();
-	if (World)
+	if (PointLight != nullptr)
 	{
-		ALightActor* LightActor = World->GetLight();
-		if (LightActor)
-		{
-			LightActor->SetLocation(LightPosition);
-			LightActor->SetAmbient(Ambient);
-			LightActor->SetDiffuse(Diffuse);
-			LightActor->SetSpecular(Specular);
-			LightActor->SetAttenuation(Attenuation);
-			LightActor->SetShininess(Shininess);
-		}
+		PointLight->SetLocation(LightPosition);
+		PointLight->SetAmbient(Ambient);
+		PointLight->SetDiffuse(Diffuse);
+		PointLight->SetSpecular(Specular);
+		PointLight->SetAttenuation(Attenuation);
+		PointLight->SetShininess(Shininess);
 	}
 
 	ImGui::Checkbox("Show TBN", &bShowTBN);
@@ -348,6 +346,8 @@ void Run(int argc, char** argv)
 	}
 
 	FWorld* World = GEngine->GetWorld();
+
+	PointLight = World->SpawnActor<APointLightActor>();
 
 	AMeshActor* LightSourceActor = World->SpawnActor<AMeshActor>();
 	LightSourceActor->SetMeshAsset(SphereMeshAsset);

@@ -18,17 +18,26 @@
 
 #include <vector>
 #include <array>
+#include <iostream>
+#include <stdexcept>
 #include <algorithm>
 #include <execution>
 #include <unordered_map>
 
-struct FUniformBufferObject
+struct FTransformBufferObject
 {
 	alignas(16) glm::mat4 View;
 	alignas(16) glm::mat4 Projection;
 	alignas(16) glm::vec3 CameraPosition;
+};
 
-	FVulkanPointLight Light;
+struct FLightBufferObject
+{
+	alignas(8) uint32_t NumPointLights;
+	FVulkanPointLight PointLights[16];
+
+	alignas(8) uint32_t NumDirectionalLights;
+	FVulkanDirectionalLight DirectionalLights[16];
 };
 
 struct FInstanceBuffer
@@ -56,6 +65,55 @@ FVulkanMeshRenderer::~FVulkanMeshRenderer()
 	VkDevice Device = Context->GetDevice();
 
 	vkDestroyDescriptorSetLayout(Device, DescriptorSetLayout, nullptr);
+}
+
+void FVulkanMeshRenderer::CreateDescriptorSetLayout()
+{
+	VkDevice Device = Context->GetDevice();
+
+	VkDescriptorSetLayoutBinding TransformBufferBinding{};
+	TransformBufferBinding.descriptorCount = 1;
+	TransformBufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	TransformBufferBinding.pImmutableSamplers = nullptr;
+	TransformBufferBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+
+	VkDescriptorSetLayoutBinding LightBufferBinding{};
+	LightBufferBinding.descriptorCount = 1;
+	LightBufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	LightBufferBinding.pImmutableSamplers = nullptr;
+	LightBufferBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	VkDescriptorSetLayoutBinding BaseColorSamplerBinding{};
+	BaseColorSamplerBinding.descriptorCount = 1;
+	BaseColorSamplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	BaseColorSamplerBinding.pImmutableSamplers = nullptr;
+	BaseColorSamplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	VkDescriptorSetLayoutBinding NormalSamplerBinding{};
+	NormalSamplerBinding.descriptorCount = 1;
+	NormalSamplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	NormalSamplerBinding.pImmutableSamplers = nullptr;
+	NormalSamplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	std::vector<VkDescriptorSetLayoutBinding> Bindings =
+	{
+		TransformBufferBinding,
+		LightBufferBinding,
+		BaseColorSamplerBinding,
+		NormalSamplerBinding
+	};
+
+	for (int Idx = 0; Idx < Bindings.size(); ++Idx)
+	{
+		Bindings[Idx].binding = Idx;
+	}
+
+	VkDescriptorSetLayoutCreateInfo DescriptorSetLayoutCI{};
+	DescriptorSetLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	DescriptorSetLayoutCI.bindingCount = static_cast<uint32_t>(Bindings.size());
+	DescriptorSetLayoutCI.pBindings = Bindings.data();
+
+	VK_ASSERT(vkCreateDescriptorSetLayout(Device, &DescriptorSetLayoutCI, nullptr, &DescriptorSetLayout));
 }
 
 void FVulkanMeshRenderer::GenerateInstancedDrawingInfo()
@@ -290,16 +348,24 @@ void FVulkanMeshRenderer::CreateUniformBuffers()
 	VkPhysicalDevice PhysicalDevice = Context->GetPhysicalDevice();
 	VkDevice Device = Context->GetDevice();
 
-	VkDeviceSize UniformBufferSize = sizeof(FUniformBufferObject);
+	VkDeviceSize TransformBufferSize = sizeof(FTransformBufferObject);
+	VkDeviceSize LightBufferSize = sizeof(FLightBufferObject);
 
-	UniformBuffers.resize(MAX_CONCURRENT_FRAME);
+	TransformBuffers.resize(MAX_CONCURRENT_FRAME);
+	LightBuffers.resize(MAX_CONCURRENT_FRAME);
 	for (size_t Idx = 0; Idx < MAX_CONCURRENT_FRAME; ++Idx)
 	{
-		UniformBuffers[Idx] = Context->CreateObject<FVulkanBuffer>();
-		UniformBuffers[Idx]->SetUsage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-		UniformBuffers[Idx]->SetProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-		UniformBuffers[Idx]->Allocate(UniformBufferSize);
-		UniformBuffers[Idx]->Map();
+		TransformBuffers[Idx] = Context->CreateObject<FVulkanBuffer>();
+		TransformBuffers[Idx]->SetUsage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+		TransformBuffers[Idx]->SetProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		TransformBuffers[Idx]->Allocate(TransformBufferSize);
+		TransformBuffers[Idx]->Map();
+
+		LightBuffers[Idx] = Context->CreateObject<FVulkanBuffer>();
+		LightBuffers[Idx]->SetUsage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+		LightBuffers[Idx]->SetProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+		LightBuffers[Idx]->Allocate(LightBufferSize);
+		LightBuffers[Idx]->Map();
 	}
 }
 
@@ -307,8 +373,6 @@ void FVulkanMeshRenderer::CreateInstanceBuffers()
 {
 	VkPhysicalDevice PhysicalDevice = Context->GetPhysicalDevice();
 	VkDevice Device = Context->GetDevice();
-
-	VkDeviceSize UniformBufferSize = sizeof(FUniformBufferObject);
 
 	for (auto& Pair : InstancedDrawingMap)
 	{
@@ -330,46 +394,6 @@ void FVulkanMeshRenderer::CreateInstanceBuffers()
 
 		UpdateInstanceBuffer(Mesh);
 	}
-}
-
-void FVulkanMeshRenderer::CreateDescriptorSetLayout()
-{
-	VkDevice Device = Context->GetDevice();
-
-	VkDescriptorSetLayoutBinding UBOBinding{};
-	UBOBinding.binding = 0;
-	UBOBinding.descriptorCount = 1;
-	UBOBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-	UBOBinding.pImmutableSamplers = nullptr;
-	UBOBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
-
-	VkDescriptorSetLayoutBinding BaseColorSamplerBinding{};
-	BaseColorSamplerBinding.binding = 1;
-	BaseColorSamplerBinding.descriptorCount = 1;
-	BaseColorSamplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	BaseColorSamplerBinding.pImmutableSamplers = nullptr;
-	BaseColorSamplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-	VkDescriptorSetLayoutBinding NormalSamplerBinding{};
-	NormalSamplerBinding.binding = 2;
-	NormalSamplerBinding.descriptorCount = 1;
-	NormalSamplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-	NormalSamplerBinding.pImmutableSamplers = nullptr;
-	NormalSamplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
-
-	std::vector<VkDescriptorSetLayoutBinding> Bindings =
-	{
-		UBOBinding,
-		BaseColorSamplerBinding,
-		NormalSamplerBinding
-	};
-
-	VkDescriptorSetLayoutCreateInfo DescriptorSetLayoutCI{};
-	DescriptorSetLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
-	DescriptorSetLayoutCI.bindingCount = static_cast<uint32_t>(Bindings.size());
-	DescriptorSetLayoutCI.pBindings = Bindings.data();
-
-	VK_ASSERT(vkCreateDescriptorSetLayout(Device, &DescriptorSetLayoutCI, nullptr, &DescriptorSetLayout));
 }
 
 void FVulkanMeshRenderer::CreateDescriptorSets()
@@ -491,18 +515,36 @@ void FVulkanMeshRenderer::UpdateUniformBuffer()
 
 	static const glm::mat4 IdentityMatrix(1.0f);
 
-	FUniformBufferObject UBO{};
-	UBO.View = Camera.View;
-	UBO.Projection = glm::perspective(FOVRadians, AspectRatio, Camera.Near, Camera.Far);
-	UBO.CameraPosition = Camera.Position;
+	FTransformBufferObject TBO{};
+	TBO.View = Camera.View;
+	TBO.Projection = glm::perspective(FOVRadians, AspectRatio, Camera.Near, Camera.Far);
+	TBO.CameraPosition = Camera.Position;
 
+	FLightBufferObject LBO{};
 	if (Scene != nullptr)
 	{
-		UBO.Light = Scene->GetLight();
-		UBO.Light.Position = UBO.View * glm::vec4(UBO.Light.Position, 1.0f);
+		const std::vector<FVulkanPointLight>& PointLights = Scene->GetPointLights();
+		const std::vector<FVulkanDirectionalLight>& DirectionalLights = Scene->GetDirectionalLights();
+
+		LBO.NumPointLights = static_cast<uint32_t>(PointLights.size());
+		for (int Idx = 0; Idx < LBO.NumPointLights; ++Idx)
+		{
+			LBO.PointLights[Idx] = PointLights[Idx];
+			LBO.PointLights[Idx].Position = TBO.View * glm::vec4(LBO.PointLights[Idx].Position, 1.0);
+		}
+
+		LBO.NumDirectionalLights = static_cast<uint32_t>(DirectionalLights.size());
+		for (int Idx = 0; Idx < LBO.NumDirectionalLights; ++Idx)
+		{
+			LBO.DirectionalLights[Idx] = DirectionalLights[Idx];
+			LBO.DirectionalLights[Idx].Direction = TBO.View * glm::vec4(LBO.DirectionalLights[Idx].Direction, 1.0);
+		}
 	}
 
-	memcpy(UniformBuffers[Context->GetCurrentFrame()]->GetMappedAddress(), &UBO, sizeof(FUniformBufferObject));
+	uint32_t CurrentFrame = Context->GetCurrentFrame();
+
+	memcpy(TransformBuffers[CurrentFrame]->GetMappedAddress(), &TBO, sizeof(FTransformBufferObject));
+	memcpy(LightBuffers[CurrentFrame]->GetMappedAddress(), &LBO, sizeof(FLightBufferObject));
 }
 
 void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMeshBase* InMesh)
@@ -589,48 +631,63 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 
 		const std::vector<VkDescriptorSet>& DescriptorSets = Pair.second.DescriptorSets;
 
-		for (int32_t Idx = 0; Idx < DescriptorSets.size(); ++Idx)
+		for (int32_t i = 0; i < DescriptorSets.size(); ++i)
 		{
-			std::array<VkWriteDescriptorSet, 3> DescriptorWrites{};
+			VkDescriptorBufferInfo TransformBufferInfo{};
+			TransformBufferInfo.buffer = TransformBuffers[i]->GetBuffer();
+			TransformBufferInfo.offset = 0;
+			TransformBufferInfo.range = sizeof(FTransformBufferObject);
 
-			VkDescriptorBufferInfo UniformBufferInfo{};
-			UniformBufferInfo.buffer = UniformBuffers[Idx]->GetBuffer();
-			UniformBufferInfo.offset = 0;
-			UniformBufferInfo.range = sizeof(FUniformBufferObject);
+			VkWriteDescriptorSet TransformBufferDescriptor{};
+			TransformBufferDescriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			TransformBufferDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			TransformBufferDescriptor.pBufferInfo = &TransformBufferInfo;
 
-			DescriptorWrites[0].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			DescriptorWrites[0].dstSet = DescriptorSets[Idx];
-			DescriptorWrites[0].dstBinding = 0;
-			DescriptorWrites[0].dstArrayElement = 0;
-			DescriptorWrites[0].descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
-			DescriptorWrites[0].descriptorCount = 1;
-			DescriptorWrites[0].pBufferInfo = &UniformBufferInfo;
+			VkDescriptorBufferInfo LightBufferInfo{};
+			LightBufferInfo.buffer = LightBuffers[i]->GetBuffer();
+			LightBufferInfo.offset = 0;
+			LightBufferInfo.range = sizeof(FLightBufferObject);
+
+			VkWriteDescriptorSet LightBufferDescriptor{};
+			LightBufferDescriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			LightBufferDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			LightBufferDescriptor.pBufferInfo = &LightBufferInfo;
 
 			VkDescriptorImageInfo BaseColorImageInfo{};
 			BaseColorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			BaseColorImageInfo.imageView = BaseColorTexture->GetImage()->GetView();
 			BaseColorImageInfo.sampler = Sampler->GetSampler();
 
-			DescriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			DescriptorWrites[1].dstSet = DescriptorSets[Idx];
-			DescriptorWrites[1].dstBinding = 1;
-			DescriptorWrites[1].dstArrayElement = 0;
-			DescriptorWrites[1].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			DescriptorWrites[1].descriptorCount = 1;
-			DescriptorWrites[1].pImageInfo = &BaseColorImageInfo;
+			VkWriteDescriptorSet BaseColorDescriptor{};
+			BaseColorDescriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			BaseColorDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			BaseColorDescriptor.pImageInfo = &BaseColorImageInfo;
 
 			VkDescriptorImageInfo NormalImageInfo{};
 			NormalImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			NormalImageInfo.imageView = NormalTexture->GetImage()->GetView();
 			NormalImageInfo.sampler = Sampler->GetSampler();
 
-			DescriptorWrites[2].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			DescriptorWrites[2].dstSet = DescriptorSets[Idx];
-			DescriptorWrites[2].dstBinding = 2;
-			DescriptorWrites[2].dstArrayElement = 0;
-			DescriptorWrites[2].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			DescriptorWrites[2].descriptorCount = 1;
-			DescriptorWrites[2].pImageInfo = &NormalImageInfo;
+			VkWriteDescriptorSet NormalDescriptor{};
+			NormalDescriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			NormalDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			NormalDescriptor.pImageInfo = &NormalImageInfo;
+
+			std::vector<VkWriteDescriptorSet> DescriptorWrites
+			{
+				TransformBufferDescriptor,
+				LightBufferDescriptor,
+				BaseColorDescriptor,
+				NormalDescriptor
+			};
+
+			for (int j = 0; j < DescriptorWrites.size(); ++j)
+			{
+				DescriptorWrites[j].dstSet = DescriptorSets[i];
+				DescriptorWrites[j].dstArrayElement = 0;
+				DescriptorWrites[j].dstBinding = j;
+				DescriptorWrites[j].descriptorCount = 1;
+			}
 
 			vkUpdateDescriptorSets(Device, static_cast<uint32_t>(DescriptorWrites.size()), DescriptorWrites.data(), 0, nullptr);
 		}
