@@ -342,7 +342,7 @@ void Run(int argc, char** argv)
 	for (int Idx = 0; Idx < 6; ++Idx)
 	{
 		EarthTextureSources[Idx] = FAssetManager::CreateAsset<FTextureSource>();
-		EarthTextureSources[Idx]->Load(ImageDirectory + "EarthMap_" + std::string(1, '0' + Idx) + ".png");
+		EarthTextureSources[Idx]->Load(ImageDirectory + "Skybox_" + std::string(1, '0' + Idx) + ".jpg");
 	}
 
 	FWorld* World = GEngine->GetWorld();
