@@ -33,6 +33,8 @@ bool FTextureSource::Load(const std::string& InFilename)
 		return false;
 	}
 
+	stbi_set_flip_vertically_on_load(true);
+
 	assert(OutWidth >= 0);
 	assert(OutHeight >= 0);
 	assert(OutNumChannels >= 0);
