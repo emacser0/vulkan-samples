@@ -39,6 +39,22 @@ layout(location = 3) in mat3 inTBN;
 
 layout(location = 0) out vec4 outColor;
 
+vec4 hdrToneMapping(vec4 inColor)
+{
+    vec3 outColor = vec3(inColor);
+    outColor = outColor / (outColor + vec3(1.0));
+
+    return vec4(outColor, inColor.a);
+}
+
+vec4 gammaCorrection(vec4 inColor)
+{
+    vec3 outColor = vec3(inColor);
+    outColor = pow(outColor, vec3(1.0 / 2.2));
+
+    return vec4(outColor, inColor.a);
+}
+
 void main()
 {
     vec3 N = normalize(inNormal);
@@ -80,4 +96,6 @@ void main()
     }
 
     outColor = (ambient + diffuse) * texture(baseColorSampler, inTexCoord) + specular;
+//    outColor = hdrToneMapping(outColor);
+//    outColor = gammaCorrection(outColor);
 }

@@ -12,6 +12,7 @@
 #include "imgui/imgui_impl_glfw.h"
 
 #include <stdexcept>
+#include <filesystem>
 
 FEngine* GEngine;
 
@@ -32,6 +33,7 @@ FEngine::FEngine()
 {
 	InitializeGLFW();
 	CreateGLFWWindow();
+	CompileShaders();
 
 	RenderContext = new FVulkanContext(Window);
 	Scene = RenderContext->CreateObject<FVulkanScene>();
@@ -103,3 +105,25 @@ void FEngine::CreateGLFWWindow()
 		throw std::runtime_error("Failed to create window");
 	}
 }
+
+void FEngine::CompileShaders()
+{
+	std::string ShaderDirectory;
+	GConfig->Get("ShaderDirectory", ShaderDirectory);
+
+	for (const auto& Entry : std::filesystem::directory_iterator(ShaderDirectory))
+	{
+		std::string Filename = Entry.path().string();
+		std::string Extension = Entry.path().extension().string();
+		if (Extension == ".vert" || Extension == ".frag" || Extension == ".geom")
+		{
+			std::string Command = "glslang -g -V ";
+			Command += Filename;
+			Command += " -o ";
+			Command += Filename + ".spv";
+
+			system(Command.c_str());
+		}
+	}
+}
+

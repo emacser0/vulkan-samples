@@ -24,7 +24,6 @@
 #include <thread>
 #include <iostream>
 #include <stdexcept>
-#include <filesystem>
 #include <cstdlib>
 
 #include "glm/glm.hpp"
@@ -170,12 +169,9 @@ public:
 	virtual ~FMainWidget() { }
 
 	virtual void Draw();
-	void OnShaderItemSelected(const std::string& NewSelectedItem);
 
 private:
 	bool bInitialized;
-	std::vector<std::string> ShaderItems;
-	std::string CurrentShaderItem;
 
 	glm::vec3 LightPosition;
 	glm::vec4 Ambient;
@@ -189,8 +185,6 @@ private:
 
 FMainWidget::FMainWidget()
 	: bInitialized(false)
-	, ShaderItems({ "phong", "blinn_phong" })
-	, CurrentShaderItem(ShaderItems[1])
 	, bShowTBN(false)
 {
 	LightPosition = glm::vec3(1.0f);
@@ -210,25 +204,6 @@ void FMainWidget::Draw()
 		ImGui::SetWindowPos(ImVec2(20, 20));
 		ImGui::SetWindowSize(ImVec2(300, 300));
 		bInitialized = true;
-	}
-
-	if (ImGui::BeginCombo("Shader", CurrentShaderItem.c_str()))
-	{
-		for (const std::string& Item : ShaderItems)
-		{
-			bool bIsSelected = CurrentShaderItem == Item;
-			if (ImGui::Selectable(Item.c_str(), bIsSelected))
-			{
-				CurrentShaderItem = Item;
-				OnShaderItemSelected(CurrentShaderItem.c_str());
-			}
-
-			if (bIsSelected)
-			{
-				ImGui::SetItemDefaultFocus();
-			}
-		}
-		ImGui::EndCombo();
 	}
 
 	ImGui::BeginGroup();
@@ -261,18 +236,6 @@ void FMainWidget::Draw()
 	ImGui::End();
 }
 
-void FMainWidget::OnShaderItemSelected(const std::string& NewSelectedItem)
-{
-	if (NewSelectedItem == "phong")
-	{
-		MeshRenderer->SetPipelineIndex(0);
-	}
-	else if (NewSelectedItem == "blinn_phong")
-	{
-		MeshRenderer->SetPipelineIndex(1);
-	}
-}
-
 void Run(int argc, char** argv)
 {
 	srand(time(0));
@@ -296,21 +259,6 @@ void Run(int argc, char** argv)
 	GConfig->Set("MeshDirectory", SolutionDirectory + "resources/meshes/");
 
 	FEngine::Init();
-
-	for (const auto& Entry : std::filesystem::directory_iterator(ProjectDirectory + "Shaders"))
-	{
-		std::string Filename = Entry.path().string();
-		std::string Extension = Entry.path().extension().string();
-		if (Extension == ".vert" || Extension == ".frag" || Extension == ".geom")
-		{
-			std::string Command = "glslang -g -V ";
-			Command += Filename;
-			Command += " -o ";
-			Command += Filename + ".spv";
-
-			system(Command.c_str());
-		}
-	}
 
 	GLFWwindow* Window = GEngine->GetWindow();
 
@@ -368,7 +316,6 @@ void Run(int argc, char** argv)
 
 	FVulkanContext* RenderContext = GEngine->GetRenderContext();
 	MeshRenderer = RenderContext->CreateObject<FVulkanMeshRenderer>();
-	MeshRenderer->SetPipelineIndex(1);
 
 	float TargetFPS;
 	GConfig->Get("TargetFPS", TargetFPS);

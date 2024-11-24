@@ -571,13 +571,13 @@ void FSingleObjectRenderer::CreateGraphicsPipeline()
 	GConfig->Get("ShaderDirectory", ShaderDirectory);
 
 	std::vector<char> VertexShaderCode;
-	if (ReadFile(ShaderDirectory + "vert.spv", VertexShaderCode) == false)
+	if (ReadFile(ShaderDirectory + "main.vert.spv", VertexShaderCode) == false)
 	{
 		throw std::runtime_error("Failed to open file.");
 	}
 
 	std::vector<char> FragmentShaderCode;
-	if (ReadFile(ShaderDirectory + "frag.spv", FragmentShaderCode) == false)
+	if (ReadFile(ShaderDirectory + "main.frag.spv", FragmentShaderCode) == false)
 	{
 		throw std::runtime_error("Failed to open file.");
 	}

@@ -19,6 +19,7 @@ public:
 private:
 	void InitializeGLFW();
 	void CreateGLFWWindow();
+	void CompileShaders();
 
 private:
 	struct GLFWwindow* Window;

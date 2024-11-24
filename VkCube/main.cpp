@@ -6,6 +6,7 @@
 #include <ctime>
 #include <chrono>
 #include <thread>
+#include <filesystem>
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -86,6 +87,24 @@ void Update(float InDeltaTime)
 	bInitialized = true;
 }
 
+void CompileShaders(const std::string& InDirectory)
+{
+	for (const auto& Entry : std::filesystem::directory_iterator(InDirectory))
+	{
+		std::string Filename = Entry.path().string();
+		std::string Extension = Entry.path().extension().string();
+		if (Extension == ".vert" || Extension == ".frag" || Extension == ".geom")
+		{
+			std::string Command = "glslang -g -V ";
+			Command += Filename;
+			Command += " -o ";
+			Command += Filename + ".spv";
+
+			system(Command.c_str());
+		}
+	}
+}
+
 void Run(int argc, char** argv)
 {
 	FEngine::Init();
@@ -104,6 +123,11 @@ void Run(int argc, char** argv)
 	GConfig->Set("ShaderDirectory", ProjectDirectory + "shaders/");
 	GConfig->Set("ImageDirectory", SolutionDirectory + "resources/images/");
 	GConfig->Set("MeshDirectory", SolutionDirectory + "resources/meshes/");
+
+	std::string ShaderDirectory;
+	GConfig->Get("ShaderDirectory", ShaderDirectory);
+
+	CompileShaders(ShaderDirectory);
 
 	InitializeGLFW();
 	CreateGLFWWindow();

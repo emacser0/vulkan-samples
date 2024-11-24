@@ -13,6 +13,7 @@
 #include <thread>
 #include <iostream>
 #include <stdexcept>
+#include <filesystem>
 
 #include "glm/glm.hpp"
 #include "glm/gtc/matrix_transform.hpp"
@@ -114,6 +115,24 @@ int RandRange(int Min, int Max)
 	return rand() % (Max - Min + 1) + Min;
 }
 
+void CompileShaders(const std::string& InDirectory)
+{
+	for (const auto& Entry : std::filesystem::directory_iterator(InDirectory))
+	{
+		std::string Filename = Entry.path().string();
+		std::string Extension = Entry.path().extension().string();
+		if (Extension == ".vert" || Extension == ".frag" || Extension == ".geom")
+		{
+			std::string Command = "glslang -g -V ";
+			Command += Filename;
+			Command += " -o ";
+			Command += Filename + ".spv";
+
+			system(Command.c_str());
+		}
+	}
+}
+
 void Run(int argc, char** argv)
 {
 	srand(time(0));
@@ -137,6 +156,11 @@ void Run(int argc, char** argv)
 	GConfig->Set("MeshDirectory", SolutionDirectory + "resources/meshes/");
 
 	FEngine::Init();
+
+	std::string ShaderDirectory;
+	GConfig->Get("ShaderDirectory", ShaderDirectory);
+
+	CompileShaders(ShaderDirectory);
 
 	GLFWwindow* Window = GEngine->GetWindow();
 
