@@ -79,5 +79,5 @@ void main()
 		specular += pow(max(dot(N, H), 0.0), 3 * light.shininess) * light.specular;
     }
 
-    outColor = (ambient + diffuse) * texture(baseColorSampler, inTexCoord) + specular;
+    outColor = (ambient + diffuse + specular) * texture(baseColorSampler, inTexCoord);
 }

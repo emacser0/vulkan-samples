@@ -42,6 +42,7 @@ FVulkanModel* AMeshActor::CreateRenderModel()
 	if (Normal != nullptr)
 	{
 		FVulkanTexture* NewTexture = RenderContext->CreateObject<FVulkanTexture>();
+		NewTexture->SetFormat(VK_FORMAT_R8G8B8A8_UNORM);
 		NewTexture->LoadSource(Normal);
 		NewMesh->SetNormalTexture(NewTexture);
 	}

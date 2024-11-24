@@ -22,8 +22,9 @@ public:
 	uint32_t GetWidth() const { return Width; }
 	uint32_t GetHeight() const { return Height; }
 	VkFormat GetFormat() const { return Format; }
-
 	FVulkanImage* GetImage() const { return Image; }
+
+	void SetFormat(VkFormat InFormat) { Format = InFormat; }
 
 private:
 	class FVulkanImage* Image;

@@ -193,7 +193,7 @@ void FWorld::UpdateRenderScene()
 				PointLights.push_back(Light);
 			}
 		}
-		else if (Actor->GetTypeId() == APointLightActor::StaticTypeId())
+		else if (Actor->GetTypeId() == ADirectionalLightActor::StaticTypeId())
 		{
 			if (ADirectionalLightActor* DirectionalLight = Cast<ADirectionalLightActor>(Actor))
 			{
