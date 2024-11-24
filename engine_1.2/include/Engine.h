@@ -21,6 +21,10 @@ private:
 	void CreateGLFWWindow();
 	void CompileShaders();
 
+	static void OnMouseButtonEvent(GLFWwindow* InWindow, int InButton, int InAction, int InMods);
+	static void OnMouseWheelEvent(GLFWwindow* InWindow, double InXOffset, double InYOffset);
+	static void OnKeyEvent(GLFWwindow* InWindow, int InKey, int InScanCode, int InAction, int InMods);
+
 private:
 	struct GLFWwindow* Window;
 	class FWorld* World;

@@ -34,125 +34,6 @@
 
 #include "imgui/imgui.h"
 
-glm::vec3 CameraMoveDelta(0.0f);
-
-double PrevMouseX, PrevMouseY;
-
-void OnMouseButtonEvent(GLFWwindow* Window, int Button, int Action, int Mods)
-{
-	if (Button == GLFW_MOUSE_BUTTON_RIGHT)
-	{
-		if (Action == GLFW_PRESS)
-		{
-			glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
-			glfwGetCursorPos(Window, &PrevMouseX, &PrevMouseY);
-		}
-		else if (Action == GLFW_RELEASE)
-		{
-			glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
-		}
-	}
-}
-
-void OnMouseWheelEvent(GLFWwindow* Window, double XOffset, double YOffset)
-{
-	FWorld* World = GEngine->GetWorld();
-	if (World == nullptr)
-	{
-		return;
-	}
-
-	if (abs(YOffset) >= DBL_EPSILON)
-	{
-		ACameraActor* Camera = World->GetCamera();
-		if (Camera == nullptr)
-		{
-			return;
-		}
-
-		glm::mat4 RotationMatrix = glm::toMat4(Camera->GetRotation());
-
-		glm::vec4 MoveVector(0.0f, 0.0f, -YOffset, 1.0f);
-
-		float CameraMoveSpeed;
-		GConfig->Get("CameraMoveSpeed", CameraMoveSpeed);
-
-		Camera->SetLocation(Camera->GetLocation() + glm::vec3(RotationMatrix * MoveVector) * CameraMoveSpeed * 0.1f);
-	}
-}
-
-void OnKeyEvent(GLFWwindow* Window, int Key, int ScanCode, int Action, int Mods)
-{
-	if (Key == GLFW_KEY_W)
-	{
-		if (Action == GLFW_PRESS)
-		{
-			CameraMoveDelta.z = -1.0f;
-		}
-		else if (Action == GLFW_RELEASE && CameraMoveDelta.z == -1.0f)
-		{
-			CameraMoveDelta.z = 0.0f;
-		}
-	}
-	else if (Key == GLFW_KEY_S)
-	{
-		if (Action == GLFW_PRESS)
-		{
-			CameraMoveDelta.z = 1.0f;
-		}
-		else if (Action == GLFW_RELEASE && CameraMoveDelta.z == 1.0f)
-		{
-			CameraMoveDelta.z = 0.0f;
-		}
-	}
-	else if (Key == GLFW_KEY_A)
-	{
-		if (Action == GLFW_PRESS)
-		{
-			CameraMoveDelta.x = -1.0f;
-		}
-		else if (Action == GLFW_RELEASE && CameraMoveDelta.x == -1.0f)
-		{
-			CameraMoveDelta.x = 0.0f;
-		}
-	}
-	else if (Key == GLFW_KEY_D)
-	{
-		if (Action == GLFW_PRESS)
-		{
-			CameraMoveDelta.x = 1.0f;
-		}
-		else if (Action == GLFW_RELEASE && CameraMoveDelta.x == 1.0f)
-		{
-			CameraMoveDelta.x = 0.0f;
-		}
-	}
-	else if (Key == GLFW_KEY_LEFT_CONTROL)
-	{
-		if (Action == GLFW_PRESS)
-		{
-			CameraMoveDelta.y = 1.0f;
-		}
-		else if (Action == GLFW_RELEASE && CameraMoveDelta.y == 1.0f)
-		{
-			CameraMoveDelta.y = 0.0f;
-		}
-	}
-	else if (Key == GLFW_KEY_SPACE)
-	{
-		if (Action == GLFW_PRESS)
-		{
-			CameraMoveDelta.y = -1.0f;
-		}
-		else if (Action == GLFW_RELEASE && CameraMoveDelta.y == -1.0f)
-		{
-			CameraMoveDelta.y = 0.0f;
-		}
-	}
-}
-
-void Update(float InDeltaTime); 
-
 int RandRange(int Min, int Max)
 {
 	return rand() % (Max - Min + 1) + Min;
@@ -295,10 +176,6 @@ void Run(int argc, char** argv)
 
 	GLFWwindow* Window = GEngine->GetWindow();
 
-	glfwSetMouseButtonCallback(Window, OnMouseButtonEvent);
-	glfwSetScrollCallback(Window, OnMouseWheelEvent);
-	glfwSetKeyCallback(Window, OnKeyEvent);
-
 	FVulkanUIRenderer* UIRenderer = GEngine->GetUIRenderer();
 	UIRenderer->Ready();
 
@@ -379,7 +256,6 @@ void Run(int argc, char** argv)
 		float DeltaTime = static_cast<float>(CurrentFrameTime - PreviousFrameTime) / CLOCKS_PER_SEC;
 
 		glfwPollEvents();
-		Update(DeltaTime);
 
 		GEngine->Tick(DeltaTime);
 
@@ -411,64 +287,6 @@ void Run(int argc, char** argv)
 
 	FEngine::Exit();
 	FConfig::Shutdown();
-}
-
-void Update(float InDeltaTime)
-{
-	GLFWwindow* Window = GEngine->GetWindow();
-	if (glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_RIGHT) != GLFW_PRESS)
-	{
-		return;
-	}
-
-	FWorld* World = GEngine->GetWorld();
-	if (World == nullptr)
-	{
-		return;
-	}
-
-	glm::vec3 RotationDelta(0.0f);
-
-	double MouseX, MouseY;
-	glfwGetCursorPos(Window, &MouseX, &MouseY);
-
-	ACameraActor* Camera = World->GetCamera();
-	if (Camera)
-	{
-		double MouseDeltaX = MouseX - PrevMouseX;
-		double MouseDeltaY = MouseY - PrevMouseY;
-
-		float MouseSensitivity;
-		GConfig->Get("MouseSensitivity", MouseSensitivity);
-
-		float PitchAmount = MouseDeltaY * MouseSensitivity * InDeltaTime;
-		float YawAmount = -MouseDeltaX * MouseSensitivity * InDeltaTime;
-
-		if (abs(PitchAmount) > FLT_EPSILON || abs(YawAmount) > FLT_EPSILON)
-		{
-			glm::quat PitchRotation = glm::angleAxis(PitchAmount, glm::vec3(1.0f, 0.0f, 0.0f));
-			glm::quat YawRotation = glm::angleAxis(YawAmount, glm::vec3(0.0f, 1.0f, 0.0f));
-
-			Camera->SetRotation(YawRotation * Camera->GetRotation() * PitchRotation);
-		}
-
-		PrevMouseX = MouseX;
-		PrevMouseY = MouseY;
-
-		glm::mat4 RotationMatrix = glm::toMat4(Camera->GetRotation());
-
-		glm::vec4 MoveVector = RotationMatrix * glm::vec4(glm::normalize(CameraMoveDelta), 1.0f);
-		glm::vec3 FinalMoveDelta(MoveVector);
-		FinalMoveDelta = glm::normalize(FinalMoveDelta);
-
-		float CameraMoveSpeed;
-		GConfig->Get("CameraMoveSpeed", CameraMoveSpeed);
-
-		if (glm::length(FinalMoveDelta) > FLT_EPSILON)
-		{
-			Camera->SetLocation(Camera->GetLocation() + FinalMoveDelta * CameraMoveSpeed * InDeltaTime);
-		}
-	}
 }
 
 int main(int argc, char** argv)

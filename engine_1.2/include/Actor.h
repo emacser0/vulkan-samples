@@ -32,6 +32,12 @@ public:
 	virtual void Deinitialize();
 	virtual void Tick(float DeltaTime);
 
+	virtual void OnMouseButtonDown(int InButton, int InMods) { }
+	virtual void OnMouseButtonUp(int InButton, int InMods) { }
+	virtual void OnMouseWheel(double InXOffset, double InYOffset) { }
+	virtual void OnKeyDown(int InKey, int InScanCode, int InMods) { }
+	virtual void OnKeyUp(int InKey, int InScanCode, int InMods) { }
+
 	class FWorld* GetWorld() const;
 	void SetWorld(class FWorld* InWorld);
 

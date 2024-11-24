@@ -15,6 +15,7 @@
 #include "imgui/imgui_impl_glfw.h"
 
 #include <stdexcept>
+#include <cassert>
 #include <filesystem>
 
 FEngine* GEngine;
@@ -109,6 +110,10 @@ void FEngine::CreateGLFWWindow()
 	{
 		throw std::runtime_error("Failed to create window");
 	}
+
+	glfwSetMouseButtonCallback(Window, OnMouseButtonEvent);
+	glfwSetScrollCallback(Window, OnMouseWheelEvent);
+	glfwSetKeyCallback(Window, OnKeyEvent);
 }
 
 void FEngine::CompileShaders()
@@ -132,3 +137,61 @@ void FEngine::CompileShaders()
 	}
 }
 
+void FEngine::OnMouseButtonEvent(GLFWwindow* InWindow, int InButton, int InAction, int InMods)
+{
+	assert(GEngine != nullptr);
+	FWorld* World = GEngine->GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	for (AActor* Actor : World->GetActors())
+	{
+		if (InAction == GLFW_PRESS)
+		{
+			Actor->OnMouseButtonDown(InButton, InMods);
+		}
+		else if (InAction == GLFW_RELEASE)
+		{
+			Actor->OnMouseButtonUp(InButton, InMods);
+		}
+	}
+}
+
+void FEngine::OnMouseWheelEvent(GLFWwindow* InWindow, double InXOffset, double InYOffset)
+{
+	assert(GEngine != nullptr);
+	FWorld* World = GEngine->GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	for (AActor* Actor : World->GetActors())
+	{
+		Actor->OnMouseWheel(InXOffset, InYOffset);
+	}
+}
+
+void FEngine::OnKeyEvent(GLFWwindow* InWindow, int InKey, int InScanCode, int InAction, int InMods)
+{
+	assert(GEngine != nullptr);
+	FWorld* World = GEngine->GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	for (AActor* Actor : World->GetActors())
+	{
+		if (InAction == GLFW_PRESS)
+		{
+			Actor->OnKeyDown(InKey, InScanCode, InMods);
+		}
+		else if (InAction == GLFW_RELEASE)
+		{
+			Actor->OnKeyUp(InKey, InScanCode, InMods);
+		}
+	}
+}
