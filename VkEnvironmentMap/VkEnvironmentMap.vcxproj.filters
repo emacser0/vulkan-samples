@@ -33,4 +33,27 @@
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\blinn_phong.frag">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Shaders\blinn_phong.vert">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Shaders\sky.frag">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Shaders\sky.vert">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Shaders\visualizeTBN.frag">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Shaders\visualizeTBN.geom">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Shaders\visualizeTBN.vert">
+      <Filter>리소스 파일</Filter>
+    </None>
+  </ItemGroup>
 </Project>

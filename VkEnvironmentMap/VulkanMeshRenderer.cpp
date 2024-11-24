@@ -5,6 +5,7 @@
 #include "VulkanScene.h"
 #include "VulkanLight.h"
 #include "VulkanMesh.h"
+#include "VulkanSkyMesh.h"
 
 #include "Utils.h"
 #include "Engine.h"
@@ -95,12 +96,19 @@ void FVulkanMeshRenderer::CreateDescriptorSetLayout()
 	NormalSamplerBinding.pImmutableSamplers = nullptr;
 	NormalSamplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
+	VkDescriptorSetLayoutBinding CubemapSamplerBinding{};
+	CubemapSamplerBinding.descriptorCount = 1;
+	CubemapSamplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	CubemapSamplerBinding.pImmutableSamplers = nullptr;
+	CubemapSamplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
 	std::vector<VkDescriptorSetLayoutBinding> Bindings =
 	{
 		TransformBufferBinding,
 		LightBufferBinding,
 		BaseColorSamplerBinding,
-		NormalSamplerBinding
+		NormalSamplerBinding,
+		CubemapSamplerBinding
 	};
 
 	for (int Idx = 0; Idx < Bindings.size(); ++Idx)
@@ -599,6 +607,36 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 {
 	VkDevice Device = Context->GetDevice();
 
+	FWorld* World = GEngine->GetWorld();
+	if (World == nullptr)
+	{
+		return;
+	}
+
+	FVulkanScene* Scene = World->GetRenderScene();
+	if (Scene == nullptr)
+	{
+		return;
+	}
+
+	FVulkanModel* Sky = Scene->GetSky();
+	if (Sky == nullptr)
+	{
+		return;
+	}
+
+	FVulkanSkyMesh* SkyMesh = Cast<FVulkanSkyMesh>(Sky->GetMesh());
+	if (SkyMesh == nullptr)
+	{
+		return;
+	}
+
+	FVulkanTexture* Cubemap = SkyMesh->GetCubemapTexture();
+	if (Cubemap == nullptr)
+	{
+		return;
+	}
+
 	for (const auto& Pair : InstancedDrawingMap)
 	{
 		FVulkanMesh* Mesh = static_cast<FVulkanMesh*>(Pair.first);
@@ -663,12 +701,23 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 			NormalDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			NormalDescriptor.pImageInfo = &NormalImageInfo;
 
+			VkDescriptorImageInfo CubemapImageInfo{};
+			CubemapImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			CubemapImageInfo.imageView = Cubemap->GetImage()->GetView();
+			CubemapImageInfo.sampler = Sampler->GetSampler();
+
+			VkWriteDescriptorSet CubemapDescriptor{};
+			CubemapDescriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			CubemapDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			CubemapDescriptor.pImageInfo = &CubemapImageInfo;
+
 			std::vector<VkWriteDescriptorSet> DescriptorWrites
 			{
 				TransformBufferDescriptor,
 				LightBufferDescriptor,
 				BaseColorDescriptor,
-				NormalDescriptor
+				NormalDescriptor,
+				CubemapDescriptor
 			};
 
 			for (int j = 0; j < DescriptorWrites.size(); ++j)

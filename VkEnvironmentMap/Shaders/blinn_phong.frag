@@ -31,6 +31,7 @@ layout(std140, binding = 1) uniform LightBuffer
 
 layout(binding = 2) uniform sampler2D baseColorSampler;
 layout(binding = 3) uniform sampler2D normalSampler;
+layout(binding = 4) uniform samplerCube cubemapSampler;
 
 layout(location = 0) in vec4 inPosition;
 layout(location = 1) in vec3 inNormal;
@@ -61,9 +62,10 @@ void main()
     vec3 V = normalize(-inPosition.xyz);
 
     vec3 tangentNormal = normalize(texture(normalSampler, inTexCoord).rgb * 2.0 - 1.0);
-    N = normalize(inTBN * tangentNormal);
+    //N = normalize(inTBN * tangentNormal);
 
-    vec4 baseColor = texture(baseColorSampler, inTexCoord);
+    vec3 R = reflect(-V, N);
+    vec4 baseColor = texture(cubemapSampler, R);
 
     vec4 ambient = lightBuffer.pointLights[0].ambient;
     vec4 diffuse = vec4(0.0);
@@ -95,7 +97,7 @@ void main()
 		specular += pow(max(dot(N, H), 0.0), 3 * light.shininess) * light.specular;
     }
 
-    outColor = (ambient + diffuse) * texture(baseColorSampler, inTexCoord) + specular;
+    outColor = baseColor;
 //    outColor = hdrToneMapping(outColor);
 //    outColor = gammaCorrection(outColor);
 }
