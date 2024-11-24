@@ -163,6 +163,7 @@ FVulkanMeshRenderer* MeshRenderer;
 FVulkanSkyRenderer* SkyRenderer;
 
 APointLightActor* PointLight;
+ADirectionalLightActor* DirectionalLight;
 
 class FMainWidget : public FWidget
 {
@@ -178,12 +179,19 @@ private:
 	std::vector<std::string> ShaderItems;
 	std::string CurrentShaderItem;
 
-	glm::vec3 LightPosition;
-	glm::vec4 Ambient;
-	glm::vec4 Diffuse;
-	glm::vec4 Specular;
-	glm::vec4 Attenuation;
-	float Shininess;
+	glm::vec3 PointLightPosition;
+	glm::vec4 PointAmbient;
+	glm::vec4 PointDiffuse;
+	glm::vec4 PointSpecular;
+	glm::vec4 PointAttenuation;
+	float PointShininess;
+
+	glm::vec3 DirDirection;
+	glm::vec4 DirAmbient;
+	glm::vec4 DirDiffuse;
+	glm::vec4 DirSpecular;
+	glm::vec4 DirAttenuation;
+	float DirShininess;
 
 	bool bShowTBN;
 };
@@ -194,12 +202,19 @@ FMainWidget::FMainWidget()
 	, CurrentShaderItem(ShaderItems[1])
 	, bShowTBN(false)
 {
-	LightPosition = glm::vec3(1.0f);
-	Ambient = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
-	Diffuse = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
-	Specular = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
-	Attenuation = glm::vec4(1.0f, 0.1f, 0.1f, 1.0f);
-	Shininess = 32;
+	PointLightPosition = glm::vec3(1.0f);
+	PointAmbient = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
+	PointDiffuse = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+	PointSpecular = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+	PointAttenuation = glm::vec4(1.0f, 0.1f, 0.1f, 1.0f);
+	PointShininess = 32;
+
+	DirDirection = glm::vec3(0.0f, 1.0f, 0.0f);
+	DirAmbient = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
+	DirDiffuse = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+	DirSpecular = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+	DirAttenuation = glm::vec4(1.0f, 0.1f, 0.1f, 1.0f);
+	DirShininess = 32;
 }
 
 void FMainWidget::Draw()
@@ -232,21 +247,42 @@ void FMainWidget::Draw()
 		ImGui::EndCombo();
 	}
 
-	ImGui::InputFloat3("LightPosition", &LightPosition[0]);
-	ImGui::SliderFloat4("Ambient", &Ambient[0], 0.0f, 1.0f);
-	ImGui::SliderFloat4("Diffuse", &Diffuse[0], 0.0f, 1.0f);
-	ImGui::SliderFloat4("Specular", &Specular[0], 0.0f, 1.0f);
-	ImGui::SliderFloat4("Attenuation", &Attenuation[0], 0.0f, 1.0f);
-	ImGui::SliderFloat("Shininess", &Shininess, 1.0f, 128.0f);
+	ImGui::Text("Point Light");
+
+	ImGui::InputFloat3("Point Position", &PointLightPosition[0]);
+	ImGui::SliderFloat4("Point Ambient", &PointAmbient[0], 0.0f, 1.0f);
+	ImGui::SliderFloat4("Point Diffuse", &PointDiffuse[0], 0.0f, 1.0f);
+	ImGui::SliderFloat4("Point Specular", &PointSpecular[0], 0.0f, 1.0f);
+	ImGui::SliderFloat4("Point Attenuation", &PointAttenuation[0], 0.0f, 1.0f);
+	ImGui::SliderFloat("Point Shininess", &PointShininess, 1.0f, 128.0f);
 
 	if (PointLight != nullptr)
 	{
-		PointLight->SetLocation(LightPosition);
-		PointLight->SetAmbient(Ambient);
-		PointLight->SetDiffuse(Diffuse);
-		PointLight->SetSpecular(Specular);
-		PointLight->SetAttenuation(Attenuation);
-		PointLight->SetShininess(Shininess);
+		PointLight->SetLocation(PointLightPosition);
+		PointLight->SetAmbient(PointAmbient);
+		PointLight->SetDiffuse(PointDiffuse);
+		PointLight->SetSpecular(PointSpecular);
+		PointLight->SetAttenuation(PointAttenuation);
+		PointLight->SetShininess(PointShininess);
+	}
+
+	ImGui::Text("Directional Light");
+
+	ImGui::InputFloat3("Directional Direction", &DirDirection[0]);
+	ImGui::SliderFloat4("Directional Ambient", &DirAmbient[0], 0.0f, 1.0f);
+	ImGui::SliderFloat4("Directional Diffuse", &DirDiffuse[0], 0.0f, 1.0f);
+	ImGui::SliderFloat4("Directional Specular", &DirSpecular[0], 0.0f, 1.0f);
+	ImGui::SliderFloat4("Directional Attenuation", &DirAttenuation[0], 0.0f, 1.0f);
+	ImGui::SliderFloat("Directional Shininess", &DirShininess, 1.0f, 128.0f);
+
+	if (DirectionalLight != nullptr)
+	{
+		DirectionalLight->SetDirection(DirDirection);
+		DirectionalLight->SetAmbient(DirAmbient);
+		DirectionalLight->SetDiffuse(DirDiffuse);
+		DirectionalLight->SetSpecular(DirSpecular);
+		DirectionalLight->SetAttenuation(DirAttenuation);
+		DirectionalLight->SetShininess(DirShininess);
 	}
 
 	ImGui::Checkbox("Show TBN", &bShowTBN);
@@ -276,7 +312,8 @@ void Run(int argc, char** argv)
 
 	FConfig::Startup();
 
-	std::string ProjectDirectory = SOLUTION_DIRECTORY PROJECT_NAME "/";
+	std::string SolutionDirectory = SOLUTION_DIRECTORY;
+	std::string ProjectDirectory = SolutionDirectory + PROJECT_NAME "/";
 
 	GConfig->Set("ApplicationName", PROJECT_NAME);
 	GConfig->Set("EngineName", "No Engine");
@@ -287,9 +324,9 @@ void Run(int argc, char** argv)
 	GConfig->Set("MaxConcurrentFrames", 2);
 	GConfig->Set("MouseSensitivity", 0.5f);
 	GConfig->Set("CameraMoveSpeed", 1.0f);
-	GConfig->Set("ShaderDirectory", ProjectDirectory + "Shaders/");
-	GConfig->Set("ImageDirectory", ProjectDirectory + "Images/");
-	GConfig->Set("ResourceDirectory", ProjectDirectory + "Resources/");
+	GConfig->Set("ShaderDirectory", ProjectDirectory + "shaders/");
+	GConfig->Set("ImageDirectory", SolutionDirectory + "resources/images/");
+	GConfig->Set("MeshDirectory", SolutionDirectory + "resources/meshes/");
 
 	FEngine::Init();
 
@@ -320,14 +357,14 @@ void Run(int argc, char** argv)
 	std::shared_ptr<FWidget> MainWidget = std::make_shared<FMainWidget>();
 	UIRenderer->AddWidget(MainWidget);
 
-	std::string ResourceDirectory;
-	GConfig->Get("ResourceDirectory", ResourceDirectory);
+	std::string MeshDirectory;
+	GConfig->Get("MeshDirectory", MeshDirectory);
 
 	std::string ImageDirectory;
 	GConfig->Get("ImageDirectory", ImageDirectory);
 
 	FMesh* SphereMeshAsset = FAssetManager::CreateAsset<FMesh>();
-	SphereMeshAsset->Load(ResourceDirectory + "sphere.fbx");
+	SphereMeshAsset->Load(MeshDirectory + "sphere.fbx");
 
 	FTextureSource* BrickBaseColorTextureSource = FAssetManager::CreateAsset<FTextureSource>();
 	BrickBaseColorTextureSource->Load(ImageDirectory + "Brick_BaseColor.jpg");
@@ -348,6 +385,7 @@ void Run(int argc, char** argv)
 	FWorld* World = GEngine->GetWorld();
 
 	PointLight = World->SpawnActor<APointLightActor>();
+	DirectionalLight = World->SpawnActor<ADirectionalLightActor>();
 
 	AMeshActor* LightSourceActor = World->SpawnActor<AMeshActor>();
 	LightSourceActor->SetMeshAsset(SphereMeshAsset);

@@ -120,7 +120,8 @@ void Run(int argc, char** argv)
 
 	FConfig::Startup();
 
-	std::string ProjectDirectory = SOLUTION_DIRECTORY PROJECT_NAME "/";
+	std::string SolutionDirectory = SOLUTION_DIRECTORY;
+	std::string ProjectDirectory = SolutionDirectory + PROJECT_NAME "/";
 
 	GConfig->Set("ApplicationName", PROJECT_NAME);
 	GConfig->Set("EngineName", "No Engine");
@@ -131,9 +132,9 @@ void Run(int argc, char** argv)
 	GConfig->Set("MaxConcurrentFrames", 2);
 	GConfig->Set("MouseSensitivity", 0.5f);
 	GConfig->Set("CameraMoveSpeed", 1.0f);
-	GConfig->Set("ShaderDirectory", ProjectDirectory + "Shaders/");
-	GConfig->Set("ImageDirectory", ProjectDirectory + "Images/");
-	GConfig->Set("ResourceDirectory", ProjectDirectory + "Resources/");
+	GConfig->Set("ShaderDirectory", ProjectDirectory + "shaders/");
+	GConfig->Set("ImageDirectory", SolutionDirectory + "resources/images/");
+	GConfig->Set("MeshDirectory", SolutionDirectory + "resources/meshes/");
 
 	FEngine::Init();
 
@@ -146,8 +147,8 @@ void Run(int argc, char** argv)
 	FVulkanUIRenderer* UIRenderer = GEngine->GetUIRenderer();
 	UIRenderer->Ready();
 
-	std::string ResourceDirectory;
-	GConfig->Get("ResourceDirectory", ResourceDirectory);
+	std::string MeshDirectory;
+	GConfig->Get("MeshDirectory", MeshDirectory);
 
 	std::string ImageDirectory;
 	GConfig->Get("ImageDirectory", ImageDirectory);
@@ -161,7 +162,7 @@ void Run(int argc, char** argv)
 	Texture->LoadSource(TextureSource);
 
 	FVulkanMesh* Mesh = new FVulkanMesh(RenderContext);
-	Mesh->Load(ResourceDirectory + "cube.obj");
+	Mesh->Load(MeshDirectory + "cube.obj");
 	Mesh->SetTexture(Texture);
 
 	for (int32_t Idx = 0; Idx < 100; ++Idx)
