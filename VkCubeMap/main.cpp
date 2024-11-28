@@ -71,11 +71,17 @@ private:
 	float DirShininess;
 
 	bool bShowTBN;
+	bool bEnableAttenuation;
+	bool bEnableGammaCorrection;
+	bool bEnableToneMapping;
 };
 
 FMainWidget::FMainWidget()
 	: bInitialized(false)
 	, bShowTBN(false)
+	, bEnableAttenuation(false)
+	, bEnableGammaCorrection(false)
+	, bEnableToneMapping(false)
 {
 	PointLightPosition = glm::vec3(1.0f);
 	PointAmbient = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
@@ -142,9 +148,15 @@ void FMainWidget::Draw()
 	}
 
 	ImGui::Checkbox("Show TBN", &bShowTBN);
+	ImGui::Checkbox("Light Attenuation", &bEnableAttenuation);
+	ImGui::Checkbox("Gamma Correction", &bEnableGammaCorrection);
+	ImGui::Checkbox("Tone Mapping", &bEnableToneMapping);
 	if (MeshRenderer != nullptr)
 	{
 		MeshRenderer->SetEnableTBNVisualization(bShowTBN);
+		MeshRenderer->SetEnableAttenuation(bEnableAttenuation);
+		MeshRenderer->SetEnableGammaCorrection(bEnableGammaCorrection);
+		MeshRenderer->SetEnableToneMapping(bEnableToneMapping);
 	}
 
 	ImGui::End();

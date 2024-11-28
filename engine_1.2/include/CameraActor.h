@@ -38,6 +38,7 @@ protected:
 
 	double PrevMouseX;
 	double PrevMouseY;
-	glm::vec3 MoveDelta;
+	glm::vec3 RelativeMoveDelta;
+	glm::vec3 AbsoluteMoveDelta;
 
 };

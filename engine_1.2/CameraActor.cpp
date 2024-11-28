@@ -14,7 +14,7 @@ ACameraActor::ACameraActor()
 	, Far(100.0f)
 	, PrevMouseX(0.0f)
 	, PrevMouseY(0.0f)
-	, MoveDelta(0.0f)
+	, RelativeMoveDelta(0.0f)
 {
 }
 
@@ -64,16 +64,23 @@ void ACameraActor::Tick(float InDeltaTime)
 
 	glm::mat4 RotationMatrix = glm::toMat4(GetRotation());
 
-	glm::vec4 MoveVector = RotationMatrix * glm::vec4(glm::normalize(MoveDelta), 1.0f);
-	glm::vec3 FinalMoveDelta(MoveVector);
-	FinalMoveDelta = glm::normalize(FinalMoveDelta);
-
 	float CameraMoveSpeed;
 	GConfig->Get("CameraMoveSpeed", CameraMoveSpeed);
 
-	if (glm::length(FinalMoveDelta) > FLT_EPSILON)
+	glm::vec4 RelativeMoveVector = RotationMatrix * glm::vec4(glm::normalize(RelativeMoveDelta), 1.0f);
+	glm::vec3 FinalRelativeMoveDelta(RelativeMoveVector);
+	FinalRelativeMoveDelta = glm::normalize(FinalRelativeMoveDelta);
+
+	if (glm::length(FinalRelativeMoveDelta) > FLT_EPSILON)
 	{
-		AddOffset(FinalMoveDelta * CameraMoveSpeed * InDeltaTime);
+		AddOffset(FinalRelativeMoveDelta * CameraMoveSpeed * InDeltaTime);
+	}
+
+	glm::vec3 FinalAbsoluteMoveDelta = glm::normalize(AbsoluteMoveDelta);
+
+	if (glm::length(FinalAbsoluteMoveDelta) > FLT_EPSILON)
+	{
+		AddOffset(FinalAbsoluteMoveDelta * CameraMoveSpeed * InDeltaTime);
 	}
 }
 
@@ -126,27 +133,27 @@ void ACameraActor::OnKeyDown(int InKey, int InScanCode, int InMods)
 {
 	if (InKey == GLFW_KEY_W)
 	{
-		MoveDelta.z = -1.0f;
+		RelativeMoveDelta.z = -1.0f;
 	}
 	else if (InKey == GLFW_KEY_S)
 	{
-		MoveDelta.z = 1.0f;
+		RelativeMoveDelta.z = 1.0f;
 	}
 	else if (InKey == GLFW_KEY_A)
 	{
-		MoveDelta.x = -1.0f;
+		RelativeMoveDelta.x = -1.0f;
 	}
 	else if (InKey == GLFW_KEY_D)
 	{
-		MoveDelta.x = 1.0f;
+		RelativeMoveDelta.x = 1.0f;
 	}
 	else if (InKey == GLFW_KEY_LEFT_CONTROL)
 	{
-		MoveDelta.y = 1.0f;
+		AbsoluteMoveDelta.y = 1.0f;
 	}
 	else if (InKey == GLFW_KEY_SPACE)
 	{
-		MoveDelta.y = -1.0f;
+		AbsoluteMoveDelta.y = -1.0f;
 	}
 }
 
@@ -154,47 +161,46 @@ void ACameraActor::OnKeyUp(int InKey, int InScanCode, int InMods)
 {
 	if (InKey == GLFW_KEY_W)
 	{
-		if (MoveDelta.z == -1.0f)
+		if (RelativeMoveDelta.z == -1.0f)
 		{
-			MoveDelta.z = 0.0f;
+			RelativeMoveDelta.z = 0.0f;
 		}
 	}
 	else if (InKey == GLFW_KEY_S)
 	{
-		if (MoveDelta.z == 1.0f)
+		if (RelativeMoveDelta.z == 1.0f)
 		{
-			MoveDelta.z = 0.0f;
+			RelativeMoveDelta.z = 0.0f;
 		}
 	}
 	else if (InKey == GLFW_KEY_A)
 	{
-		if (MoveDelta.x == -1.0f)
+		if (RelativeMoveDelta.x == -1.0f)
 		{
-			MoveDelta.x = 0.0f;
+			RelativeMoveDelta.x = 0.0f;
 		}
 	}
 	else if (InKey == GLFW_KEY_D)
 	{
-		if (MoveDelta.x == 1.0f)
+		if (RelativeMoveDelta.x == 1.0f)
 		{
-			MoveDelta.x = 0.0f;
+			RelativeMoveDelta.x = 0.0f;
 		}
 	}
 	else if (InKey == GLFW_KEY_LEFT_CONTROL)
 	{
-		if (MoveDelta.y == 1.0f)
+		if (AbsoluteMoveDelta.y == 1.0f)
 		{
-			MoveDelta.y = 0.0f;
+			AbsoluteMoveDelta.y = 0.0f;
 		}
 	}
 	else if (InKey == GLFW_KEY_SPACE)
 	{
-		if (MoveDelta.y == -1.0f)
+		if (AbsoluteMoveDelta.y == -1.0f)
 		{
-			MoveDelta.y = 0.0f;
+			AbsoluteMoveDelta.y = 0.0f;
 		}
 	}
-
 }
 
 glm::mat4 ACameraActor::GetViewMatrix() const

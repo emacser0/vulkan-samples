@@ -10,34 +10,21 @@ struct Light
     float shininess;
 };
 
-layout(std140, binding = 0) uniform UniformBufferObject
+layout(std140, binding = 0) uniform TransformBufferObject
 {
     mat4 view;
     mat4 projection;
     vec3 cameraPosition;
-
-    Light light;
-} ubo;
+} transformBuffer;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inTexCoord;
 layout(location = 3) in vec3 inTangent;
 
-layout(location = 4) in vec4 inModel_0;
-layout(location = 5) in vec4 inModel_1;
-layout(location = 6) in vec4 inModel_2;
-layout(location = 7) in vec4 inModel_3;
-
-layout(location = 8) in vec4 inModelView_0;
-layout(location = 9) in vec4 inModelView_1;
-layout(location = 10) in vec4 inModelView_2;
-layout(location = 11) in vec4 inModelView_3;
-
-layout(location = 12) in vec4 inNormalMatrix_0;
-layout(location = 13) in vec4 inNormalMatrix_1;
-layout(location = 14) in vec4 inNormalMatrix_2;
-layout(location = 15) in vec4 inNormalMatrix_3;
+layout(location = 4) in mat4 inModel;
+layout(location = 8) in mat4 inModelView;
+layout(location = 12) in mat4 inNormalMatrix;
 
 layout(location = 0) out vec3 outNormal;
 layout(location = 1) out vec3 outTangent;
@@ -45,13 +32,12 @@ layout(location = 2) out vec3 outBitangent;
 
 void main()
 {
-    mat4 modelView = mat4(inModelView_0, inModelView_1, inModelView_2, inModelView_3);
-    mat3 normalMatrix = mat3(mat4(inNormalMatrix_0, inNormalMatrix_1, inNormalMatrix_2, inNormalMatrix_3));
+    mat3 normalMatrix = mat3(inNormalMatrix);
 
-    vec4 position = modelView * vec4(inPosition, 1.0);
-    gl_Position = ubo.projection * position;
+    vec4 position = inModelView * vec4(inPosition, 1.0);
+    gl_Position = transformBuffer.projection * position;
 
-    outNormal = normalize(vec3(ubo.projection * ubo.view * vec4(normalMatrix * inNormal, 0.0)));
-    outTangent = normalize(vec3(ubo.projection * ubo.view * vec4(normalMatrix * inTangent, 0.0)));
+    outNormal = normalize(vec3(transformBuffer.projection * transformBuffer.view * vec4(normalMatrix * inNormal, 0.0)));
+    outTangent = normalize(vec3(transformBuffer.projection * transformBuffer.view * vec4(normalMatrix * inTangent, 0.0)));
     outBitangent = normalize(cross(outNormal, outTangent));
 }

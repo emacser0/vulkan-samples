@@ -21,12 +21,6 @@
     <None Include="Shaders\blinn_phong.vert">
       <Filter>리소스 파일</Filter>
     </None>
-    <None Include="Shaders\phong.frag">
-      <Filter>리소스 파일</Filter>
-    </None>
-    <None Include="Shaders\phong.vert">
-      <Filter>리소스 파일</Filter>
-    </None>
     <None Include="Shaders\visualizeTBN.frag">
       <Filter>리소스 파일</Filter>
     </None>

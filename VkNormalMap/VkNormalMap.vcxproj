@@ -141,8 +141,6 @@
     <None Include="Shaders\visualizeTBN.frag" />
     <None Include="Shaders\visualizeTBN.geom" />
     <None Include="Shaders\visualizeTBN.vert" />
-    <None Include="Shaders\phong.frag" />
-    <None Include="Shaders\phong.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="VulkanMeshRenderer.h" />

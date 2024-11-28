@@ -29,9 +29,16 @@ layout(std140, binding = 1) uniform LightBuffer
     DirectionalLight directionalLights[16];
 } lightBuffer;
 
-layout(binding = 2) uniform sampler2D baseColorSampler;
-layout(binding = 3) uniform sampler2D normalSampler;
-layout(binding = 4) uniform samplerCube cubemapSampler;
+layout(std140, binding = 2) uniform DebugBuffer
+{
+    bool bAttenuation;
+    bool bGammaCorrection;
+    bool bToneMapping;
+} debugBuffer;
+
+layout(binding = 3) uniform sampler2D baseColorSampler;
+layout(binding = 4) uniform sampler2D normalSampler;
+layout(binding = 5) uniform samplerCube cubemapSampler;
 
 layout(location = 0) in vec4 inPosition;
 layout(location = 1) in vec3 inNormal;
@@ -61,11 +68,8 @@ void main()
     vec3 N = normalize(inNormal);
     vec3 V = normalize(-inPosition.xyz);
 
-    vec3 tangentNormal = normalize(texture(normalSampler, inTexCoord).rgb * 2.0 - 1.0);
-    //N = normalize(inTBN * tangentNormal);
-
-    vec3 R = reflect(-V, N);
-    vec4 baseColor = texture(cubemapSampler, R);
+	vec3 tangentNormal = normalize(texture(normalSampler, inTexCoord).rgb * 2.0 - 1.0);
+    N = normalize(inTBN * tangentNormal);
 
     vec4 ambient = lightBuffer.pointLights[0].ambient;
     vec4 diffuse = vec4(0.0);
@@ -80,6 +84,11 @@ void main()
 		
 		float d = length(light.position - inPosition.xyz);
 		float denom = light.attenuation.x + light.attenuation.y * d + light.attenuation.z * d * d;
+
+        if (!debugBuffer.bAttenuation)
+        {
+            denom = 1.0;
+        }
 
 		diffuse += max(dot(L, N), 0.0) * light.diffuse / denom;
 		specular += pow(max(dot(N, H), 0.0), 3 * light.shininess) * light.specular / denom;
@@ -97,7 +106,17 @@ void main()
 		specular += pow(max(dot(N, H), 0.0), 3 * light.shininess) * light.specular;
     }
 
+    vec3 R = reflect(-V, N);
+    vec4 baseColor = texture(cubemapSampler, R);
+    if (debugBuffer.bGammaCorrection)
+    {
+		baseColor = gammaCorrection(baseColor);
+    }
+
     outColor = baseColor;
-//    outColor = hdrToneMapping(outColor);
-//    outColor = gammaCorrection(outColor);
+
+    if (debugBuffer.bToneMapping)
+    {
+		outColor = hdrToneMapping(outColor);
+    }
 }
