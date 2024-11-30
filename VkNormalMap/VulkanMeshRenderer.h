@@ -33,7 +33,10 @@ public:
 	void WaitIdle();
 
 	void SetPipelineIndex(int32_t Idx);
-	void SetEnableTBNVisualization(bool bEnabled) { bTBNVisualizationEnabled = bEnabled; }
+	void SetEnableTBNVisualization(bool bEnabled) { bEnableTBNVisualization = bEnabled; }
+	void SetEnableAttenuation(bool bEnabled) { bEnableAttenuation = bEnabled; }
+	void SetEnableGammaCorrection(bool bEnabled) { bEnableGammaCorrection = bEnabled; }
+	void SetEnableToneMapping(bool bEnabled) { bEnableToneMapping = bEnabled; }
 
 protected:
 	void GenerateInstancedDrawingInfo();
@@ -73,10 +76,14 @@ protected:
 
 	std::vector<FVulkanBuffer*> TransformBuffers;
 	std::vector<FVulkanBuffer*> LightBuffers;
+	std::vector<FVulkanBuffer*> DebugBuffers;
 
 	FVulkanSampler* Sampler;
 
 	bool bInitialized;
-	bool bTBNVisualizationEnabled;
+	bool bEnableTBNVisualization;
+	bool bEnableAttenuation;
+	bool bEnableGammaCorrection;
+	bool bEnableToneMapping;
 };
 

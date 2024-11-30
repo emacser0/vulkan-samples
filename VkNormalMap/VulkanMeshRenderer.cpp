@@ -40,6 +40,13 @@ struct FLightBufferObject
 	FVulkanDirectionalLight DirectionalLights[16];
 };
 
+struct FDebugBufferObject
+{
+	alignas(4) bool bAttenuation;
+	alignas(4) bool bGammaCorrection;
+	alignas(4) bool bToneMapping;
+};
+
 struct FInstanceBuffer
 {
 	alignas(16) glm::mat4 Model;
@@ -52,7 +59,10 @@ FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	, TBNPipeline(nullptr)
 	, DescriptorSetLayout(VK_NULL_HANDLE)
 	, bInitialized(false)
-	, bTBNVisualizationEnabled(false)
+	, bEnableTBNVisualization(false)
+	, bEnableAttenuation(false)
+	, bEnableGammaCorrection(false)
+	, bEnableToneMapping(false)
 {
 	CreateTextureSampler();
 	CreateDescriptorSetLayout();
@@ -83,6 +93,12 @@ void FVulkanMeshRenderer::CreateDescriptorSetLayout()
 	LightBufferBinding.pImmutableSamplers = nullptr;
 	LightBufferBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
+	VkDescriptorSetLayoutBinding DebugBufferBinding{};
+	DebugBufferBinding.descriptorCount = 1;
+	DebugBufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	DebugBufferBinding.pImmutableSamplers = nullptr;
+	DebugBufferBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
 	VkDescriptorSetLayoutBinding BaseColorSamplerBinding{};
 	BaseColorSamplerBinding.descriptorCount = 1;
 	BaseColorSamplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
@@ -99,6 +115,7 @@ void FVulkanMeshRenderer::CreateDescriptorSetLayout()
 	{
 		TransformBufferBinding,
 		LightBufferBinding,
+		DebugBufferBinding,
 		BaseColorSamplerBinding,
 		NormalSamplerBinding
 	};
@@ -162,9 +179,9 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 	GConfig->Get("ShaderDirectory", ShaderDirectory);
 
 	FVulkanShader* BlinnPhongVS = Context->CreateObject<FVulkanShader>();
-	BlinnPhongVS->LoadFile(ShaderDirectory + "blinn_phong.vert.spv");
+	BlinnPhongVS->LoadFile(ShaderDirectory + "blinnPhong.vert.spv");
 	FVulkanShader* BlinnPhongFS = Context->CreateObject<FVulkanShader>();
-	BlinnPhongFS->LoadFile(ShaderDirectory + "blinn_phong.frag.spv");
+	BlinnPhongFS->LoadFile(ShaderDirectory + "blinnPhong.frag.spv");
 
 	FVulkanPipeline* BlinnPhongPipeline = Context->CreateObject<FVulkanPipeline>();
 	BlinnPhongPipeline->SetVertexShader(BlinnPhongVS);
@@ -338,24 +355,30 @@ void FVulkanMeshRenderer::CreateUniformBuffers()
 	VkPhysicalDevice PhysicalDevice = Context->GetPhysicalDevice();
 	VkDevice Device = Context->GetDevice();
 
-	VkDeviceSize TransformBufferSize = sizeof(FTransformBufferObject);
-	VkDeviceSize LightBufferSize = sizeof(FLightBufferObject);
-
-	TransformBuffers.resize(MAX_CONCURRENT_FRAME);
-	LightBuffers.resize(MAX_CONCURRENT_FRAME);
-	for (size_t Idx = 0; Idx < MAX_CONCURRENT_FRAME; ++Idx)
+	struct FUniformBufferCreateInfo
 	{
-		TransformBuffers[Idx] = Context->CreateObject<FVulkanBuffer>();
-		TransformBuffers[Idx]->SetUsage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-		TransformBuffers[Idx]->SetProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-		TransformBuffers[Idx]->Allocate(TransformBufferSize);
-		TransformBuffers[Idx]->Map();
+		VkDeviceSize BufferSize;
+		std::vector<FVulkanBuffer*>& TargetBuffer;
+	};
 
-		LightBuffers[Idx] = Context->CreateObject<FVulkanBuffer>();
-		LightBuffers[Idx]->SetUsage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
-		LightBuffers[Idx]->SetProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
-		LightBuffers[Idx]->Allocate(LightBufferSize);
-		LightBuffers[Idx]->Map();
+	std::vector<FUniformBufferCreateInfo> UniformBufferCIs =
+	{
+		{ sizeof(FTransformBufferObject), TransformBuffers },
+		{ sizeof(FLightBufferObject), LightBuffers },
+		{ sizeof(FDebugBufferObject), DebugBuffers }
+	};
+
+	for (const FUniformBufferCreateInfo& CI : UniformBufferCIs)
+	{
+		CI.TargetBuffer.resize(MAX_CONCURRENT_FRAME);
+		for (size_t Idx = 0; Idx < MAX_CONCURRENT_FRAME; ++Idx)
+		{
+			CI.TargetBuffer[Idx] = Context->CreateObject<FVulkanBuffer>();
+			CI.TargetBuffer[Idx]->SetUsage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+			CI.TargetBuffer[Idx]->SetProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+			CI.TargetBuffer[Idx]->Allocate(CI.BufferSize);
+			CI.TargetBuffer[Idx]->Map();
+		}
 	}
 }
 
@@ -538,10 +561,16 @@ void FVulkanMeshRenderer::UpdateUniformBuffer()
 		}
 	}
 
+	FDebugBufferObject DBO{};
+	DBO.bAttenuation = bEnableAttenuation;
+	DBO.bGammaCorrection = bEnableGammaCorrection;
+	DBO.bToneMapping = bEnableToneMapping;
+
 	uint32_t CurrentFrame = Context->GetCurrentFrame();
 
 	memcpy(TransformBuffers[CurrentFrame]->GetMappedAddress(), &TBO, sizeof(FTransformBufferObject));
 	memcpy(LightBuffers[CurrentFrame]->GetMappedAddress(), &LBO, sizeof(FLightBufferObject));
+	memcpy(DebugBuffers[CurrentFrame]->GetMappedAddress(), &DBO, sizeof(FDebugBufferObject));
 }
 
 void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMeshBase* InMesh)
@@ -650,6 +679,16 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 			LightBufferDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			LightBufferDescriptor.pBufferInfo = &LightBufferInfo;
 
+			VkDescriptorBufferInfo DebugBufferInfo{};
+			DebugBufferInfo.buffer = DebugBuffers[i]->GetBuffer();
+			DebugBufferInfo.offset = 0;
+			DebugBufferInfo.range = sizeof(FDebugBufferObject);
+
+			VkWriteDescriptorSet DebugBufferDescriptor{};
+			DebugBufferDescriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			DebugBufferDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			DebugBufferDescriptor.pBufferInfo = &DebugBufferInfo;
+
 			VkDescriptorImageInfo BaseColorImageInfo{};
 			BaseColorImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 			BaseColorImageInfo.imageView = BaseColorTexture->GetImage()->GetView();
@@ -674,6 +713,7 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 			{
 				TransformBufferDescriptor,
 				LightBufferDescriptor,
+				DebugBufferDescriptor,
 				BaseColorDescriptor,
 				NormalDescriptor
 			};
@@ -734,7 +774,7 @@ void FVulkanMeshRenderer::Render()
 
 	UpdateUniformBuffer();
 
-	if (bTBNVisualizationEnabled)
+	if (bEnableTBNVisualization)
 	{
 		Draw(TBNPipeline, Viewport, Scissor);
 	}

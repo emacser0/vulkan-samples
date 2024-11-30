@@ -108,12 +108,12 @@ void main()
 
     vec3 R = reflect(-V, N);
     vec4 baseColor = texture(cubemapSampler, R);
+    outColor = baseColor;
+
     if (debugBuffer.bGammaCorrection)
     {
-		baseColor = gammaCorrection(baseColor);
+		outColor = gammaCorrection(outColor);
     }
-
-    outColor = baseColor;
 
     if (debugBuffer.bToneMapping)
     {

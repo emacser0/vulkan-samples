@@ -29,8 +29,15 @@ layout(std140, binding = 1) uniform LightBuffer
     DirectionalLight directionalLights[16];
 } lightBuffer;
 
-layout(binding = 2) uniform sampler2D baseColorSampler;
-layout(binding = 3) uniform sampler2D normalSampler;
+layout(std140, binding = 2) uniform DebugBuffer
+{
+    bool bAttenuation;
+    bool bGammaCorrection;
+    bool bToneMapping;
+} debugBuffer;
+
+layout(binding = 3) uniform sampler2D baseColorSampler;
+layout(binding = 4) uniform sampler2D normalSampler;
 
 layout(location = 0) in vec4 inPosition;
 layout(location = 1) in vec3 inNormal;
@@ -50,7 +57,7 @@ vec4 hdrToneMapping(vec4 inColor)
 vec4 gammaCorrection(vec4 inColor)
 {
     vec3 outColor = vec3(inColor);
-    outColor = pow(outColor, vec3(1.0 / 2.2));
+    outColor = pow(outColor, vec3(1.0 / 1.2));
 
     return vec4(outColor, inColor.a);
 }
@@ -79,6 +86,11 @@ void main()
 		float d = length(light.position - inPosition.xyz);
 		float denom = light.attenuation.x + light.attenuation.y * d + light.attenuation.z * d * d;
 
+        if (!debugBuffer.bAttenuation)
+        {
+            denom = 1.0;
+        }
+
 		diffuse += max(dot(L, N), 0.0) * light.diffuse / denom;
 		specular += pow(max(dot(N, H), 0.0), 3 * light.shininess) * light.specular / denom;
     }
@@ -95,7 +107,15 @@ void main()
 		specular += pow(max(dot(N, H), 0.0), 3 * light.shininess) * light.specular;
     }
 
-    outColor = (ambient + diffuse) * texture(baseColorSampler, inTexCoord) + specular;
-//    outColor = hdrToneMapping(outColor);
-//    outColor = gammaCorrection(outColor);
+    outColor = (ambient + diffuse + specular) * texture(baseColorSampler, inTexCoord);
+
+    if (debugBuffer.bGammaCorrection)
+    {
+		outColor = gammaCorrection(outColor);
+    }
+
+    if (debugBuffer.bToneMapping)
+    {
+		outColor = hdrToneMapping(outColor);
+    }
 }
