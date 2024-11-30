@@ -5,11 +5,13 @@
 
 #include <string>
 
-class FMesh : public FAsset
+class UMesh : public UAsset
 {
 public:
-	FMesh();
-	virtual ~FMesh();
+	DECLARE_OBJECT_BODY(UMesh, UAsset);
+
+	UMesh();
+	virtual ~UMesh();
 
 	const std::vector<FVertex>& GetVertices() const { return Vertices; }
 	const std::vector<uint32_t>& GetIndices() const { return Indices; }

@@ -5,8 +5,8 @@
 
 #include <cassert>
 
-FTextureSource::FTextureSource()
-	: FAsset()
+UTextureSource::UTextureSource()
+	: UAsset()
 	, Width(0)
 	, Height(0)
 	, NumChannels(0)
@@ -15,7 +15,7 @@ FTextureSource::FTextureSource()
 
 }
 
-FTextureSource::~FTextureSource()
+UTextureSource::~UTextureSource()
 {
 	if (Pixels != nullptr)
 	{
@@ -23,7 +23,7 @@ FTextureSource::~FTextureSource()
 	}
 }
 
-bool FTextureSource::Load(const std::string& InFilename)
+bool UTextureSource::Load(const std::string& InFilename)
 {
 	int OutWidth, OutHeight, OutNumChannels;
 

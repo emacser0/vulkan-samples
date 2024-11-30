@@ -654,7 +654,7 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 		return;
 	}
 
-	FVulkanSkyMesh* SkyMesh = Cast<FVulkanSkyMesh>(Sky->GetMesh());
+	FVulkanSkyMesh* SkyMesh = dynamic_cast<FVulkanSkyMesh*>(Sky->GetMesh());
 	if (SkyMesh == nullptr)
 	{
 		return;

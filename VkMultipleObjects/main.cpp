@@ -179,7 +179,7 @@ void Run(int argc, char** argv)
 
 	FVulkanContext* RenderContext = GEngine->GetRenderContext();
 
-	FTextureSource TextureSource;
+	UTextureSource TextureSource;
 	TextureSource.Load(ImageDirectory + "wood.jpg");
 
 	FVulkanTexture* Texture = new FVulkanTexture(RenderContext);

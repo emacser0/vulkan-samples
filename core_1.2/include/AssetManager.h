@@ -1,8 +1,11 @@
 #pragma once
 
-#include <vector>
+#include <unordered_map>
+#include <string>
 
-class FAsset;
+#include "Utils.h"
+
+class UAsset;
 
 class FAssetManager
 {
@@ -10,21 +13,33 @@ public:
 	static void Startup();
 	static void Shutdown();
 
-	template <typename T = FAsset>
-	static T* CreateAsset()
+	template <typename T = UAsset>
+	static T* CreateAsset(const std::string& InAssetName)
 	{
 		if (Instance == nullptr)
 		{
 			return nullptr;
 		}
 
-		T* NewAsset = new T();
-		Instance->LiveAssets.push_back(NewAsset);
+		std::unordered_map<std::string, UAsset*>& LiveAssets = Instance->LiveAssets;
+
+		auto Itr = LiveAssets.find(InAssetName);
+		if (Itr != LiveAssets.end())
+		{
+			return Cast<T>(Itr->second);
+		}
+
+		T* NewAsset = T::StaticCreateObject();
+		NewAsset->SetName(InAssetName);
+
+		LiveAssets[InAssetName] = NewAsset;
 
 		return NewAsset;
 	}
 
-	void DestroyAsset(FAsset* InAsset);
+	static UAsset* FindAsset(const std::string& InAssetName);
+	static void DestroyAsset(const std::string& InAssetName);
+	static void DestroyAsset(UAsset* InAsset);
 
 private:
 	static FAssetManager* Instance;
@@ -36,5 +51,5 @@ public:
 	virtual ~FAssetManager();
 
 private:
-	std::vector<class FAsset*> LiveAssets;
+	std::unordered_map<std::string, class UAsset*> LiveAssets;
 };

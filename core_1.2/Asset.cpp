@@ -1,10 +1,10 @@
 #include "Asset.h"
 
-FAsset::FAsset()
+UAsset::UAsset()
 {
 
 }
 
-FAsset::~FAsset()
+UAsset::~UAsset()
 {	
 }

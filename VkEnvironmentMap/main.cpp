@@ -120,17 +120,18 @@ void Run(int argc, char** argv)
 	std::string ImageDirectory;
 	GConfig->Get("ImageDirectory", ImageDirectory);
 
-	FMesh* SphereMeshAsset = FAssetManager::CreateAsset<FMesh>();
+	UMesh* SphereMeshAsset = FAssetManager::CreateAsset<UMesh>("Sphere");
 	SphereMeshAsset->Load(MeshDirectory + "sphere.fbx");
 
-	FTextureSource* WhiteTextureSource = FAssetManager::CreateAsset<FTextureSource>();
+	UTextureSource* WhiteTextureSource = FAssetManager::CreateAsset<UTextureSource>("White");
 	WhiteTextureSource->Load(ImageDirectory + "white.png");
 
-	std::vector<FTextureSource*> EarthTextureSources(6);
+	std::vector<UTextureSource*> EarthTextureSources(6);
 	for (int Idx = 0; Idx < 6; ++Idx)
 	{
-		EarthTextureSources[Idx] = FAssetManager::CreateAsset<FTextureSource>();
-		EarthTextureSources[Idx]->Load(ImageDirectory + "Skybox_" + std::string(1, '0' + Idx) + ".jpg");
+		std::string AssetName = "Skybox_" + std::string(1, '0' + Idx) + ".jpg";
+		EarthTextureSources[Idx] = FAssetManager::CreateAsset<UTextureSource>(AssetName);
+		EarthTextureSources[Idx]->Load(ImageDirectory + AssetName);
 	}
 
 	FWorld* World = GEngine->GetWorld();

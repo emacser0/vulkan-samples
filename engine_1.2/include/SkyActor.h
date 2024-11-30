@@ -13,8 +13,8 @@ public:
 
 	virtual class FVulkanModel* CreateRenderModel() override;
 
-	void SetCubemap(const std::vector<FTextureSource*>& InCubemap);
+	void SetCubemap(const std::vector<UTextureSource*>& InCubemap);
 
 private:
-	std::vector<FTextureSource*> Cubemap;
+	std::vector<UTextureSource*> Cubemap;
 };

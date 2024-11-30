@@ -30,7 +30,7 @@ FVulkanTexture::~FVulkanTexture()
 	}
 }
 
-void FVulkanTexture::LoadSource(const FTextureSource& InSource)
+void FVulkanTexture::LoadSource(const UTextureSource& InSource)
 {
 	if (InSource.GetWidth() <= 0)
 	{

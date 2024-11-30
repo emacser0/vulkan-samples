@@ -114,7 +114,7 @@ void FWorld::GenerateRenderScene()
 		{
 			if (AMeshActor* MeshActor = Cast<AMeshActor>(Actor))
 			{
-				FMesh* MeshAsset = MeshActor->GetMeshAsset();
+				UMesh* MeshAsset = MeshActor->GetMeshAsset();
 				if (MeshAsset == nullptr)
 				{
 					continue;

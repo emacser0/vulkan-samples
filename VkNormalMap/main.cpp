@@ -189,16 +189,16 @@ void Run(int argc, char** argv)
 	std::string ImageDirectory;
 	GConfig->Get("ImageDirectory", ImageDirectory);
 
-	FMesh* SphereMeshAsset = FAssetManager::CreateAsset<FMesh>();
+	UMesh* SphereMeshAsset = FAssetManager::CreateAsset<UMesh>("Sphere");
 	SphereMeshAsset->Load(MeshDirectory + "sphere.fbx");
 
-	FTextureSource* BrickBaseColorTextureSource = FAssetManager::CreateAsset<FTextureSource>();
+	UTextureSource* BrickBaseColorTextureSource = FAssetManager::CreateAsset<UTextureSource>("BrickBaseColor");
 	BrickBaseColorTextureSource->Load(ImageDirectory + "Brick_BaseColor.jpg");
 
-	FTextureSource* BrickNormalTextureSource = FAssetManager::CreateAsset<FTextureSource>();
+	UTextureSource* BrickNormalTextureSource = FAssetManager::CreateAsset<UTextureSource>("BrickNormal");
 	BrickNormalTextureSource->Load(ImageDirectory + "Brick_Normal.png");
 
-	FTextureSource* WhiteTextureSource = FAssetManager::CreateAsset<FTextureSource>();
+	UTextureSource* WhiteTextureSource = FAssetManager::CreateAsset<UTextureSource>("White");
 	WhiteTextureSource->Load(ImageDirectory + "white.png");
 
 	FWorld* World = GEngine->GetWorld();

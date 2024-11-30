@@ -1,29 +1,26 @@
 #pragma once
 
+#include "Object.h"
 #include "Transform.h"
 
 #include "glm/glm.hpp"
 
 #include <string>
 
-#define DECLARE_ACTOR_BODY_INTERNAL(ClassName) \
-	static std::string StaticTypeId() { return #ClassName; } \
+#define DECLARE_ACTOR_BODY(ClassName, ParentClassName) \
+	DECLARE_OBJECT_BODY(ClassName, ParentClassName); \
 	static ClassName* StaticSpawnActor(class FWorld* InWorld) \
 	{ \
-		ClassName* NewActor = new ClassName(); \
+		ClassName* NewActor = StaticCreateObject(); \
 		NewActor->TypeId = ClassName::StaticTypeId(); \
 		NewActor->SetWorld(InWorld); \
 		return NewActor; \
 	} \
 
-#define DECLARE_ACTOR_BODY(ClassName, ParentClassName) \
-	DECLARE_ACTOR_BODY_INTERNAL(ClassName) \
-	using Super = ParentClassName; \
-
-class AActor
+class AActor : public UObject
 {
 public:
-	DECLARE_ACTOR_BODY_INTERNAL(AActor);
+	DECLARE_ACTOR_BODY(AActor, UObject);
 
 	AActor() { }
 	virtual ~AActor() { }
@@ -56,8 +53,6 @@ public:
 	void AddRotation(const glm::quat& InRotation);
 	void AddScale(const glm::vec3& InScale);
 
-	std::string GetTypeId() const { return TypeId; }
-
 	glm::mat4 GetCachedModelMatrix() const { return CachedModelMatrix; }
 
 protected:
@@ -68,7 +63,5 @@ protected:
 
 	FTransform Transform;
 	glm::mat4 CachedModelMatrix;
-	
-	std::string TypeId;
 };
 

@@ -26,7 +26,7 @@ void FVulkanMeshBase::Destroy()
 	Unload();
 }
 
-bool FVulkanMeshBase::Load(FMesh* InMesh)
+bool FVulkanMeshBase::Load(UMesh* InMesh)
 {
 	if (InMesh == nullptr)
 	{

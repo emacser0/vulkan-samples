@@ -1,15 +1,16 @@
 #pragma once
 
-#include "Actor.h"
+#include "MeshActorBase.h"
 
 #include "glm/glm.hpp"
 
-class ALightActor : public AActor
+class ALightActor : public AMeshActorBase
 {
 public:
 	DECLARE_ACTOR_BODY(ALightActor, AActor);
 
 	ALightActor();
+	virtual ~ALightActor();
 
 	glm::vec4 GetAmbient() const { return Ambient; }
 	glm::vec4 GetDiffuse() const { return Diffuse; }
@@ -22,6 +23,8 @@ public:
 	void SetSpecular(const glm::vec4& InSpecular) { Specular = InSpecular; }
 	void SetAttenuation(const glm::vec4& InAttenuation) { Attenuation = InAttenuation; }
 	void SetShininess(float InShininess) { Shininess = InShininess; }
+
+	virtual class FVulkanModel* CreateRenderModel() override;
 
 protected:
 	glm::vec4 Ambient;

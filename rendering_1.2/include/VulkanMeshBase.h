@@ -10,16 +10,16 @@ public:
 
 	virtual void Destroy() override;
 
-	virtual bool Load(class FMesh* InMesh);
+	virtual bool Load(class UMesh* InMesh);
 	virtual void Unload();
 
 	FVulkanBuffer* GetVertexBuffer() const { return VertexBuffer; }
 	FVulkanBuffer* GetIndexBuffer() const { return IndexBuffer; }
 
-	class FMesh* GetMeshAsset() const { return MeshAsset; }
+	class UMesh* GetMeshAsset() const { return MeshAsset; }
 	
 protected:
-	class FMesh* MeshAsset;
+	class UMesh* MeshAsset;
 
 	FVulkanBuffer* VertexBuffer;
 	FVulkanBuffer* IndexBuffer;

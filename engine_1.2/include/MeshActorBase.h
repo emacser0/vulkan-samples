@@ -10,8 +10,8 @@ public:
 
 	AMeshActorBase();
 
-	FMesh* GetMeshAsset() const { return MeshAsset; }
-	void SetMeshAsset(FMesh* InMeshAsset) { MeshAsset = InMeshAsset; }
+	UMesh* GetMeshAsset() const { return MeshAsset; }
+	void SetMeshAsset(UMesh* InMeshAsset) { MeshAsset = InMeshAsset; }
 
 	virtual class FVulkanModel* CreateRenderModel() { return nullptr; }
 	void UpdateRenderModel();
@@ -19,7 +19,7 @@ public:
 	class FVulkanModel* GetRenderModel() const { return RenderModel; }
 
 protected:
-	FMesh* MeshAsset;
+	UMesh* MeshAsset;
 
 	class FVulkanModel* RenderModel;
 };

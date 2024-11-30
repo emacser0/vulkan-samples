@@ -16,13 +16,13 @@ public:
 	FVulkanMesh(class FVulkanContext* InContext);
 	virtual ~FVulkanMesh();
 
-	bool Load(class FMesh* InMesh);
+	bool Load(class UMesh* InMesh);
 	void Unload();
 
 	FVulkanBuffer GetVertexBuffer() const { return VertexBuffer; }
 	FVulkanBuffer GetIndexBuffer() const { return IndexBuffer; }
 
-	class FMesh* GetMeshAsset() const { return MeshAsset; }
+	class UMesh* GetMeshAsset() const { return MeshAsset; }
 
 	class FVulkanTexture* GetTexture() const { return Texture; }
 	void SetTexture(class FVulkanTexture* InTexture) { Texture = InTexture; }
@@ -32,7 +32,7 @@ private:
 	void CreateIndexBuffer(const std::vector<uint32_t>& Indices);
 	
 private:
-	class FMesh* MeshAsset;
+	class UMesh* MeshAsset;
 
 	FVulkanBuffer VertexBuffer;
 	FVulkanBuffer IndexBuffer;

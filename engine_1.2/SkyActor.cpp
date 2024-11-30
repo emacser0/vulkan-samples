@@ -38,7 +38,7 @@ FVulkanModel* ASkyActor::CreateRenderModel()
 	return RenderModel;
 }
 
-void ASkyActor::SetCubemap(const std::vector<FTextureSource*>& InSkyTexture)
+void ASkyActor::SetCubemap(const std::vector<UTextureSource*>& InSkyTexture)
 {
 	Cubemap = InSkyTexture;
 }

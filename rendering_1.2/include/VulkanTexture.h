@@ -14,8 +14,8 @@ public:
 
 	virtual void Destroy() override;
 
-	void LoadSource(class FTextureSource* InSource);
-	void LoadSource(const std::vector<FTextureSource*>& InSource);
+	void LoadSource(class UTextureSource* InSource);
+	void LoadSource(const std::vector<UTextureSource*>& InSource);
 
 	void Unload();
 

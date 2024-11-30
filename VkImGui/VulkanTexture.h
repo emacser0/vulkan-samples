@@ -10,7 +10,7 @@ public:
 	uint32_t GetHeight() const { return Source.GetHeight(); }
 	uint32_t GetNumChannels() const { return Source.GetNumChannels(); }
 
-	FTextureSource Source;
+	UTextureSource Source;
 	VkImage Image;
 	VkDeviceMemory Memory;
 	VkImageView View;

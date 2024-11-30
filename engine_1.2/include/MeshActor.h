@@ -1,6 +1,7 @@
 #pragma once
 
 #include "MeshActorBase.h"
+#include "Material.h"
 #include "TextureSource.h"
 
 class AMeshActor : public AMeshActorBase
@@ -10,15 +11,16 @@ public:
 
 	AMeshActor();
 
-	class FTextureSource* GetBaseColorTexture() const { return BaseColor; }
-	void SetBaseColorTexture(class FTextureSource* InTexture) { BaseColor = InTexture; }
+	class UTextureSource* GetBaseColorTexture() const { return BaseColor; }
+	void SetBaseColorTexture(class UTextureSource* InTexture) { BaseColor = InTexture; }
 
-	class FTextureSource* GetNormalTexture() const { return Normal; }
-	void SetNormalTexture(class FTextureSource* InTexture) { Normal = InTexture; }
+	class UTextureSource* GetNormalTexture() const { return Normal; }
+	void SetNormalTexture(class UTextureSource* InTexture) { Normal = InTexture; }
 
 	virtual class FVulkanModel* CreateRenderModel() override;
 
 protected:
-	FTextureSource* BaseColor;
-	FTextureSource* Normal;
+	UMaterial* Material;
+	UTextureSource* BaseColor;
+	UTextureSource* Normal;
 };

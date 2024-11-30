@@ -19,23 +19,42 @@ void FAssetManager::Shutdown()
 	}
 }
 
-void FAssetManager::DestroyAsset(FAsset* InAsset)
+UAsset* FAssetManager::FindAsset(const std::string& InAssetName)
+{
+	if (Instance == nullptr)
+	{
+		return nullptr;
+	}
+
+	std::unordered_map<std::string, UAsset*> LiveAssets = Instance->LiveAssets;
+	if (auto Itr = LiveAssets.find(InAssetName); Itr != LiveAssets.end())
+	{
+		return Itr->second;
+	}
+
+	return nullptr;
+}
+
+void FAssetManager::DestroyAsset(const std::string& InAssetName)
 {
 	assert(Instance != nullptr);
 
+	std::unordered_map<std::string, UAsset*>& LiveAssets = Instance->LiveAssets;
+	if (auto Itr = LiveAssets.find(InAssetName); Itr != LiveAssets.end())
+	{
+		LiveAssets.erase(Itr);
+		delete Itr->second;
+	}
+}
+
+void FAssetManager::DestroyAsset(UAsset* InAsset)
+{
 	if (InAsset == nullptr)
 	{
 		return;
 	}
-
-	for (int Idx = 0; Idx < Instance->LiveAssets.size(); ++Idx)
-	{
-		if (InAsset == Instance->LiveAssets[Idx])
-		{
-			Instance->LiveAssets[Idx] = nullptr;
-			break;
-		}
-	}
+	
+	DestroyAsset(InAsset->GetName());
 }
 
 FAssetManager::FAssetManager()
@@ -45,11 +64,11 @@ FAssetManager::FAssetManager()
 
 FAssetManager::~FAssetManager()
 {
-	for (FAsset* Asset : LiveAssets)
+	for (const auto& Pair : LiveAssets)
 	{
-		if (Asset != nullptr)
+		if (Pair.second != nullptr)
 		{
-			delete Asset;
+			delete Pair.second;
 		}
 	}
 }

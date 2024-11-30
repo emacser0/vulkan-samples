@@ -22,6 +22,7 @@
     <ClCompile Include="Asset.cpp" />
     <ClCompile Include="AssetManager.cpp" />
     <ClCompile Include="Config.cpp" />
+    <ClCompile Include="Material.cpp" />
     <ClCompile Include="Mesh.cpp" />
     <ClCompile Include="TextureSource.cpp" />
     <ClCompile Include="Transform.cpp" />
@@ -33,7 +34,9 @@
     <ClInclude Include="include\Asset.h" />
     <ClInclude Include="include\AssetManager.h" />
     <ClInclude Include="include\Config.h" />
+    <ClInclude Include="include\Material.h" />
     <ClInclude Include="include\Mesh.h" />
+    <ClInclude Include="include\Object.h" />
     <ClInclude Include="include\TextureSource.h" />
     <ClInclude Include="include\Transform.h" />
     <ClInclude Include="include\Utils.h" />

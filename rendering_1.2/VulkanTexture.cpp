@@ -22,7 +22,7 @@ void FVulkanTexture::Destroy()
 	Unload();
 }
 
-void FVulkanTexture::LoadSource(FTextureSource* InSource)
+void FVulkanTexture::LoadSource(UTextureSource* InSource)
 {
 	if (InSource == nullptr)
 	{
@@ -109,14 +109,14 @@ void FVulkanTexture::LoadSource(FTextureSource* InSource)
 	vkFreeMemory(Device, StagingBufferMemory, nullptr);
 }
 
-void FVulkanTexture::LoadSource(const std::vector<FTextureSource*>& InSource)
+void FVulkanTexture::LoadSource(const std::vector<UTextureSource*>& InSource)
 {
 	if (InSource.size() != 6)
 	{
 		return;
 	}
 
-	FTextureSource* FirstSource = InSource[0];
+	UTextureSource* FirstSource = InSource[0];
 	if (FirstSource == nullptr)
 	{
 		return;
@@ -158,7 +158,7 @@ void FVulkanTexture::LoadSource(const std::vector<FTextureSource*>& InSource)
 	VK_ASSERT(vkMapMemory(Device, StagingBufferMemory, 0, ImageSize, 0, &Data));
 	for (int Idx = 0; Idx < ArrayLayers; ++Idx)
 	{
-		FTextureSource* Source = InSource[Idx];
+		UTextureSource* Source = InSource[Idx];
 		if (Source == nullptr)
 		{
 			continue;
