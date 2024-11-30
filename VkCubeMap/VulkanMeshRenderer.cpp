@@ -178,16 +178,16 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 	std::string ShaderDirectory;
 	GConfig->Get("ShaderDirectory", ShaderDirectory);
 
-	FVulkanShader* BlinnPhongVS = Context->CreateObject<FVulkanShader>();
-	BlinnPhongVS->LoadFile(ShaderDirectory + "blinnPhong.vert.spv");
-	FVulkanShader* BlinnPhongFS = Context->CreateObject<FVulkanShader>();
-	BlinnPhongFS->LoadFile(ShaderDirectory + "blinnPhong.frag.spv");
+	FVulkanShader* VS = Context->CreateObject<FVulkanShader>();
+	VS->LoadFile(ShaderDirectory + "base.vert.spv");
+	FVulkanShader* FS = Context->CreateObject<FVulkanShader>();
+	FS->LoadFile(ShaderDirectory + "base.frag.spv");
 
-	FVulkanPipeline* BlinnPhongPipeline = Context->CreateObject<FVulkanPipeline>();
-	BlinnPhongPipeline->SetVertexShader(BlinnPhongVS);
-	BlinnPhongPipeline->SetFragmentShader(BlinnPhongFS);
+	FVulkanPipeline* Pipeline = Context->CreateObject<FVulkanPipeline>();
+	Pipeline->SetVertexShader(VS);
+	Pipeline->SetFragmentShader(FS);
 
-	Pipelines.push_back(BlinnPhongPipeline);
+	Pipelines.push_back(Pipeline);
 
 	for (int32_t Idx = 0; Idx < Pipelines.size(); ++Idx)
 	{

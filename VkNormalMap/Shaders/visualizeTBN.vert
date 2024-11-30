@@ -10,14 +10,12 @@ struct Light
     float shininess;
 };
 
-layout(std140, binding = 0) uniform UniformBufferObject
+layout(std140, binding = 0) uniform TransformBufferObject
 {
     mat4 view;
     mat4 projection;
     vec3 cameraPosition;
-
-    Light light;
-} ubo;
+} transformBuffer;
 
 layout(location = 0) in vec3 inPosition;
 layout(location = 1) in vec3 inNormal;
@@ -37,9 +35,9 @@ void main()
     mat3 normalMatrix = mat3(inNormalMatrix);
 
     vec4 position = inModelView * vec4(inPosition, 1.0);
-    gl_Position = ubo.projection * position;
+    gl_Position = transformBuffer.projection * position;
 
-    outNormal = normalize(vec3(ubo.projection * vec4(normalMatrix * inNormal, 0.0)));
-    outTangent = normalize(vec3(ubo.projection * vec4(normalMatrix * inTangent, 0.0)));
+    outNormal = normalize(vec3(transformBuffer.projection * vec4(normalMatrix * inNormal, 0.0)));
+    outTangent = normalize(vec3(transformBuffer.projection * vec4(normalMatrix * inTangent, 0.0)));
     outBitangent = normalize(cross(outNormal, outTangent));
 }

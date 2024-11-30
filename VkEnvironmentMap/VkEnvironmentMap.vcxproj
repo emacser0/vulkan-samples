@@ -144,8 +144,8 @@
     <ClInclude Include="VulkanSkyRenderer.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\blinn_phong.frag" />
-    <None Include="Shaders\blinn_phong.vert" />
+    <None Include="Shaders\base.frag" />
+    <None Include="Shaders\base.vert" />
     <None Include="Shaders\sky.frag" />
     <None Include="Shaders\sky.vert" />
     <None Include="Shaders\visualizeTBN.frag" />

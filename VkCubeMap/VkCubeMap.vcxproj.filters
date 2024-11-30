@@ -15,10 +15,10 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\blinn_phong.frag">
+    <None Include="Shaders\base.frag">
       <Filter>리소스 파일</Filter>
     </None>
-    <None Include="Shaders\blinn_phong.vert">
+    <None Include="Shaders\base.vert">
       <Filter>리소스 파일</Filter>
     </None>
     <None Include="Shaders\visualizeTBN.frag">

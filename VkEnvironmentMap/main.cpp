@@ -14,8 +14,6 @@
 #include "Engine.h"
 #include "World.h"
 #include "Actor.h"
-#include "PointLightActor.h"
-#include "DirectionalLightActor.h"
 #include "MeshActor.h"
 #include "SkyActor.h"
 
@@ -30,16 +28,8 @@
 
 #include "imgui/imgui.h"
 
-int RandRange(int Min, int Max)
-{
-	return rand() % (Max - Min + 1) + Min;
-}
-
 FVulkanMeshRenderer* MeshRenderer;
 FVulkanSkyRenderer* SkyRenderer;
-
-APointLightActor* PointLight;
-ADirectionalLightActor* DirectionalLight;
 
 class FMainWidget : public FWidget
 {
@@ -51,20 +41,6 @@ public:
 
 private:
 	bool bInitialized;
-
-	glm::vec3 PointLightPosition;
-	glm::vec4 PointAmbient;
-	glm::vec4 PointDiffuse;
-	glm::vec4 PointSpecular;
-	glm::vec4 PointAttenuation;
-	float PointShininess;
-
-	glm::vec3 DirDirection;
-	glm::vec4 DirAmbient;
-	glm::vec4 DirDiffuse;
-	glm::vec4 DirSpecular;
-	glm::vec4 DirAttenuation;
-	float DirShininess;
 
 	bool bShowTBN;
 	bool bEnableAttenuation;
@@ -79,19 +55,6 @@ FMainWidget::FMainWidget()
 	, bEnableGammaCorrection(false)
 	, bEnableToneMapping(false)
 {
-	PointLightPosition = glm::vec3(1.0f);
-	PointAmbient = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
-	PointDiffuse = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
-	PointSpecular = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
-	PointAttenuation = glm::vec4(1.0f, 0.1f, 0.1f, 1.0f);
-	PointShininess = 32;
-
-	DirDirection = glm::vec3(0.0f, -1.0f, 0.0f);
-	DirAmbient = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
-	DirDiffuse = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
-	DirSpecular = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
-	DirAttenuation = glm::vec4(1.0f, 0.1f, 0.1f, 1.0f);
-	DirShininess = 32;
 }
 
 void FMainWidget::Draw()
@@ -104,45 +67,6 @@ void FMainWidget::Draw()
 		ImGui::SetWindowSize(ImVec2(300, 300));
 		bInitialized = true;
 	}
-
-	ImGui::Text("Point Light");
-
-	ImGui::InputFloat3("Point Position", &PointLightPosition[0]);
-	ImGui::SliderFloat4("Point Ambient", &PointAmbient[0], 0.0f, 1.0f);
-	ImGui::SliderFloat4("Point Diffuse", &PointDiffuse[0], 0.0f, 1.0f);
-	ImGui::SliderFloat4("Point Specular", &PointSpecular[0], 0.0f, 1.0f);
-	ImGui::SliderFloat4("Point Attenuation", &PointAttenuation[0], 0.0f, 1.0f);
-	ImGui::SliderFloat("Point Shininess", &PointShininess, 1.0f, 128.0f);
-
-	if (PointLight != nullptr)
-	{
-		PointLight->SetLocation(PointLightPosition);
-		PointLight->SetAmbient(PointAmbient);
-		PointLight->SetDiffuse(PointDiffuse);
-		PointLight->SetSpecular(PointSpecular);
-		PointLight->SetAttenuation(PointAttenuation);
-		PointLight->SetShininess(PointShininess);
-	}
-
-	ImGui::Text("Directional Light");
-
-	ImGui::InputFloat3("Directional Direction", &DirDirection[0]);
-	ImGui::SliderFloat4("Directional Ambient", &DirAmbient[0], 0.0f, 1.0f);
-	ImGui::SliderFloat4("Directional Diffuse", &DirDiffuse[0], 0.0f, 1.0f);
-	ImGui::SliderFloat4("Directional Specular", &DirSpecular[0], 0.0f, 1.0f);
-	ImGui::SliderFloat4("Directional Attenuation", &DirAttenuation[0], 0.0f, 1.0f);
-	ImGui::SliderFloat("Directional Shininess", &DirShininess, 1.0f, 128.0f);
-
-	if (DirectionalLight != nullptr)
-	{
-		DirectionalLight->SetDirection(DirDirection);
-		DirectionalLight->SetAmbient(DirAmbient);
-		DirectionalLight->SetDiffuse(DirDiffuse);
-		DirectionalLight->SetSpecular(DirSpecular);
-		DirectionalLight->SetAttenuation(DirAttenuation);
-		DirectionalLight->SetShininess(DirShininess);
-	}
-
 	ImGui::Checkbox("Show TBN", &bShowTBN);
 	ImGui::Checkbox("Light Attenuation", &bEnableAttenuation);
 	ImGui::Checkbox("Gamma Correction", &bEnableGammaCorrection);
@@ -199,12 +123,6 @@ void Run(int argc, char** argv)
 	FMesh* SphereMeshAsset = FAssetManager::CreateAsset<FMesh>();
 	SphereMeshAsset->Load(MeshDirectory + "sphere.fbx");
 
-	FTextureSource* BrickBaseColorTextureSource = FAssetManager::CreateAsset<FTextureSource>();
-	BrickBaseColorTextureSource->Load(ImageDirectory + "Brick_BaseColor.jpg");
-
-	FTextureSource* BrickNormalTextureSource = FAssetManager::CreateAsset<FTextureSource>();
-	BrickNormalTextureSource->Load(ImageDirectory + "Brick_Normal.png");
-
 	FTextureSource* WhiteTextureSource = FAssetManager::CreateAsset<FTextureSource>();
 	WhiteTextureSource->Load(ImageDirectory + "white.png");
 
@@ -217,28 +135,11 @@ void Run(int argc, char** argv)
 
 	FWorld* World = GEngine->GetWorld();
 
-	PointLight = World->SpawnActor<APointLightActor>();
-	DirectionalLight = World->SpawnActor<ADirectionalLightActor>();
-
-	AMeshActor* LightSourceActor = World->SpawnActor<AMeshActor>();
-	LightSourceActor->SetMeshAsset(SphereMeshAsset);
-	LightSourceActor->SetBaseColorTexture(WhiteTextureSource);
-	LightSourceActor->SetNormalTexture(BrickNormalTextureSource);
-	LightSourceActor->SetScale(glm::vec3(0.1f, 0.1f, 0.1f));
-
 	AMeshActor* SphereActor = World->SpawnActor<AMeshActor>();
 	SphereActor->SetMeshAsset(SphereMeshAsset);
-	SphereActor->SetBaseColorTexture(BrickBaseColorTextureSource);
-	SphereActor->SetNormalTexture(BrickNormalTextureSource);
+	SphereActor->SetBaseColorTexture(WhiteTextureSource);
+	SphereActor->SetNormalTexture(WhiteTextureSource);
 	SphereActor->SetLocation(glm::vec3(0.0f, 0.0f, -2.0f));
-	SphereActor->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
-
-	AMeshActor* SphereActor2 = World->SpawnActor<AMeshActor>();
-	SphereActor2->SetMeshAsset(SphereMeshAsset);
-	SphereActor2->SetBaseColorTexture(BrickBaseColorTextureSource);
-	SphereActor2->SetNormalTexture(BrickNormalTextureSource);
-	SphereActor2->SetLocation(glm::vec3(4.0f, 0.0f, -2.0f));
-	SphereActor2->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
 
 	FVulkanContext* RenderContext = GEngine->GetRenderContext();
 	MeshRenderer = RenderContext->CreateObject<FVulkanMeshRenderer>();

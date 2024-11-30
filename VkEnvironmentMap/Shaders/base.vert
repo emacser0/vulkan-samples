@@ -18,20 +18,13 @@ layout(location = 12) in mat4 inNormalMatrix;
 
 layout(location = 0) out vec4 outPosition;
 layout(location = 1) out vec3 outNormal;
-layout(location = 2) out vec2 outTexCoord;
-layout(location = 3) out mat3 outTBN;
 
 void main()
 {
     mat3 normalMatrix = mat3(inNormalMatrix);
 
-    outPosition = inModelView * vec4(inPosition, 1.0);
+    outPosition = inModel * vec4(inPosition, 1.0);
     outNormal = normalize(normalMatrix * inNormal);
-    outTexCoord = inTexCoord;
 
-    vec3 tangent = normalize(normalMatrix * inTangent);
-    vec3 bitangent = normalize(normalMatrix * cross(outNormal, tangent));
-    outTBN = mat3(tangent, bitangent, outNormal);
-
-    gl_Position = transformBuffer.projection * outPosition;
+    gl_Position = transformBuffer.projection * transformBuffer.view * outPosition;
 }

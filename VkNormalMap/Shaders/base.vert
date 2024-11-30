@@ -23,15 +23,8 @@ layout(location = 3) out mat3 outTBN;
 
 void main()
 {
-    mat3 normalMatrix = mat3(inNormalMatrix);
+	mat3 normalMatrix = mat3(inNormalMatrix);
 
-    outPosition = inModelView * vec4(inPosition, 1.0);
-    outNormal = normalize(normalMatrix * inNormal);
-    outTexCoord = inTexCoord;
-
-    vec3 tangent = normalize(normalMatrix * inTangent);
-    vec3 bitangent = normalize(normalMatrix * cross(outNormal, tangent));
-    outTBN = mat3(tangent, bitangent, outNormal);
-
-    gl_Position = transformBuffer.projection * outPosition;
+	vec4 position = inModelView * vec4(inPosition, 1.0);
+	gl_Position = transformBuffer.projection * position;
 }

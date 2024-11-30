@@ -136,8 +136,10 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="imgui.ini" />
-    <None Include="Shaders\blinn_phong.frag" />
-    <None Include="Shaders\blinn_phong.vert" />
+    <None Include="Shaders\base.frag" />
+    <None Include="Shaders\base.vert" />
+    <None Include="Shaders\lightSource.frag" />
+    <None Include="Shaders\lightSource.vert" />
     <None Include="Shaders\visualizeTBN.frag" />
     <None Include="Shaders\visualizeTBN.geom" />
     <None Include="Shaders\visualizeTBN.vert" />

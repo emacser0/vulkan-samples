@@ -86,7 +86,7 @@ void FVulkanMeshRenderer::CreateDescriptorSetLayout()
 	TransformBufferBinding.descriptorCount = 1;
 	TransformBufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	TransformBufferBinding.pImmutableSamplers = nullptr;
-	TransformBufferBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	TransformBufferBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
 	VkDescriptorSetLayoutBinding LightBufferBinding{};
 	LightBufferBinding.descriptorCount = 1;
@@ -186,16 +186,16 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 	std::string ShaderDirectory;
 	GConfig->Get("ShaderDirectory", ShaderDirectory);
 
-	FVulkanShader* BlinnPhongVS = Context->CreateObject<FVulkanShader>();
-	BlinnPhongVS->LoadFile(ShaderDirectory + "blinnPhong.vert.spv");
-	FVulkanShader* BlinnPhongFS = Context->CreateObject<FVulkanShader>();
-	BlinnPhongFS->LoadFile(ShaderDirectory + "blinnPhong.frag.spv");
+	FVulkanShader* VS = Context->CreateObject<FVulkanShader>();
+	VS->LoadFile(ShaderDirectory + "base.vert.spv");
+	FVulkanShader* FS = Context->CreateObject<FVulkanShader>();
+	FS->LoadFile(ShaderDirectory + "base.frag.spv");
 
-	FVulkanPipeline* BlinnPhongPipeline = Context->CreateObject<FVulkanPipeline>();
-	BlinnPhongPipeline->SetVertexShader(BlinnPhongVS);
-	BlinnPhongPipeline->SetFragmentShader(BlinnPhongFS);
+	FVulkanPipeline* Pipeline = Context->CreateObject<FVulkanPipeline>();
+	Pipeline->SetVertexShader(VS);
+	Pipeline->SetFragmentShader(FS);
 
-	Pipelines.push_back(BlinnPhongPipeline);
+	Pipelines.push_back(Pipeline);
 
 	for (int32_t Idx = 0; Idx < Pipelines.size(); ++Idx)
 	{
@@ -627,7 +627,7 @@ void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMeshBase* InMesh)
 			FInstanceBuffer* InstanceBufferData = (FInstanceBuffer*)InstanceBuffer->GetMappedAddress()  + Idx;
 			InstanceBufferData->Model = Model->GetModelMatrix();
 			InstanceBufferData->ModelView = View * InstanceBufferData->Model;
-			InstanceBufferData->NormalMatrix = glm::transpose(glm::inverse(glm::mat3(InstanceBufferData->ModelView)));
+			InstanceBufferData->NormalMatrix = glm::transpose(glm::inverse(glm::mat3(InstanceBufferData->Model)));
 		});
 	}
 }

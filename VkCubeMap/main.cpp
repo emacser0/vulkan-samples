@@ -34,11 +34,6 @@
 
 #include "imgui/imgui.h"
 
-int RandRange(int Min, int Max)
-{
-	return rand() % (Max - Min + 1) + Min;
-}
-
 FVulkanMeshRenderer* MeshRenderer;
 FVulkanSkyRenderer* SkyRenderer;
 
