@@ -66,6 +66,12 @@
     <ClInclude Include="include\VulkanImage.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
+    <ClInclude Include="include\VulkanMaterial.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="include\VulkanMeshRenderer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="VulkanContext.cpp">
@@ -111,6 +117,12 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="VulkanImage.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanMaterial.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
+    <ClCompile Include="VulkanMeshRenderer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>

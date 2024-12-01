@@ -5,6 +5,7 @@
 AMeshActorBase::AMeshActorBase()
 	: AActor()
 	, MeshAsset(nullptr)
+	, Material(nullptr)
 	, RenderModel(nullptr)
 {
 }

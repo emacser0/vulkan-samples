@@ -7,6 +7,7 @@
 #include "MeshActor.h" 
 
 #include "VulkanContext.h"
+#include "VulkanMeshRenderer.h"
 #include "VulkanUIRenderer.h"
 
 #include "glfw/glfw3.h"
@@ -23,6 +24,7 @@ FEngine* GEngine;
 void FEngine::Init()
 {
 	GEngine = new FEngine();
+	GEngine->Initialize();
 }
 
 void FEngine::Exit()
@@ -34,16 +36,12 @@ void FEngine::Exit()
 }
 
 FEngine::FEngine()
+	: Window(nullptr)
+	, World(nullptr)
+	, RenderContext(nullptr)
+	, MeshRenderer(nullptr)
+	, UIRenderer(nullptr)
 {
-	InitializeGLFW();
-	CreateGLFWWindow();
-	CompileShaders();
-
-	World = new FWorld();
-	RenderContext = new FVulkanContext(Window);
-	UIRenderer = RenderContext->CreateObject<FVulkanUIRenderer>();
-
-	FAssetManager::Startup();
 }
 
 FEngine::~FEngine()
@@ -55,6 +53,20 @@ FEngine::~FEngine()
 	glfwTerminate();
 
 	FAssetManager::Shutdown();
+}
+
+void FEngine::Initialize()
+{
+	InitializeGLFW();
+	CreateGLFWWindow();
+	CompileShaders();
+
+	World = new FWorld();
+	RenderContext = new FVulkanContext(Window);
+	MeshRenderer = RenderContext->CreateObject<FVulkanMeshRenderer>();
+	UIRenderer = RenderContext->CreateObject<FVulkanUIRenderer>();
+
+	FAssetManager::Startup();
 }
 
 GLFWwindow* FEngine::GetWindow() const
@@ -72,6 +84,11 @@ FVulkanContext* FEngine::GetRenderContext() const
 	return RenderContext;
 }
 
+FVulkanMeshRenderer* FEngine::GetMeshRenderer() const
+{
+	return MeshRenderer;
+}
+
 FVulkanUIRenderer* FEngine::GetUIRenderer() const
 {
 	return UIRenderer;
@@ -82,6 +99,7 @@ void FEngine::Tick(float DeltaTime)
 	if (World != nullptr)
 	{
 		World->Tick(DeltaTime);
+		MeshRenderer->SetScene(World->GetRenderScene());
 	}
 }
 

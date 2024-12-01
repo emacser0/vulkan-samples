@@ -4,7 +4,7 @@
 
 #include "glm/glm.hpp"
 
-class ALightActor : public AMeshActorBase
+class ALightActor : public AActor
 {
 public:
 	DECLARE_ACTOR_BODY(ALightActor, AActor);
@@ -23,8 +23,6 @@ public:
 	void SetSpecular(const glm::vec4& InSpecular) { Specular = InSpecular; }
 	void SetAttenuation(const glm::vec4& InAttenuation) { Attenuation = InAttenuation; }
 	void SetShininess(float InShininess) { Shininess = InShininess; }
-
-	virtual class FVulkanModel* CreateRenderModel() override;
 
 protected:
 	glm::vec4 Ambient;

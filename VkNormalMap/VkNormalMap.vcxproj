@@ -145,11 +145,7 @@
     <None Include="Shaders\visualizeTBN.vert" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="VulkanMeshRenderer.h" />
-  </ItemGroup>
-  <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="VulkanMeshRenderer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

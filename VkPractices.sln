@@ -117,6 +117,7 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rendering_1.1", "rendering_
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "rendering_1.2", "rendering_1.2\rendering_1.2.vcxproj", "{FA3FB4FE-909F-4143-8ABC-0F4736FAB120}"
 	ProjectSection(ProjectDependencies) = postProject
+		{194AE078-897A-4C41-A577-88FF7AB1C2D9} = {194AE078-897A-4C41-A577-88FF7AB1C2D9}
 		{57A05AF1-8B67-4F6A-BE52-E7A70D90DEE8} = {57A05AF1-8B67-4F6A-BE52-E7A70D90DEE8}
 	EndProjectSection
 EndProject

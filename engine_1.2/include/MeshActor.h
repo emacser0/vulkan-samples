@@ -1,7 +1,6 @@
 #pragma once
 
 #include "MeshActorBase.h"
-#include "Material.h"
 #include "TextureSource.h"
 
 class AMeshActor : public AMeshActorBase
@@ -20,7 +19,6 @@ public:
 	virtual class FVulkanModel* CreateRenderModel() override;
 
 protected:
-	UMaterial* Material;
 	UTextureSource* BaseColor;
 	UTextureSource* Normal;
 };

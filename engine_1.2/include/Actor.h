@@ -22,8 +22,8 @@ class AActor : public UObject
 public:
 	DECLARE_ACTOR_BODY(AActor, UObject);
 
-	AActor() { }
-	virtual ~AActor() { }
+	AActor();
+	virtual ~AActor() = default;
 
 	virtual void Initialize();
 	virtual void Deinitialize();
@@ -37,6 +37,9 @@ public:
 
 	class FWorld* GetWorld() const;
 	void SetWorld(class FWorld* InWorld);
+
+	bool IsVisible() const { return bVisible; }
+	void SetVisible(bool InbVisible) { bVisible = InbVisible; }
 
 	FTransform GetTransform() const { return Transform; }
 	void SetTransform(const FTransform& InTransform);
@@ -63,5 +66,7 @@ protected:
 
 	FTransform Transform;
 	glm::mat4 CachedModelMatrix;
+
+	bool bVisible;
 };
 

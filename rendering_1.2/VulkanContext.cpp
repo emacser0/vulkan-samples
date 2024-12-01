@@ -12,8 +12,6 @@
 #include <algorithm>
 #include <unordered_map>
 
-#define MAX_CONCURRENT_FRAME 2
-
 static std::vector<const char*> GValidationLayers  =
 {
 	"VK_LAYER_KHRONOS_validation"
@@ -117,7 +115,7 @@ FVulkanContext::~FVulkanContext()
 	vkDestroyRenderPass(Device, RenderPass, nullptr);
 	vkDestroyCommandPool(Device, CommandPool, nullptr);
 
-	for (size_t Idx = 0; Idx < MAX_CONCURRENT_FRAME; ++Idx)
+	for (size_t Idx = 0; Idx < GetMaxConcurrentFrames(); ++Idx)
 	{
 		vkDestroySemaphore(Device, ImageAvailableSemaphores[Idx], nullptr);
 		vkDestroySemaphore(Device, RenderFinishedSemaphores[Idx], nullptr);
@@ -580,7 +578,7 @@ void FVulkanContext::CreateCommandPool()
 
 void FVulkanContext::CreateCommandBuffers()
 {
-	CommandBuffers.resize(MAX_CONCURRENT_FRAME);
+	CommandBuffers.resize(GetMaxConcurrentFrames());
 
 	VkCommandBufferAllocateInfo CommandBufferAllocInfo{};
 	CommandBufferAllocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -596,9 +594,11 @@ void FVulkanContext::CreateCommandBuffers()
 
 void FVulkanContext::CreateSyncObjects()
 {
-	ImageAvailableSemaphores.resize(MAX_CONCURRENT_FRAME);
-	RenderFinishedSemaphores.resize(MAX_CONCURRENT_FRAME);
-	Fences.resize(MAX_CONCURRENT_FRAME);
+	uint32_t MaxConcurrentFrames = GetMaxConcurrentFrames();
+
+	ImageAvailableSemaphores.resize(MaxConcurrentFrames);
+	RenderFinishedSemaphores.resize(MaxConcurrentFrames);
+	Fences.resize(MaxConcurrentFrames);
 
 	VkSemaphoreCreateInfo SemaphoreCI{};
 	SemaphoreCI.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
@@ -607,7 +607,7 @@ void FVulkanContext::CreateSyncObjects()
 	FenceCI.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
 	FenceCI.flags = VK_FENCE_CREATE_SIGNALED_BIT;
 
-	for (size_t Idx = 0; Idx < MAX_CONCURRENT_FRAME; ++Idx)
+	for (size_t Idx = 0; Idx < MaxConcurrentFrames; ++Idx)
 	{
 		if (vkCreateSemaphore(Device, &SemaphoreCI, nullptr, &ImageAvailableSemaphores[Idx]) != VK_SUCCESS ||
 			vkCreateSemaphore(Device, &SemaphoreCI, nullptr, &RenderFinishedSemaphores[Idx]) != VK_SUCCESS ||
@@ -816,5 +816,5 @@ void FVulkanContext::EndRender()
 		throw std::runtime_error("Failed to present swap chain image.");
 	}
 
-	CurrentFrame = (CurrentFrame + 1) % MAX_CONCURRENT_FRAME;
+	CurrentFrame = (CurrentFrame + 1) % GetMaxConcurrentFrames();
 }

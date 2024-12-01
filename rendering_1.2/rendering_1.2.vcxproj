@@ -23,6 +23,8 @@
     <ClInclude Include="include\VulkanCamera.h" />
     <ClInclude Include="include\VulkanContext.h" />
     <ClInclude Include="include\VulkanImage.h" />
+    <ClInclude Include="include\VulkanMaterial.h" />
+    <ClInclude Include="include\VulkanMeshRenderer.h" />
     <ClInclude Include="include\VulkanSkyMesh.h" />
     <ClInclude Include="include\VulkanHelpers.h" />
     <ClInclude Include="include\VulkanLight.h" />
@@ -43,8 +45,10 @@
     <ClCompile Include="VulkanContext.cpp" />
     <ClCompile Include="VulkanHelpers.cpp" />
     <ClCompile Include="VulkanImage.cpp" />
+    <ClCompile Include="VulkanMaterial.cpp" />
     <ClCompile Include="VulkanMesh.cpp" />
     <ClCompile Include="VulkanMeshBase.cpp" />
+    <ClCompile Include="VulkanMeshRenderer.cpp" />
     <ClCompile Include="VulkanModel.cpp" />
     <ClCompile Include="VulkanObject.cpp" />
     <ClCompile Include="VulkanPipeline.cpp" />

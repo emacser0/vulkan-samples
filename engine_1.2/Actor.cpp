@@ -1,6 +1,15 @@
 #include "Actor.h"
 #include "World.h"
 
+AActor::AActor()
+	: World(nullptr)
+	, Transform()
+	, CachedModelMatrix(1.0)
+	, bVisible(true)
+{
+
+}
+
 void AActor::Initialize()
 {
 

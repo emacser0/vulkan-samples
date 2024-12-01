@@ -136,11 +136,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="VulkanMeshRenderer.cpp" />
     <ClCompile Include="VulkanSkyRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="VulkanMeshRenderer.h" />
     <ClInclude Include="VulkanSkyRenderer.h" />
   </ItemGroup>
   <ItemGroup>

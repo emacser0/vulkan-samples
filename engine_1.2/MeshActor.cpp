@@ -5,6 +5,7 @@
 #include "VulkanContext.h"
 #include "VulkanModel.h"
 #include "VulkanMesh.h"
+#include "VulkanMaterial.h"
 #include "VulkanTexture.h"
 
 AMeshActor::AMeshActor()
@@ -21,6 +22,16 @@ FVulkanModel* AMeshActor::CreateRenderModel()
 		return RenderModel;
 	}
 
+	if (MeshAsset == nullptr)
+	{
+		return nullptr;
+	}
+
+	if (Material == nullptr)
+	{
+		return nullptr;
+	}
+
 	FVulkanContext* RenderContext = GEngine->GetRenderContext();
 	if (RenderContext == nullptr)
 	{
@@ -31,6 +42,21 @@ FVulkanModel* AMeshActor::CreateRenderModel()
 
 	FVulkanMesh* NewMesh = RenderContext->CreateObject<FVulkanMesh>();
 	NewMesh->Load(MeshAsset);
+
+	FVulkanMaterial* NewMaterial = RenderContext->CreateObject<FVulkanMaterial>();
+	FShaderPath ShaderPath = Material->GetShaderPath();
+
+	if (NewMaterial->LoadVS(ShaderPath.VS) == false)
+	{
+		return nullptr;
+	}
+
+	if (NewMaterial->LoadFS(ShaderPath.FS) == false)
+	{
+		return nullptr;
+	}
+
+	NewMesh->SetMaterial(NewMaterial);
 
 	if (BaseColor != nullptr)
 	{

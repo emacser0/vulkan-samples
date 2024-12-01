@@ -36,11 +36,14 @@
     <None Include="Shaders\sky.vert">
       <Filter>리소스 파일</Filter>
     </None>
+    <None Include="Shaders\lightSource.frag">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Shaders\lightSource.vert">
+      <Filter>리소스 파일</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="VulkanMeshRenderer.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -49,9 +52,6 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="VulkanMeshRenderer.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="VulkanSkyRenderer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>

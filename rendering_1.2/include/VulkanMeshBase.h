@@ -2,6 +2,7 @@
 
 #include "VulkanObject.h"
 #include "VulkanBuffer.h"
+#include "VulkanMaterial.h"
 
 class FVulkanMeshBase : public FVulkanObject
 {
@@ -16,11 +17,19 @@ public:
 	FVulkanBuffer* GetVertexBuffer() const { return VertexBuffer; }
 	FVulkanBuffer* GetIndexBuffer() const { return IndexBuffer; }
 
+	FVulkanMaterial* GetMaterial() const { return Material; }
+	void SetMaterial(FVulkanMaterial* InMaterial) { Material = InMaterial; }
+
 	class UMesh* GetMeshAsset() const { return MeshAsset; }
+	class UMaterial* GetMaterialAsset() const { return MaterialAsset; }
 	
 protected:
-	class UMesh* MeshAsset;
-
 	FVulkanBuffer* VertexBuffer;
 	FVulkanBuffer* IndexBuffer;
+
+	FVulkanMaterial* Material;
+
+	class UMesh* MeshAsset;
+	class UMaterial* MaterialAsset;
 };
+

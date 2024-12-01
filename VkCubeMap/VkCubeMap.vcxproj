@@ -137,6 +137,8 @@
   <ItemGroup>
     <None Include="Shaders\base.frag" />
     <None Include="Shaders\base.vert" />
+    <None Include="Shaders\lightSource.frag" />
+    <None Include="Shaders\lightSource.vert" />
     <None Include="Shaders\sky.frag" />
     <None Include="Shaders\sky.vert" />
     <None Include="Shaders\visualizeTBN.frag" />
@@ -145,11 +147,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="VulkanMeshRenderer.cpp" />
     <ClCompile Include="VulkanSkyRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="VulkanMeshRenderer.h" />
     <ClInclude Include="VulkanSkyRenderer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

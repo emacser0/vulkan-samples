@@ -12,11 +12,14 @@ public:
 	struct GLFWwindow* GetWindow() const;
 	class FWorld* GetWorld() const;
 	class FVulkanContext* GetRenderContext() const;
+	class FVulkanMeshRenderer* GetMeshRenderer() const;
 	class FVulkanUIRenderer* GetUIRenderer() const;
 
 	void Tick(float DeltaTime);
 
 private:
+	void Initialize();
+
 	void InitializeGLFW();
 	void CreateGLFWWindow();
 	void CompileShaders();
@@ -29,6 +32,7 @@ private:
 	struct GLFWwindow* Window;
 	class FWorld* World;
 	class FVulkanContext* RenderContext;
+	class FVulkanMeshRenderer* MeshRenderer;
 	class FVulkanUIRenderer* UIRenderer;
 };
 

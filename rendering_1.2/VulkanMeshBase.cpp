@@ -6,11 +6,12 @@
 
 #include <vector>
 
-FVulkanMeshBase::FVulkanMeshBase(class FVulkanContext* InContext)
+FVulkanMeshBase::FVulkanMeshBase(FVulkanContext* InContext)
 	: FVulkanObject(InContext)
 	, MeshAsset(nullptr)
-	, VertexBuffer()
-	, IndexBuffer()
+	, VertexBuffer(nullptr)
+	, IndexBuffer(nullptr)
+	, Material(nullptr)
 {
 	VertexBuffer = InContext->CreateObject<FVulkanBuffer>();
 	VertexBuffer->SetUsage(VK_BUFFER_USAGE_TRANSFER_DST_BIT | VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);

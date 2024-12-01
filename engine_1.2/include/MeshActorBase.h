@@ -2,6 +2,7 @@
 
 #include "Actor.h"
 #include "Mesh.h"
+#include "Material.h"
 
 class AMeshActorBase : public AActor
 {
@@ -13,6 +14,9 @@ public:
 	UMesh* GetMeshAsset() const { return MeshAsset; }
 	void SetMeshAsset(UMesh* InMeshAsset) { MeshAsset = InMeshAsset; }
 
+	UMaterial* GetMaterial() const { return Material; }
+	void SetMaterial(UMaterial* InMaterial) { Material = InMaterial; }
+
 	virtual class FVulkanModel* CreateRenderModel() { return nullptr; }
 	void UpdateRenderModel();
 
@@ -20,6 +24,7 @@ public:
 
 protected:
 	UMesh* MeshAsset;
+	UMaterial* Material;
 
 	class FVulkanModel* RenderModel;
 };
