@@ -43,8 +43,7 @@ bool FVulkanMesh::Load(UMesh* InMesh)
 	}
 
 	if (VertexBuffer->GetBuffer() != VK_NULL_HANDLE ||
-		IndexBuffer->GetBuffer() != VK_NULL_HANDLE ||
-		Material != nullptr)
+		IndexBuffer->GetBuffer() != VK_NULL_HANDLE)
 	{
 		Unload();
 	}

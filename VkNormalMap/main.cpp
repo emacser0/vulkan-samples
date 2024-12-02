@@ -248,12 +248,12 @@ void Run(int argc, char** argv)
 	}
 
 	UMesh* SphereMesh = FAssetManager::CreateAsset<UMesh>("SM_Sphere");
-	SphereMesh->Load(MeshDirectory + "sphere.fbx");
 	SphereMesh->SetMaterial(BaseMaterial);
+	SphereMesh->Load(MeshDirectory + "sphere.fbx");
 
 	UMesh* LightSourceMesh = FAssetManager::CreateAsset<UMesh>("SM_LightSource");
-	LightSourceMesh->Load(MeshDirectory + "sphere.fbx");
 	LightSourceMesh->SetMaterial(LightSourceMaterial);
+	LightSourceMesh->Load(MeshDirectory + "sphere.fbx");
 
 	FWorld* World = GEngine->GetWorld();
 

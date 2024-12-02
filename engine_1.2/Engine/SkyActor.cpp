@@ -22,7 +22,15 @@ FVulkanModel* ASkyActor::CreateRenderModel()
 	}
 
 	RenderModel = RenderContext->CreateObject<FVulkanModel>();
-	RenderModel->SetMesh(Mesh->GetRenderMesh());
+
+	if (Mesh != nullptr)
+	{
+		FVulkanMesh* RenderMesh = Mesh->GetRenderMesh();
+		if (RenderMesh != nullptr)
+		{
+			RenderModel->SetMesh(RenderMesh);
+		}
+	}
 
 	return RenderModel;
 }

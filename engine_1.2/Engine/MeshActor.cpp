@@ -14,15 +14,10 @@ AMeshActor::AMeshActor()
 }
 
 FVulkanModel* AMeshActor::CreateRenderModel()
-{
+{	
 	if (RenderModel != nullptr)
 	{
 		return RenderModel;
-	}
-
-	if (Mesh == nullptr)
-	{
-		return nullptr;
 	}
 
 	FVulkanContext* RenderContext = GEngine->GetRenderContext();
@@ -32,7 +27,15 @@ FVulkanModel* AMeshActor::CreateRenderModel()
 	}
 
 	RenderModel = RenderContext->CreateObject<FVulkanModel>();
-	RenderModel->SetMesh(Mesh->GetRenderMesh());
+
+	if (Mesh != nullptr)
+	{
+		FVulkanMesh* RenderMesh = Mesh->GetRenderMesh();
+		if (RenderMesh != nullptr)
+		{
+			RenderModel->SetMesh(RenderMesh);
+		}
+	}
 
 	return RenderModel;
 }

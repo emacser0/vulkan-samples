@@ -2,7 +2,7 @@
 #include "Mesh.h"
 #include "Material.h"
 #include "AssetManager.h"
-#include "TextureSource.h"
+#include "Texture.h"
 #include "Widget.h"
 
 #include "VulkanContext.h"
@@ -207,21 +207,21 @@ void Run(int argc, char** argv)
 	UMesh* SphereMeshAsset = FAssetManager::CreateAsset<UMesh>("SM_Sphere");
 	SphereMeshAsset->Load(MeshDirectory + "sphere.fbx");
 
-	UTextureSource* BrickBaseColorTextureSource = FAssetManager::CreateAsset<UTextureSource>("T_BrickBaseColor");
-	BrickBaseColorTextureSource->Load(ImageDirectory + "Brick_BaseColor.jpg");
+	UTexture* BrickBaseColorTexture = FAssetManager::CreateAsset<UTexture>("T_BrickBaseColor");
+	BrickBaseColorTexture->Load(ImageDirectory + "Brick_BaseColor.jpg");
 
-	UTextureSource* BrickNormalTextureSource = FAssetManager::CreateAsset<UTextureSource>("T_BrickNormal");
-	BrickNormalTextureSource->Load(ImageDirectory + "Brick_Normal.png");
+	UTexture* BrickNormalTexture = FAssetManager::CreateAsset<UTexture>("T_BrickNormal");
+	BrickNormalTexture->Load(ImageDirectory + "Brick_Normal.png");
 
-	UTextureSource* WhiteTextureSource = FAssetManager::CreateAsset<UTextureSource>("T_White");
-	WhiteTextureSource->Load(ImageDirectory + "white.png");
+	UTexture* WhiteTexture = FAssetManager::CreateAsset<UTexture>("T_White");
+	WhiteTexture->Load(ImageDirectory + "white.png");
 
-	std::vector<UTextureSource*> EarthTextureSources(6);
+	std::vector<UTexture*> EarthTextures(6);
 	for (int Idx = 0; Idx < 6; ++Idx)
 	{		
 		std::string AssetName = "Skybox_" + std::string(1, '0' + Idx) + ".jpg";
-		EarthTextureSources[Idx] = FAssetManager::CreateAsset<UTextureSource>(AssetName);
-		EarthTextureSources[Idx]->Load(ImageDirectory + AssetName);
+		EarthTextures[Idx] = FAssetManager::CreateAsset<UTexture>(AssetName);
+		EarthTextures[Idx]->Load(ImageDirectory + AssetName);
 	}
 
 	std::string ShaderDirectory;
@@ -247,23 +247,23 @@ void Run(int argc, char** argv)
 	LightSourceActor = World->SpawnActor<AMeshActor>();
 	LightSourceActor->SetMeshAsset(SphereMeshAsset);
 	LightSourceActor->SetMaterial(LightSourceMaterial);
-	LightSourceActor->SetBaseColorTexture(WhiteTextureSource);
-	LightSourceActor->SetNormalTexture(BrickNormalTextureSource);
+	LightSourceActor->SetBaseColorTexture(WhiteTexture);
+	LightSourceActor->SetNormalTexture(BrickNormalTexture);
 	LightSourceActor->SetScale(glm::vec3(0.1f, 0.1f, 0.1f));
 
 	AMeshActor* SphereActor = World->SpawnActor<AMeshActor>();
 	SphereActor->SetMeshAsset(SphereMeshAsset);
 	SphereActor->SetMaterial(BaseMaterial);
-	SphereActor->SetBaseColorTexture(BrickBaseColorTextureSource);
-	SphereActor->SetNormalTexture(BrickNormalTextureSource);
+	SphereActor->SetBaseColorTexture(BrickBaseColorTexture);
+	SphereActor->SetNormalTexture(BrickNormalTexture);
 	SphereActor->SetLocation(glm::vec3(0.0f, 0.0f, -2.0f));
 	SphereActor->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
 
 	AMeshActor* SphereActor2 = World->SpawnActor<AMeshActor>();
 	SphereActor2->SetMeshAsset(SphereMeshAsset);
 	SphereActor2->SetMaterial(BaseMaterial);
-	SphereActor2->SetBaseColorTexture(BrickBaseColorTextureSource);
-	SphereActor2->SetNormalTexture(BrickNormalTextureSource);
+	SphereActor2->SetBaseColorTexture(BrickBaseColorTexture);
+	SphereActor2->SetNormalTexture(BrickNormalTexture);
 	SphereActor2->SetLocation(glm::vec3(4.0f, 0.0f, -2.0f));
 	SphereActor2->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
 
@@ -272,7 +272,7 @@ void Run(int argc, char** argv)
 
 	ASkyActor* SkyActor = World->GetSky();
 	SkyActor->SetMeshAsset(SphereMeshAsset);
-	SkyActor->SetCubemap(EarthTextureSources);
+	SkyActor->SetCubemap(EarthTextures);
 
 	SkyRenderer = RenderContext->CreateObject<FVulkanSkyRenderer>();
 

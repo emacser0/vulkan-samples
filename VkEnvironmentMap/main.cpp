@@ -1,7 +1,7 @@
 #include "Config.h"
 #include "Mesh.h"
 #include "AssetManager.h"
-#include "TextureSource.h"
+#include "Texture.h"
 #include "Widget.h"
 
 #include "VulkanContext.h"
@@ -123,23 +123,23 @@ void Run(int argc, char** argv)
 	UMesh* SphereMeshAsset = FAssetManager::CreateAsset<UMesh>("Sphere");
 	SphereMeshAsset->Load(MeshDirectory + "sphere.fbx");
 
-	UTextureSource* WhiteTextureSource = FAssetManager::CreateAsset<UTextureSource>("White");
-	WhiteTextureSource->Load(ImageDirectory + "white.png");
+	UTexture* WhiteTexture = FAssetManager::CreateAsset<UTexture>("White");
+	WhiteTexture->Load(ImageDirectory + "white.png");
 
-	std::vector<UTextureSource*> EarthTextureSources(6);
+	std::vector<UTexture*> EarthTextures(6);
 	for (int Idx = 0; Idx < 6; ++Idx)
 	{
 		std::string AssetName = "Skybox_" + std::string(1, '0' + Idx) + ".jpg";
-		EarthTextureSources[Idx] = FAssetManager::CreateAsset<UTextureSource>(AssetName);
-		EarthTextureSources[Idx]->Load(ImageDirectory + AssetName);
+		EarthTextures[Idx] = FAssetManager::CreateAsset<UTexture>(AssetName);
+		EarthTextures[Idx]->Load(ImageDirectory + AssetName);
 	}
 
 	FWorld* World = GEngine->GetWorld();
 
 	AMeshActor* SphereActor = World->SpawnActor<AMeshActor>();
 	SphereActor->SetMeshAsset(SphereMeshAsset);
-	SphereActor->SetBaseColorTexture(WhiteTextureSource);
-	SphereActor->SetNormalTexture(WhiteTextureSource);
+	SphereActor->SetBaseColorTexture(WhiteTexture);
+	SphereActor->SetNormalTexture(WhiteTexture);
 	SphereActor->SetLocation(glm::vec3(0.0f, 0.0f, -2.0f));
 
 	FVulkanContext* RenderContext = GEngine->GetRenderContext();
@@ -147,7 +147,7 @@ void Run(int argc, char** argv)
 
 	ASkyActor* SkyActor = World->GetSky();
 	SkyActor->SetMeshAsset(SphereMeshAsset);
-	SkyActor->SetCubemap(EarthTextureSources);
+	SkyActor->SetCubemap(EarthTextures);
 
 	SkyRenderer = RenderContext->CreateObject<FVulkanSkyRenderer>();
 
