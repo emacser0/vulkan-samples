@@ -2,7 +2,7 @@
 #include "Mesh.h"
 #include "Material.h"
 #include "AssetManager.h"
-#include "TextureSource.h"
+#include "Texture.h"
 #include "Widget.h"
 
 #include "VulkanContext.h"
@@ -32,6 +32,7 @@
 
 APointLightActor* PointLight;
 ADirectionalLightActor* DirectionalLight;
+AMeshActor* LightSourceActor;
 
 class FMainWidget : public FWidget
 {
@@ -71,7 +72,7 @@ FMainWidget::FMainWidget()
 	, bEnableGammaCorrection(false)
 	, bEnableToneMapping(false)
 {
-	PointLightPosition = glm::vec3(1.0f);
+	PointLightPosition = glm::vec3(1.0f, -0.5f, 1.0f);
 	PointAmbient = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
 	PointDiffuse = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
 	PointSpecular = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
@@ -114,6 +115,11 @@ void FMainWidget::Draw()
 		PointLight->SetSpecular(PointSpecular);
 		PointLight->SetAttenuation(PointAttenuation);
 		PointLight->SetShininess(PointShininess);
+	}
+
+	if (LightSourceActor != nullptr)
+	{
+		LightSourceActor->SetLocation(PointLightPosition);
 	}
 
 	ImGui::Text("Directional Light");
@@ -190,51 +196,82 @@ void Run(int argc, char** argv)
 	std::string ImageDirectory;
 	GConfig->Get("ImageDirectory", ImageDirectory);
 
-	UMesh* SphereMeshAsset = FAssetManager::CreateAsset<UMesh>("SM_Sphere");
-	SphereMeshAsset->Load(MeshDirectory + "sphere.fbx");
+	UTexture* BrickBaseColorTexture = FAssetManager::CreateAsset<UTexture>("T_BrickBaseColor");
+	BrickBaseColorTexture->Load(ImageDirectory + "Brick_BaseColor.jpg");
 
-	UTextureSource* BrickBaseColorTextureSource = FAssetManager::CreateAsset<UTextureSource>("T_BrickBaseColor");
-	BrickBaseColorTextureSource->Load(ImageDirectory + "Brick_BaseColor.jpg");
+	UTexture* BrickNormalTexture = FAssetManager::CreateAsset<UTexture>("T_BrickNormal");
+	BrickNormalTexture->Load(ImageDirectory + "Brick_Normal.png", true);
 
-	UTextureSource* BrickNormalTextureSource = FAssetManager::CreateAsset<UTextureSource>("T_BrickNormal");
-	BrickNormalTextureSource->Load(ImageDirectory + "Brick_Normal.png");
+	UTexture* WhiteTexture = FAssetManager::CreateAsset<UTexture>("T_White");
+	WhiteTexture->Load(ImageDirectory + "white.png");
 
-	UTextureSource* WhiteTextureSource = FAssetManager::CreateAsset<UTextureSource>("T_White");
-	WhiteTextureSource->Load(ImageDirectory + "white.png");
+	UTexture* PlaneNormalTexture = FAssetManager::CreateAsset<UTexture>("T_PlaneNormal");
+	PlaneNormalTexture->Load(ImageDirectory + "normal.png", true);
 
 	std::string ShaderDirectory;
 	GConfig->Get("ShaderDirectory", ShaderDirectory);
 
 	UMaterial* BaseMaterial = FAssetManager::CreateAsset<UMaterial>("M_Base");
-	FShaderPath BaseShaderPath{};
-	BaseShaderPath.VS = ShaderDirectory + "base.vert.spv";
-	BaseShaderPath.FS = ShaderDirectory + "base.frag.spv";
-	BaseMaterial->SetShaderPath(BaseShaderPath);
+	{
+		FShaderPath ShaderPath{};
+		ShaderPath.VS = ShaderDirectory + "base.vert.spv";
+		ShaderPath.FS = ShaderDirectory + "base.frag.spv";
+		BaseMaterial->SetShaderPath(ShaderPath);
+
+		FShaderParameter BaseColorParameter{};
+		BaseColorParameter.Type = EShaderParameterType::Texture;
+		BaseColorParameter.TexParam = BrickBaseColorTexture;
+		BaseMaterial->SetBaseColor(BaseColorParameter);
+
+		FShaderParameter NormalParameter{};
+		NormalParameter.Type = EShaderParameterType::Texture;
+		NormalParameter.TexParam = BrickNormalTexture;
+		BaseMaterial->SetNormal(NormalParameter);
+	}
 
 	UMaterial* LightSourceMaterial = FAssetManager::CreateAsset<UMaterial>("M_LightSource");
-	FShaderPath LightSourceShaderPath{};
-	LightSourceShaderPath.VS = ShaderDirectory + "lightSource.vert.spv";
-	LightSourceShaderPath.FS = ShaderDirectory + "lightSource.frag.spv";
-	LightSourceMaterial->SetShaderPath(LightSourceShaderPath);
+	{
+		FShaderPath ShaderPath{};
+		ShaderPath.VS = ShaderDirectory + "lightSource.vert.spv";
+		ShaderPath.FS = ShaderDirectory + "lightSource.frag.spv";
+		LightSourceMaterial->SetShaderPath(ShaderPath);
+
+		FShaderParameter BaseColorParameter{};
+		BaseColorParameter.Type = EShaderParameterType::Texture;
+		BaseColorParameter.TexParam = WhiteTexture;
+		LightSourceMaterial->SetBaseColor(BaseColorParameter);
+
+		FShaderParameter NormalParameter{};
+		NormalParameter.Type = EShaderParameterType::Texture;
+		NormalParameter.TexParam = PlaneNormalTexture;
+		LightSourceMaterial->SetNormal(NormalParameter);
+	}
+
+	UMesh* SphereMesh = FAssetManager::CreateAsset<UMesh>("SM_Sphere");
+	SphereMesh->Load(MeshDirectory + "sphere.fbx");
+	SphereMesh->SetMaterial(BaseMaterial);
+
+	UMesh* LightSourceMesh = FAssetManager::CreateAsset<UMesh>("SM_LightSource");
+	LightSourceMesh->Load(MeshDirectory + "sphere.fbx");
+	LightSourceMesh->SetMaterial(LightSourceMaterial);
 
 	FWorld* World = GEngine->GetWorld();
 
 	PointLight = World->SpawnActor<APointLightActor>();
 	DirectionalLight = World->SpawnActor<ADirectionalLightActor>();
 
+	LightSourceActor = World->SpawnActor<AMeshActor>();
+	LightSourceActor->SetMesh(LightSourceMesh);
+	LightSourceActor->SetLocation(glm::vec3(0.0f));
+	LightSourceActor->SetScale(glm::vec3(0.1f, 0.1f, 0.1f));
+
 	AMeshActor* SphereActor = World->SpawnActor<AMeshActor>();
-	SphereActor->SetMeshAsset(SphereMeshAsset);
-	SphereActor->SetMaterial(BaseMaterial);
-	SphereActor->SetBaseColorTexture(BrickBaseColorTextureSource);
-	SphereActor->SetNormalTexture(BrickNormalTextureSource);
+	SphereActor->SetMesh(SphereMesh);
 	SphereActor->SetLocation(glm::vec3(0.0f, 0.0f, -2.0f));
 	SphereActor->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
 
 	AMeshActor* SphereActor2 = World->SpawnActor<AMeshActor>();
-	SphereActor2->SetMeshAsset(SphereMeshAsset);
-	SphereActor2->SetMaterial(BaseMaterial);
-	SphereActor2->SetBaseColorTexture(BrickBaseColorTextureSource);
-	SphereActor2->SetNormalTexture(BrickNormalTextureSource);
+	SphereActor2->SetMesh(SphereMesh);
 	SphereActor2->SetLocation(glm::vec3(4.0f, 0.0f, -2.0f));
 	SphereActor2->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
 

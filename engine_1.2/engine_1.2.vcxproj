@@ -19,28 +19,82 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Actor.cpp" />
-    <ClCompile Include="CameraActor.cpp" />
-    <ClCompile Include="DirectionalLightActor.cpp" />
-    <ClCompile Include="PointLightActor.cpp" />
-    <ClCompile Include="SkyActor.cpp" />
-    <ClCompile Include="Engine.cpp" />
-    <ClCompile Include="LightActor.cpp" />
-    <ClCompile Include="MeshActor.cpp" />
-    <ClCompile Include="MeshActorBase.cpp" />
-    <ClCompile Include="World.cpp" />
+    <ClInclude Include="Core\Asset.h" />
+    <ClInclude Include="Core\AssetManager.h" />
+    <ClInclude Include="Core\Config.h" />
+    <ClInclude Include="Core\Material.h" />
+    <ClInclude Include="Core\Mesh.h" />
+    <ClInclude Include="Core\Object.h" />
+    <ClInclude Include="Core\ShaderParameter.h" />
+    <ClInclude Include="Core\Texture.h" />
+    <ClInclude Include="Core\Transform.h" />
+    <ClInclude Include="Core\Utils.h" />
+    <ClInclude Include="Core\Vertex.h" />
+    <ClInclude Include="Core\Widget.h" />
+    <ClInclude Include="Engine\Actor.h" />
+    <ClInclude Include="Engine\CameraActor.h" />
+    <ClInclude Include="Engine\DirectionalLightActor.h" />
+    <ClInclude Include="Engine\Engine.h" />
+    <ClInclude Include="Engine\LightActor.h" />
+    <ClInclude Include="Engine\MeshActor.h" />
+    <ClInclude Include="Engine\MeshActorBase.h" />
+    <ClInclude Include="Engine\PointLightActor.h" />
+    <ClInclude Include="Engine\SkyActor.h" />
+    <ClInclude Include="Engine\World.h" />
+    <ClInclude Include="Rendering\VulkanBuffer.h" />
+    <ClInclude Include="Rendering\VulkanCamera.h" />
+    <ClInclude Include="Rendering\VulkanContext.h" />
+    <ClInclude Include="Rendering\VulkanHelpers.h" />
+    <ClInclude Include="Rendering\VulkanImage.h" />
+    <ClInclude Include="Rendering\VulkanLight.h" />
+    <ClInclude Include="Rendering\VulkanMaterial.h" />
+    <ClInclude Include="Rendering\VulkanMesh.h" />
+    <ClInclude Include="Rendering\VulkanMeshRenderer.h" />
+    <ClInclude Include="Rendering\VulkanModel.h" />
+    <ClInclude Include="Rendering\VulkanObject.h" />
+    <ClInclude Include="Rendering\VulkanPipeline.h" />
+    <ClInclude Include="Rendering\VulkanSampler.h" />
+    <ClInclude Include="Rendering\VulkanScene.h" />
+    <ClInclude Include="Rendering\VulkanShader.h" />
+    <ClInclude Include="Rendering\VulkanTexture.h" />
+    <ClInclude Include="Rendering\VulkanUIRenderer.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\Actor.h" />
-    <ClInclude Include="include\CameraActor.h" />
-    <ClInclude Include="include\DirectionalLightActor.h" />
-    <ClInclude Include="include\PointLightActor.h" />
-    <ClInclude Include="include\SkyActor.h" />
-    <ClInclude Include="include\Engine.h" />
-    <ClInclude Include="include\LightActor.h" />
-    <ClInclude Include="include\MeshActor.h" />
-    <ClInclude Include="include\MeshActorBase.h" />
-    <ClInclude Include="include\World.h" />
+    <ClCompile Include="Core\Asset.cpp" />
+    <ClCompile Include="Core\AssetManager.cpp" />
+    <ClCompile Include="Core\Config.cpp" />
+    <ClCompile Include="Core\Material.cpp" />
+    <ClCompile Include="Core\Mesh.cpp" />
+    <ClCompile Include="Core\Texture.cpp" />
+    <ClCompile Include="Core\Transform.cpp" />
+    <ClCompile Include="Core\Utils.cpp" />
+    <ClCompile Include="Core\Vertex.cpp" />
+    <ClCompile Include="Core\Widget.cpp" />
+    <ClCompile Include="Engine\Actor.cpp" />
+    <ClCompile Include="Engine\CameraActor.cpp" />
+    <ClCompile Include="Engine\DirectionalLightActor.cpp" />
+    <ClCompile Include="Engine\Engine.cpp" />
+    <ClCompile Include="Engine\LightActor.cpp" />
+    <ClCompile Include="Engine\MeshActor.cpp" />
+    <ClCompile Include="Engine\MeshActorBase.cpp" />
+    <ClCompile Include="Engine\PointLightActor.cpp" />
+    <ClCompile Include="Engine\SkyActor.cpp" />
+    <ClCompile Include="Engine\World.cpp" />
+    <ClCompile Include="Rendering\VulkanBuffer.cpp" />
+    <ClCompile Include="Rendering\VulkanContext.cpp" />
+    <ClCompile Include="Rendering\VulkanHelpers.cpp" />
+    <ClCompile Include="Rendering\VulkanImage.cpp" />
+    <ClCompile Include="Rendering\VulkanMaterial.cpp" />
+    <ClCompile Include="Rendering\VulkanMesh.cpp" />
+    <ClCompile Include="Rendering\VulkanMeshRenderer.cpp" />
+    <ClCompile Include="Rendering\VulkanModel.cpp" />
+    <ClCompile Include="Rendering\VulkanObject.cpp" />
+    <ClCompile Include="Rendering\VulkanPipeline.cpp" />
+    <ClCompile Include="Rendering\VulkanSampler.cpp" />
+    <ClCompile Include="Rendering\VulkanScene.cpp" />
+    <ClCompile Include="Rendering\VulkanShader.cpp" />
+    <ClCompile Include="Rendering\VulkanTexture.cpp" />
+    <ClCompile Include="Rendering\VulkanUIRenderer.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -144,7 +198,7 @@
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)core_1.2\include;$(SolutionDir)rendering_1.2\include;$(SolutionDir)external\include;C:\VulkanSDK\1.3.290.0\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Core;$(ProjectDir)Rendering;$(ProjectDir)Engine;$(SolutionDir)external\include;C:\VulkanSDK\1.3.290.0\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -164,7 +218,7 @@
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)core_1.2\include;$(SolutionDir)rendering_1.2\include;$(SolutionDir)external\include;C:\VulkanSDK\1.3.290.0\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Core;$(ProjectDir)Rendering;$(ProjectDir)Engine;$(SolutionDir)external\include;C:\VulkanSDK\1.3.290.0\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
