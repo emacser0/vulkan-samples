@@ -8,7 +8,7 @@
 #include "VulkanObject.h"
 #include "VulkanContext.h"
 #include "VulkanBuffer.h"
-#include "VulkanMeshBase.h"
+#include "VulkanMesh.h"
 #include "VulkanShader.h"
 #include "VulkanModel.h"
 #include "VulkanPipeline.h"
@@ -51,7 +51,7 @@ protected:
 	void GetVertexInputAttributes(std::vector<VkVertexInputAttributeDescription>& OutDescs);
 
 	void UpdateUniformBuffer();
-	void UpdateInstanceBuffer(FVulkanMeshBase* InMesh);
+	void UpdateInstanceBuffer(FVulkanMesh* InMesh);
 	void UpdateDescriptorSets();
 
 	void Draw(FVulkanPipeline* InPipeline, VkViewport& InViewport, VkRect2D& InScissor);
@@ -70,7 +70,7 @@ protected:
 		std::vector<FVulkanBuffer*> InstanceBuffers;
 		std::vector<VkDescriptorSet> DescriptorSets;
 	};
-	std::unordered_map<FVulkanMeshBase*, FInstancedDrawingInfo> InstancedDrawingMap;
+	std::unordered_map<FVulkanMesh*, FInstancedDrawingInfo> InstancedDrawingMap;
 
 	std::vector<FVulkanBuffer*> TransformBuffers;
 	std::vector<FVulkanBuffer*> LightBuffers;

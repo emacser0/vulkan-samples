@@ -5,11 +5,11 @@
 #include <cstdint>
 #include <string>
 
-class UTextureSource : public FAsset
+class FTextureSource : public FAsset
 {
 public:
-	UTextureSource();
-	virtual ~UTextureSource();
+	FTextureSource();
+	virtual ~FTextureSource();
 
 	uint32_t GetWidth() const { return Width; }
 	uint32_t GetHeight() const { return Height; }

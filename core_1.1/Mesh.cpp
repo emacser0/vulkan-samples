@@ -6,13 +6,13 @@
 
 #include "glm/glm.hpp"
 
-UMesh::UMesh()
+FMesh::FMesh()
 	: FAsset()
 {
 
 }
 
-UMesh::~UMesh()
+FMesh::~FMesh()
 {
 
 }
@@ -46,7 +46,7 @@ static aiMesh* FindFirstMesh(const aiScene* InScene, const aiNode* InNode)
 	return nullptr;
 }
 
-bool UMesh::Load(const std::string& InFilename)
+bool FMesh::Load(const std::string& InFilename)
 {
 	Assimp::Importer Importer;
 	const aiScene* Scene = Importer.ReadFile(InFilename, aiProcess_Triangulate | aiProcess_FlipUVs);

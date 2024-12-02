@@ -20,7 +20,7 @@ FVulkanMesh::~FVulkanMesh()
 	Unload();
 }
 
-bool FVulkanMesh::Load(UMesh* InMesh)
+bool FVulkanMesh::Load(FMesh* InMesh)
 {
 	if (InMesh == nullptr)
 	{

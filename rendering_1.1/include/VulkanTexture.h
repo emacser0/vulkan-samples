@@ -10,7 +10,7 @@ public:
 	FVulkanTexture(FVulkanContext* InContext);
 	virtual ~FVulkanTexture();
 
-	void LoadSource(const class UTextureSource& InSource);
+	void LoadSource(const class FTextureSource& InSource);
 
 	uint32_t GetWidth() const { return Width; }
 	uint32_t GetHeight() const { return Height; }

@@ -8,7 +8,7 @@
 #include "VulkanObject.h"
 #include "VulkanContext.h"
 #include "VulkanBuffer.h"
-#include "VulkanMeshBase.h"
+#include "VulkanMesh.h"
 #include "VulkanShader.h"
 #include "VulkanModel.h"
 #include "VulkanPipeline.h"

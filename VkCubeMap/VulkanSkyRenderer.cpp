@@ -3,7 +3,6 @@
 #include "VulkanHelpers.h"
 #include "VulkanTexture.h"
 #include "VulkanScene.h"
-#include "VulkanSkyMesh.h"
 
 #include "Utils.h"
 #include "Engine.h"

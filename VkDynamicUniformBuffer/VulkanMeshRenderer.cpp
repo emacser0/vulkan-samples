@@ -679,7 +679,7 @@ void FVulkanMeshRenderer::Render()
 				continue;
 			}
 
-			UMesh* MeshAsset = Mesh->GetMeshAsset();
+			FMesh* MeshAsset = Mesh->GetMeshAsset();
 			if (MeshAsset == nullptr)
 			{
 				continue;

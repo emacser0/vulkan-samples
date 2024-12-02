@@ -258,30 +258,30 @@ void Run(int argc, char** argv)
 
 	FVulkanContext* RenderContext = GEngine->GetRenderContext();
 
-	UMesh* SphereMeshAsset = FAssetManager::CreateAsset<UMesh>();
+	FMesh* SphereMeshAsset = FAssetManager::CreateAsset<FMesh>();
 	SphereMeshAsset->Load(MeshDirectory + "sphere.obj");
 
-	UMesh* MonkeyMeshAsset = FAssetManager::CreateAsset<UMesh>();
+	FMesh* MonkeyMeshAsset = FAssetManager::CreateAsset<FMesh>();
 	MonkeyMeshAsset->Load(MeshDirectory + "monkey.obj");
 
-	std::vector<UTextureSource*> TextureSources;
+	std::vector<FTextureSource*> TextureSources;
 	{
-		UTextureSource* NewTextureSource = FAssetManager::CreateAsset<UTextureSource>();
+		FTextureSource* NewTextureSource = FAssetManager::CreateAsset<FTextureSource>();
 		NewTextureSource->Load(ImageDirectory + "purple.png");
 		TextureSources.push_back(NewTextureSource);
 	}
 	{
-		UTextureSource* NewTextureSource = FAssetManager::CreateAsset<UTextureSource>();
+		FTextureSource* NewTextureSource = FAssetManager::CreateAsset<FTextureSource>();
 		NewTextureSource->Load(ImageDirectory + "orange.png");
 		TextureSources.push_back(NewTextureSource);
 	}
 	{
-		UTextureSource* NewTextureSource = FAssetManager::CreateAsset<UTextureSource>();
+		FTextureSource* NewTextureSource = FAssetManager::CreateAsset<FTextureSource>();
 		NewTextureSource->Load(ImageDirectory + "green.png");
 		TextureSources.push_back(NewTextureSource);
 	}
 
-	UTextureSource* WhiteTextureSource = FAssetManager::CreateAsset<UTextureSource>();
+	FTextureSource* WhiteTextureSource = FAssetManager::CreateAsset<FTextureSource>();
 	WhiteTextureSource->Load(ImageDirectory + "white.png");
 
 	std::vector<FVulkanTexture*> Textures;
