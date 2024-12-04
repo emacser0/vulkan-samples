@@ -19,8 +19,6 @@
 #include <vector>
 #include <unordered_map>
 
-#define MAX_CONCURRENT_FRAME 2
-
 class FVulkanSkyRenderer : public FVulkanObject
 {
 public:
@@ -43,7 +41,7 @@ protected:
 	void UpdateDescriptorSets();
 	void UpdateUniformBuffer();
 
-	class FVulkanSkyMesh* GetSkyMesh() const;
+	class FVulkanMesh* GetSkyMesh() const;
 
 protected:
 	FVulkanPipeline* Pipeline;

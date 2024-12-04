@@ -27,6 +27,8 @@
     <ClInclude Include="Core\Object.h" />
     <ClInclude Include="Core\ShaderParameter.h" />
     <ClInclude Include="Core\Texture.h" />
+    <ClInclude Include="Core\Texture2D.h" />
+    <ClInclude Include="Core\TextureCube.h" />
     <ClInclude Include="Core\Transform.h" />
     <ClInclude Include="Core\Utils.h" />
     <ClInclude Include="Core\Vertex.h" />
@@ -66,6 +68,8 @@
     <ClCompile Include="Core\Material.cpp" />
     <ClCompile Include="Core\Mesh.cpp" />
     <ClCompile Include="Core\Texture.cpp" />
+    <ClCompile Include="Core\Texture2D.cpp" />
+    <ClCompile Include="Core\TextureCube.cpp" />
     <ClCompile Include="Core\Transform.cpp" />
     <ClCompile Include="Core\Utils.cpp" />
     <ClCompile Include="Core\Vertex.cpp" />

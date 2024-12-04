@@ -2,7 +2,8 @@
 #include "Mesh.h"
 #include "Material.h"
 #include "AssetManager.h"
-#include "Texture.h"
+#include "Texture2D.h"
+#include "TextureCube.h"
 #include "Widget.h"
 
 #include "VulkanContext.h"
@@ -80,7 +81,7 @@ FMainWidget::FMainWidget()
 	, bEnableGammaCorrection(false)
 	, bEnableToneMapping(false)
 {
-	PointLightPosition = glm::vec3(1.0f);
+	PointLightPosition = glm::vec3(1.0f, -0.5f, 1.0f);
 	PointAmbient = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
 	PointDiffuse = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
 	PointSpecular = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
@@ -204,40 +205,102 @@ void Run(int argc, char** argv)
 	std::string ImageDirectory;
 	GConfig->Get("ImageDirectory", ImageDirectory);
 
-	UMesh* SphereMeshAsset = FAssetManager::CreateAsset<UMesh>("SM_Sphere");
-	SphereMeshAsset->Load(MeshDirectory + "sphere.fbx");
-
-	UTexture* BrickBaseColorTexture = FAssetManager::CreateAsset<UTexture>("T_BrickBaseColor");
+	UTexture2D* BrickBaseColorTexture = FAssetManager::CreateAsset<UTexture2D>("T_BrickBaseColor");
 	BrickBaseColorTexture->Load(ImageDirectory + "Brick_BaseColor.jpg");
 
-	UTexture* BrickNormalTexture = FAssetManager::CreateAsset<UTexture>("T_BrickNormal");
+	UTexture2D* BrickNormalTexture = FAssetManager::CreateAsset<UTexture2D>("T_BrickNormal");
 	BrickNormalTexture->Load(ImageDirectory + "Brick_Normal.png");
 
-	UTexture* WhiteTexture = FAssetManager::CreateAsset<UTexture>("T_White");
+	UTexture2D* WhiteTexture = FAssetManager::CreateAsset<UTexture2D>("T_White");
 	WhiteTexture->Load(ImageDirectory + "white.png");
 
-	std::vector<UTexture*> EarthTextures(6);
-	for (int Idx = 0; Idx < 6; ++Idx)
-	{		
-		std::string AssetName = "Skybox_" + std::string(1, '0' + Idx) + ".jpg";
-		EarthTextures[Idx] = FAssetManager::CreateAsset<UTexture>(AssetName);
-		EarthTextures[Idx]->Load(ImageDirectory + AssetName);
+	UTexture2D* PlaneNormalTexture = FAssetManager::CreateAsset<UTexture2D>("T_PlaneNormal");
+	PlaneNormalTexture->Load(ImageDirectory + "normal.png", true);
+
+	UTextureCube* SkyTexture = FAssetManager::CreateAsset<UTextureCube>("T_Sky");
+	{
+		std::array<std::string, 6> SkyTextureFilenames;
+		for (int Idx = 0; Idx < SkyTextureFilenames.size(); ++Idx)
+		{
+			SkyTextureFilenames[Idx] = ImageDirectory + "Skybox_" + std::string(1, '0' + Idx) + ".jpg";
+		}
+		SkyTexture->Load(SkyTextureFilenames);
 	}
 
 	std::string ShaderDirectory;
 	GConfig->Get("ShaderDirectory", ShaderDirectory);
 
 	UMaterial* BaseMaterial = FAssetManager::CreateAsset<UMaterial>("M_Base");
-	FShaderPath BaseShaderPath{};
-	BaseShaderPath.VS = ShaderDirectory + "base.vert.spv";
-	BaseShaderPath.FS = ShaderDirectory + "base.frag.spv";
-	BaseMaterial->SetShaderPath(BaseShaderPath);
+	{
+		FShaderPath ShaderPath{};
+		ShaderPath.VS = ShaderDirectory + "base.vert.spv";
+		ShaderPath.FS = ShaderDirectory + "base.frag.spv";
+		BaseMaterial->SetShaderPath(ShaderPath);
+
+		FShaderParameter BaseColorParameter{};
+		BaseColorParameter.Type = EShaderParameterType::Texture;
+		BaseColorParameter.TexParam = BrickBaseColorTexture;
+		BaseMaterial->SetBaseColor(BaseColorParameter);
+
+		FShaderParameter NormalParameter{};
+		NormalParameter.Type = EShaderParameterType::Texture;
+		NormalParameter.TexParam = BrickNormalTexture;
+		BaseMaterial->SetNormal(NormalParameter);
+
+		BaseMaterial->CreateRenderMaterial();
+	}
 
 	UMaterial* LightSourceMaterial = FAssetManager::CreateAsset<UMaterial>("M_LightSource");
-	FShaderPath LightSourceShaderPath{};
-	LightSourceShaderPath.VS = ShaderDirectory + "lightSource.vert.spv";
-	LightSourceShaderPath.FS = ShaderDirectory + "lightSource.frag.spv";
-	LightSourceMaterial->SetShaderPath(LightSourceShaderPath);
+	{
+		FShaderPath ShaderPath{};
+		ShaderPath.VS = ShaderDirectory + "lightSource.vert.spv";
+		ShaderPath.FS = ShaderDirectory + "lightSource.frag.spv";
+		LightSourceMaterial->SetShaderPath(ShaderPath);
+
+		FShaderParameter BaseColorParameter{};
+		BaseColorParameter.Type = EShaderParameterType::Texture;
+		BaseColorParameter.TexParam = WhiteTexture;
+		LightSourceMaterial->SetBaseColor(BaseColorParameter);
+
+		FShaderParameter NormalParameter{};
+		NormalParameter.Type = EShaderParameterType::Texture;
+		NormalParameter.TexParam = PlaneNormalTexture;
+		LightSourceMaterial->SetNormal(NormalParameter);
+
+		LightSourceMaterial->CreateRenderMaterial();
+	}
+
+	UMaterial* SkyMaterial = FAssetManager::CreateAsset<UMaterial>("M_Sky");
+	{
+		FShaderPath ShaderPath{};
+		ShaderPath.VS = ShaderDirectory + "sky.vert.spv";
+		ShaderPath.FS = ShaderDirectory + "sky.frag.spv";
+		SkyMaterial->SetShaderPath(ShaderPath);
+
+		FShaderParameter BaseColorParameter{};
+		BaseColorParameter.Type = EShaderParameterType::Texture;
+		BaseColorParameter.TexParam = SkyTexture;
+		SkyMaterial->SetBaseColor(BaseColorParameter);
+
+		FShaderParameter NormalParameter{};
+		NormalParameter.Type = EShaderParameterType::Texture;
+		NormalParameter.TexParam = PlaneNormalTexture;
+		SkyMaterial->SetNormal(NormalParameter);
+
+		SkyMaterial->CreateRenderMaterial();
+	}
+
+	UMesh* SphereMesh = FAssetManager::CreateAsset<UMesh>("SM_Sphere");
+	SphereMesh->Load(MeshDirectory + "sphere.fbx");
+	SphereMesh->SetMaterial(BaseMaterial);
+
+	UMesh* LightSourceMesh = FAssetManager::CreateAsset<UMesh>("SM_LightSource");
+	LightSourceMesh->Load(MeshDirectory + "sphere.fbx");
+	LightSourceMesh->SetMaterial(LightSourceMaterial);
+
+	UMesh* SkyMesh = FAssetManager::CreateAsset<UMesh>("SM_Sky");
+	SkyMesh->Load(MeshDirectory + "sphere.fbx");
+	SkyMesh->SetMaterial(SkyMaterial);
 
 	FWorld* World = GEngine->GetWorld();
 
@@ -245,34 +308,24 @@ void Run(int argc, char** argv)
 	DirectionalLight = World->SpawnActor<ADirectionalLightActor>();
 
 	LightSourceActor = World->SpawnActor<AMeshActor>();
-	LightSourceActor->SetMeshAsset(SphereMeshAsset);
-	LightSourceActor->SetMaterial(LightSourceMaterial);
-	LightSourceActor->SetBaseColorTexture(WhiteTexture);
-	LightSourceActor->SetNormalTexture(BrickNormalTexture);
+	LightSourceActor->SetMesh(LightSourceMesh);
 	LightSourceActor->SetScale(glm::vec3(0.1f, 0.1f, 0.1f));
 
 	AMeshActor* SphereActor = World->SpawnActor<AMeshActor>();
-	SphereActor->SetMeshAsset(SphereMeshAsset);
-	SphereActor->SetMaterial(BaseMaterial);
-	SphereActor->SetBaseColorTexture(BrickBaseColorTexture);
-	SphereActor->SetNormalTexture(BrickNormalTexture);
+	SphereActor->SetMesh(SphereMesh);
 	SphereActor->SetLocation(glm::vec3(0.0f, 0.0f, -2.0f));
 	SphereActor->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
 
 	AMeshActor* SphereActor2 = World->SpawnActor<AMeshActor>();
-	SphereActor2->SetMeshAsset(SphereMeshAsset);
-	SphereActor2->SetMaterial(BaseMaterial);
-	SphereActor2->SetBaseColorTexture(BrickBaseColorTexture);
-	SphereActor2->SetNormalTexture(BrickNormalTexture);
+	SphereActor2->SetMesh(SphereMesh);
 	SphereActor2->SetLocation(glm::vec3(4.0f, 0.0f, -2.0f));
 	SphereActor2->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
 
+	ASkyActor* SkyActor = World->GetSky();
+	SkyActor->SetMesh(SkyMesh);
+
 	FVulkanContext* RenderContext = GEngine->GetRenderContext();
 	FVulkanMeshRenderer* MeshRenderer = GEngine->GetMeshRenderer();
-
-	ASkyActor* SkyActor = World->GetSky();
-	SkyActor->SetMeshAsset(SphereMeshAsset);
-	SkyActor->SetCubemap(EarthTextures);
 
 	SkyRenderer = RenderContext->CreateObject<FVulkanSkyRenderer>();
 
@@ -294,8 +347,8 @@ void Run(int argc, char** argv)
 
 		GEngine->Tick(DeltaTime);
 
-		MeshRenderer->PreRender();
 		SkyRenderer->PreRender();
+		MeshRenderer->PreRender();
 
 		RenderContext->BeginRender();
 		SkyRenderer->Render();

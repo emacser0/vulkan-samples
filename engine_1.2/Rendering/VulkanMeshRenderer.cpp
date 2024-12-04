@@ -83,7 +83,7 @@ void FVulkanMeshRenderer::CreateDescriptorSetLayout()
 	TransformBufferBinding.descriptorCount = 1;
 	TransformBufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 	TransformBufferBinding.pImmutableSamplers = nullptr;
-	TransformBufferBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT;
+	TransformBufferBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
 
 	VkDescriptorSetLayoutBinding LightBufferBinding{};
 	LightBufferBinding.descriptorCount = 1;
@@ -370,7 +370,7 @@ void FVulkanMeshRenderer::CreateUniformBuffers()
 		{ sizeof(FDebugBufferObject), DebugBuffers }
 	};
 
-	uint32_t MaxConcurrentFrames = Context->GetMaxConcurrentFrames();
+	const uint32_t MaxConcurrentFrames = Context->GetMaxConcurrentFrames();
 
 	for (const FUniformBufferCreateInfo& CI : UniformBufferCIs)
 	{
@@ -399,7 +399,7 @@ void FVulkanMeshRenderer::CreateInstanceBuffers()
 
 		uint32_t InstanceBufferSize = sizeof(FInstanceBuffer) * Models.size();
 
-		uint32_t MaxConcurrentFrames = Context->GetMaxConcurrentFrames();
+		const uint32_t MaxConcurrentFrames = Context->GetMaxConcurrentFrames();
 
 		InstanceBuffers.resize(MaxConcurrentFrames);
 		for (int Idx = 0; Idx < MaxConcurrentFrames; ++Idx)
@@ -420,7 +420,7 @@ void FVulkanMeshRenderer::CreateDescriptorSets()
 	VkDevice Device = Context->GetDevice();
 	VkDescriptorPool DescriptorPool = Context->GetDescriptorPool();
 
-	uint32_t MaxConcurrentFrames = Context->GetMaxConcurrentFrames();
+	const uint32_t MaxConcurrentFrames = Context->GetMaxConcurrentFrames();
 
 	for (auto& Pair : InstancedDrawingMap)
 	{
@@ -633,13 +633,25 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 			continue;
 		}
 
-		FVulkanTexture* BaseColorTexture = Material->GetBaseColor().TexParam->GetRenderTexture();
+		UTexture* BaseColorTextureAsset = Material->GetBaseColor().TexParam;
+		if (BaseColorTextureAsset == nullptr)
+		{
+			continue;
+		}
+
+		FVulkanTexture* BaseColorTexture = BaseColorTextureAsset->GetRenderTexture();
 		if (BaseColorTexture == nullptr)
 		{
 			continue;
 		}
 
-		FVulkanTexture* NormalTexture = Material->GetNormal().TexParam->GetRenderTexture();
+		UTexture* NormalTextureAsset = Material->GetNormal().TexParam;
+		if (NormalTextureAsset == nullptr)
+		{
+			continue;
+		}
+
+		FVulkanTexture* NormalTexture = NormalTextureAsset->GetRenderTexture();
 		if (NormalTexture == nullptr)
 		{
 			continue;

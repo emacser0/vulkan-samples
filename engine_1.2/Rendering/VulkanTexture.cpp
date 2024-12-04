@@ -3,9 +3,10 @@
 #include "VulkanHelpers.h"
 #include "VulkanImage.h"
 
-#include "Texture.h"
+#include "Texture2D.h"
+#include "TextureCube.h"
 
-#include <cassert>
+#include <array>
 
 FVulkanTexture::FVulkanTexture(FVulkanContext* InContext)
 	: FVulkanObject(InContext)
@@ -22,20 +23,20 @@ void FVulkanTexture::Destroy()
 	Unload();
 }
 
-void FVulkanTexture::LoadSource(UTexture* InSource)
+void FVulkanTexture::Load(UTexture2D* InTexture)
 {
-	if (InSource == nullptr)
+	if (InTexture == nullptr)
 	{
 		return;
 	}
 
-	if (InSource->GetWidth() <= 0 || InSource->GetHeight() <= 0)
+	if (InTexture->GetWidth() <= 0 || InTexture->GetHeight() <= 0)
 	{
 		return;
 	}
 
-	Width = static_cast<uint32_t>(InSource->GetWidth());
-	Height = static_cast<uint32_t>(InSource->GetHeight());
+	Width = static_cast<uint32_t>(InTexture->GetWidth());
+	Height = static_cast<uint32_t>(InTexture->GetHeight());
 	Depth = 1U;
 	Channel = 4U;
 
@@ -60,7 +61,7 @@ void FVulkanTexture::LoadSource(UTexture* InSource)
 	void* Data = nullptr;
 
 	VK_ASSERT(vkMapMemory(Device, StagingBufferMemory, 0, ImageSize, 0, &Data));
-	memcpy(Data, InSource->GetPixels(), static_cast<size_t>(ImageSize));
+	memcpy(Data, InTexture->GetPixels(), static_cast<size_t>(ImageSize));
 	vkUnmapMemory(Device, StagingBufferMemory);
 
 	Image = Context->CreateObject<FVulkanImage>();
@@ -109,30 +110,19 @@ void FVulkanTexture::LoadSource(UTexture* InSource)
 	vkFreeMemory(Device, StagingBufferMemory, nullptr);
 }
 
-void FVulkanTexture::LoadSource(const std::vector<UTexture*>& InSource)
+void FVulkanTexture::Load(UTextureCube* InTexture)
 {
-	if (InSource.size() != 6)
+	if (InTexture == nullptr)
 	{
 		return;
 	}
 
-	UTexture* FirstSource = InSource[0];
-	if (FirstSource == nullptr)
-	{
-		return;
-	}
-
-	if (FirstSource->GetWidth() <= 0 || FirstSource->GetHeight() <= 0)
-	{
-		return;
-	}
-
-	Width = static_cast<uint32_t>(FirstSource->GetWidth());
-	Height = static_cast<uint32_t>(FirstSource->GetHeight());
+	Width = static_cast<uint32_t>(InTexture->GetWidth());
+	Height = static_cast<uint32_t>(InTexture->GetHeight());
 	Depth = 1U;
 	Channel = 4U;
 
-	uint32_t ArrayLayers = static_cast<uint32_t>(InSource.size());
+	uint32_t ArrayLayers = 6;
 
 	VkPhysicalDevice PhysicalDevice = Context->GetPhysicalDevice();
 	VkDevice Device = Context->GetDevice();
@@ -155,16 +145,18 @@ void FVulkanTexture::LoadSource(const std::vector<UTexture*>& InSource)
 
 	void* Data = nullptr;
 
+	const std::array<uint8_t*, 6>& Images = InTexture->GetImages();
+
 	VK_ASSERT(vkMapMemory(Device, StagingBufferMemory, 0, ImageSize, 0, &Data));
 	for (int Idx = 0; Idx < ArrayLayers; ++Idx)
 	{
-		UTexture* Source = InSource[Idx];
-		if (Source == nullptr)
+		uint8_t* Pixels = Images[Idx];
+		if (Pixels == nullptr)
 		{
 			continue;
 		}
 
-		memcpy((uint8_t*)Data + SliceSize * Idx, Source->GetPixels(), static_cast<size_t>(SliceSize));
+		memcpy((uint8_t*)Data + SliceSize * Idx, Pixels, static_cast<size_t>(SliceSize));
 	}
 	vkUnmapMemory(Device, StagingBufferMemory);
 
@@ -214,7 +206,6 @@ void FVulkanTexture::LoadSource(const std::vector<UTexture*>& InSource)
 	vkDestroyBuffer(Device, StagingBuffer, nullptr);
 	vkFreeMemory(Device, StagingBufferMemory, nullptr);
 }
-
 
 void FVulkanTexture::Unload()
 {

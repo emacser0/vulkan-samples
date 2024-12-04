@@ -31,9 +31,15 @@ public:
 	FShaderParameter GetNormal() const { return Normal; }
 	void SetNormal(const FShaderParameter& InNormal) { Normal = InNormal; }
 
+	class FVulkanMaterial* GetRenderMaterial() const;
+	void CreateRenderMaterial();
+	void DestroyRenderMaterial();
+
 private:
 	FShaderPath ShaderPath;
 
 	FShaderParameter BaseColor;
 	FShaderParameter Normal;
+
+	class FVulkanMaterial* RenderMaterial;
 };

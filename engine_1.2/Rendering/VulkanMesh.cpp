@@ -36,12 +36,6 @@ bool FVulkanMesh::Load(UMesh* InMesh)
 		return false;
 	}
 
-	UMaterial* MaterialAsset = InMesh->GetMaterial();
-	if (MaterialAsset == nullptr)
-	{
-		return false;
-	}
-
 	if (VertexBuffer->GetBuffer() != VK_NULL_HANDLE ||
 		IndexBuffer->GetBuffer() != VK_NULL_HANDLE)
 	{
@@ -55,23 +49,6 @@ bool FVulkanMesh::Load(UMesh* InMesh)
 
 	VertexBuffer->Load((uint8_t*)Vertices.data(), sizeof(FVertex) * Vertices.size());
 	IndexBuffer->Load((uint8_t*)Indices.data(), sizeof(uint32_t) * Indices.size());
-
-	FShaderPath ShaderPath = MaterialAsset->GetShaderPath();
-
-	if (Material->LoadVS(ShaderPath.VS) == false)
-	{
-		Unload();
-		return false;
-	}
-
-	if (Material->LoadFS(ShaderPath.FS) == false)
-	{
-		Unload();
-		return false;
-	}
-
-	Material->SetBaseColor(MaterialAsset->GetBaseColor());
-	Material->SetNormal(MaterialAsset->GetNormal());
 
 	return true;
 }
@@ -90,10 +67,5 @@ void FVulkanMesh::Unload()
 	if (IndexBuffer != nullptr)
 	{
 		IndexBuffer->Unload();
-	}
-
-	if (Material != nullptr)
-	{
-		Material->UnloadShaders();
 	}
 }

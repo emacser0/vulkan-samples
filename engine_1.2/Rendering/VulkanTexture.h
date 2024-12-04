@@ -14,8 +14,8 @@ public:
 
 	virtual void Destroy() override;
 
-	void LoadSource(class UTexture* InSource);
-	void LoadSource(const std::vector<UTexture*>& InSource);
+	void Load(class UTexture2D* InTexture);
+	void Load(class UTextureCube* InTexture);
 
 	void Unload();
 

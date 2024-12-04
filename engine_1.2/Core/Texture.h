@@ -13,22 +13,10 @@ public:
 	UTexture();
 	virtual ~UTexture();
 
-	uint32_t GetWidth() const { return Width; }
-	uint32_t GetHeight() const { return Height; }
-	uint32_t GetNumChannels() const { return NumChannels; }
-	const uint8_t* GetPixels() const { return Pixels; }
-
-	bool Load(const std::string& InFilename, bool bIsNormal = false);
-	void Unload();
-
 	class FVulkanTexture* GetRenderTexture() const;
+	virtual void CreateRenderTexture() { }
+	void DestroyRenderTexture();
 
-private:
-	uint32_t Width;
-	uint32_t Height;
-	uint32_t NumChannels;
-
-	uint8_t* Pixels;
-
+protected:
 	class FVulkanTexture* RenderTexture;
 };

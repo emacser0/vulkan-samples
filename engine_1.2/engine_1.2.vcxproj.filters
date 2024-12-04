@@ -133,6 +133,12 @@
     <ClInclude Include="Core\ShaderParameter.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="Core\Texture2D.h">
+      <Filter>Core</Filter>
+    </ClInclude>
+    <ClInclude Include="Core\TextureCube.h">
+      <Filter>Core</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Rendering\VulkanImage.cpp">
@@ -238,6 +244,12 @@
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="Core\Material.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\Texture2D.cpp">
+      <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Core\TextureCube.cpp">
       <Filter>Core</Filter>
     </ClCompile>
   </ItemGroup>

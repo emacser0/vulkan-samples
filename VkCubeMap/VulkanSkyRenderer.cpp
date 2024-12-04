@@ -169,14 +169,16 @@ void FVulkanSkyRenderer::CreateDescriptorSets()
 	VkDevice Device = Context->GetDevice();
 	VkDescriptorPool DescriptorPool = Context->GetDescriptorPool();
 
-	std::vector<VkDescriptorSetLayout> Layouts(MAX_CONCURRENT_FRAME, DescriptorSetLayout);
+	const uint32_t MaxConcurrentFrames = Context->GetMaxConcurrentFrames();
+
+	std::vector<VkDescriptorSetLayout> Layouts(MaxConcurrentFrames, DescriptorSetLayout);
 	VkDescriptorSetAllocateInfo DescriptorSetAllocInfo{};
 	DescriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
 	DescriptorSetAllocInfo.descriptorPool = DescriptorPool;
-	DescriptorSetAllocInfo.descriptorSetCount = static_cast<uint32_t>(MAX_CONCURRENT_FRAME);
+	DescriptorSetAllocInfo.descriptorSetCount = static_cast<uint32_t>(MaxConcurrentFrames);
 	DescriptorSetAllocInfo.pSetLayouts = Layouts.data();
 
-	DescriptorSets.resize(MAX_CONCURRENT_FRAME);
+	DescriptorSets.resize(MaxConcurrentFrames);
 	VK_ASSERT(vkAllocateDescriptorSets(Device, &DescriptorSetAllocInfo, DescriptorSets.data()));
 
 	UpdateDescriptorSets();
@@ -189,8 +191,10 @@ void FVulkanSkyRenderer::CreateUniformBuffers()
 
 	VkDeviceSize UniformBufferSize = sizeof(FUniformBufferObject);
 
-	UniformBuffers.resize(MAX_CONCURRENT_FRAME);
-	for (size_t Idx = 0; Idx < MAX_CONCURRENT_FRAME; ++Idx)
+	const uint32_t MaxConcurrentFrames = Context->GetMaxConcurrentFrames();
+
+	UniformBuffers.resize(MaxConcurrentFrames);
+	for (size_t Idx = 0; Idx < MaxConcurrentFrames; ++Idx)
 	{
 		UniformBuffers[Idx] = Context->CreateObject<FVulkanBuffer>();
 		UniformBuffers[Idx]->SetUsage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
@@ -238,14 +242,26 @@ void FVulkanSkyRenderer::UpdateDescriptorSets()
 {
 	VkDevice Device = Context->GetDevice();
 
-	FVulkanSkyMesh* SkyMesh = GetSkyMesh();
+	FVulkanMesh* SkyMesh = GetSkyMesh();
 	if (SkyMesh == nullptr)
 	{
 		return;
 	}
 
-	FVulkanTexture* Cubemap = SkyMesh->GetCubemapTexture();
-	if (Cubemap == nullptr)
+	FVulkanMaterial* Material = SkyMesh->GetMaterial();
+	if (Material == nullptr)
+	{
+		return;
+	}
+
+	UTexture* TextureAsset = Material->GetBaseColor().TexParam;
+	if (TextureAsset == nullptr)
+	{
+		return;
+	}
+
+	FVulkanTexture* Texture = TextureAsset->GetRenderTexture();
+	if (Texture == nullptr)
 	{
 		return;
 	}
@@ -269,7 +285,7 @@ void FVulkanSkyRenderer::UpdateDescriptorSets()
 
 		VkDescriptorImageInfo CubemapImageInfo{};
 		CubemapImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		CubemapImageInfo.imageView = Cubemap->GetImage()->GetView();
+		CubemapImageInfo.imageView = Texture->GetImage()->GetView();
 		CubemapImageInfo.sampler = Sampler->GetSampler();
 
 		DescriptorWrites[1].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
@@ -314,7 +330,7 @@ void FVulkanSkyRenderer::UpdateUniformBuffer()
 	memcpy(UniformBuffers[Context->GetCurrentFrame()]->GetMappedAddress(), &UBO, sizeof(FUniformBufferObject));
 }
 
-FVulkanSkyMesh* FVulkanSkyRenderer::GetSkyMesh() const
+FVulkanMesh* FVulkanSkyRenderer::GetSkyMesh() const
 {
 	FWorld* World = GEngine->GetWorld();
 	if (World == nullptr)
@@ -334,7 +350,7 @@ FVulkanSkyMesh* FVulkanSkyRenderer::GetSkyMesh() const
 		return nullptr;
 	}
 
-	return static_cast<FVulkanSkyMesh*>(Sky->GetMesh());
+	return static_cast<FVulkanMesh*>(Sky->GetMesh());
 }
 
 void FVulkanSkyRenderer::PreRender()
@@ -379,7 +395,7 @@ void FVulkanSkyRenderer::Render()
 	vkCmdSetViewport(CommandBuffer, 0, 1, &Viewport);
 	vkCmdSetScissor(CommandBuffer, 0, 1, &Scissor);
 
-	FVulkanSkyMesh* SkyMesh = GetSkyMesh();
+	FVulkanMesh* SkyMesh = GetSkyMesh();
 	if (SkyMesh == nullptr)
 	{
 		return;

@@ -21,7 +21,7 @@ layout(location = 1) out vec3 outNormal;
 
 void main()
 {
-    mat3 normalMatrix = mat3(inNormalMatrix);
+    mat3 normalMatrix = transpose(inverse(mat3(inModel)));
 
     outPosition = inModel * vec4(inPosition, 1.0);
     outNormal = normalize(normalMatrix * inNormal);

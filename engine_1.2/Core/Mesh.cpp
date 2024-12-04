@@ -20,7 +20,7 @@ UMesh::UMesh()
 
 UMesh::~UMesh()
 {
-
+	DestroyRenderMesh();
 }
 
 static aiMesh* FindFirstMesh(const aiScene* InScene, const aiNode* InNode)
@@ -141,29 +141,58 @@ bool UMesh::Load(const std::string& InFilename)
 		}
 	}
 
-	FVulkanContext* RenderContext = GEngine->GetRenderContext();
-	if (RenderContext != nullptr)
-	{
-		RenderMesh = RenderContext->CreateObject<FVulkanMesh>();
-		RenderMesh->Load(this);
-	}
+	CreateRenderMesh();
 
 	return true;
 }
 
 void UMesh::Unload()
 {
-	FVulkanContext* RenderContext = GEngine->GetRenderContext();
-	if (RenderContext != nullptr)
+	Vertices.clear();
+	Indices.clear();
+	Material = nullptr;
+
+	DestroyRenderMesh();
+}
+
+void UMesh::SetMaterial(UMaterial* InMaterial)
+{
+	Material = InMaterial;
+	
+	if (RenderMesh != nullptr)
 	{
-		if (RenderMesh != nullptr)
-		{
-			RenderContext->DestroyObject(RenderMesh);
-		}
+		RenderMesh->SetMaterial(InMaterial != nullptr ? InMaterial->GetRenderMaterial() : nullptr);
 	}
 }
 
 FVulkanMesh* UMesh::GetRenderMesh() const
 {
 	return RenderMesh;
+}
+
+void UMesh::CreateRenderMesh()
+{
+	FVulkanContext* RenderContext = GEngine->GetRenderContext();
+	if (RenderContext != nullptr)
+	{
+		RenderMesh = RenderContext->CreateObject<FVulkanMesh>();
+		RenderMesh->Load(this);
+	}
+}
+
+void UMesh::DestroyRenderMesh()
+{
+	if (RenderMesh == nullptr)
+	{
+		return;
+	}
+
+	FVulkanContext* RenderContext = GEngine->GetRenderContext();
+	if (RenderContext == nullptr)
+	{
+		return;
+	}
+
+	RenderContext->DestroyObject(RenderMesh);
+	RenderMesh = nullptr;
 }

@@ -16,7 +16,9 @@ public:
 
 	FVulkanBuffer* GetVertexBuffer() const { return VertexBuffer; }
 	FVulkanBuffer* GetIndexBuffer() const { return IndexBuffer; }
+
 	FVulkanMaterial* GetMaterial() const { return Material; }
+	void SetMaterial(FVulkanMaterial* InMaterial) { Material = InMaterial; }
 
 	class UMesh* GetMeshAsset() const { return MeshAsset; }
 	

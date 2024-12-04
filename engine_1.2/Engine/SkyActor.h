@@ -1,20 +1,25 @@
 #pragma once
 
-#include "MeshActorBase.h"
+#include "Actor.h"
 
+#include "Mesh.h"
 #include "Texture.h"
 
 #include <vector>
 
-class ASkyActor : public AMeshActorBase
+class ASkyActor : public AActor
 {
 public:
-	DECLARE_ACTOR_BODY(ASkyActor, AMeshActorBase);
+	DECLARE_ACTOR_BODY(ASkyActor, AActor);
 
-	virtual class FVulkanModel* CreateRenderModel() override;
+	UMesh* GetMesh() const { return Mesh; }
+	void SetMesh(UMesh* InMesh) { Mesh = InMesh; }
 
-	void SetCubemap(const std::vector<UTexture*>& InCubemap);
+	class FVulkanModel* CreateRenderModel();
+	void UpdateRenderModel();
 
 private:
-	std::vector<UTexture*> Cubemap;
+	UMesh* Mesh;
+
+	class FVulkanModel* RenderModel;
 };

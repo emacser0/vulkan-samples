@@ -35,7 +35,12 @@ FVulkanModel* ASkyActor::CreateRenderModel()
 	return RenderModel;
 }
 
-void ASkyActor::SetCubemap(const std::vector<UTexture*>& InSkyTexture)
+void ASkyActor::UpdateRenderModel()
 {
-	Cubemap = InSkyTexture;
+	if (RenderModel == nullptr)
+	{
+		CreateRenderModel();
+	}
+
+	RenderModel->SetModelMatrix(GetCachedModelMatrix());
 }

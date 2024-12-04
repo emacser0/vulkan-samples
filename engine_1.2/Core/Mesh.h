@@ -21,9 +21,11 @@ public:
 	void Unload();
 
 	UMaterial* GetMaterial() const { return Material; }
-	void SetMaterial(UMaterial* InMaterial) { Material = InMaterial; }
+	void SetMaterial(UMaterial* InMaterial);
 
 	class FVulkanMesh* GetRenderMesh() const;
+	void CreateRenderMesh();
+	void DestroyRenderMesh();
 
 protected:
 	std::vector<FVertex> Vertices;

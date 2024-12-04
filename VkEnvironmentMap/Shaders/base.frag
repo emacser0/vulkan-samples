@@ -43,9 +43,8 @@ layout(std140, binding = 2) uniform DebugBuffer
     bool bToneMapping;
 } debugBuffer;
 
-layout(binding = 3) uniform sampler2D baseColorSampler;
+layout(binding = 3) uniform samplerCube cubemapSampler;
 layout(binding = 4) uniform sampler2D normalSampler;
-layout(binding = 5) uniform samplerCube cubemapSampler;
 
 layout(location = 0) in vec4 inPosition;
 layout(location = 1) in vec3 inNormal;

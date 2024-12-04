@@ -46,13 +46,13 @@ FEngine::FEngine()
 
 FEngine::~FEngine()
 {
-	delete RenderContext;
 	delete World;
+	FAssetManager::Shutdown();
+
+	delete RenderContext;
 
 	glfwDestroyWindow(Window);
 	glfwTerminate();
-
-	FAssetManager::Shutdown();
 }
 
 void FEngine::Initialize()

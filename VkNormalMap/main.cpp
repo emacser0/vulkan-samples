@@ -2,7 +2,8 @@
 #include "Mesh.h"
 #include "Material.h"
 #include "AssetManager.h"
-#include "Texture.h"
+#include "Texture2D.h"
+#include "TextureCube.h"
 #include "Widget.h"
 
 #include "VulkanContext.h"
@@ -196,16 +197,16 @@ void Run(int argc, char** argv)
 	std::string ImageDirectory;
 	GConfig->Get("ImageDirectory", ImageDirectory);
 
-	UTexture* BrickBaseColorTexture = FAssetManager::CreateAsset<UTexture>("T_BrickBaseColor");
+	UTexture2D* BrickBaseColorTexture = FAssetManager::CreateAsset<UTexture2D>("T_BrickBaseColor");
 	BrickBaseColorTexture->Load(ImageDirectory + "Brick_BaseColor.jpg");
 
-	UTexture* BrickNormalTexture = FAssetManager::CreateAsset<UTexture>("T_BrickNormal");
+	UTexture2D* BrickNormalTexture = FAssetManager::CreateAsset<UTexture2D>("T_BrickNormal");
 	BrickNormalTexture->Load(ImageDirectory + "Brick_Normal.png", true);
 
-	UTexture* WhiteTexture = FAssetManager::CreateAsset<UTexture>("T_White");
+	UTexture2D* WhiteTexture = FAssetManager::CreateAsset<UTexture2D>("T_White");
 	WhiteTexture->Load(ImageDirectory + "white.png");
 
-	UTexture* PlaneNormalTexture = FAssetManager::CreateAsset<UTexture>("T_PlaneNormal");
+	UTexture2D* PlaneNormalTexture = FAssetManager::CreateAsset<UTexture2D>("T_PlaneNormal");
 	PlaneNormalTexture->Load(ImageDirectory + "normal.png", true);
 
 	std::string ShaderDirectory;
@@ -227,6 +228,8 @@ void Run(int argc, char** argv)
 		NormalParameter.Type = EShaderParameterType::Texture;
 		NormalParameter.TexParam = BrickNormalTexture;
 		BaseMaterial->SetNormal(NormalParameter);
+
+		BaseMaterial->CreateRenderMaterial();
 	}
 
 	UMaterial* LightSourceMaterial = FAssetManager::CreateAsset<UMaterial>("M_LightSource");
@@ -245,15 +248,17 @@ void Run(int argc, char** argv)
 		NormalParameter.Type = EShaderParameterType::Texture;
 		NormalParameter.TexParam = PlaneNormalTexture;
 		LightSourceMaterial->SetNormal(NormalParameter);
+
+		LightSourceMaterial->CreateRenderMaterial();
 	}
 
 	UMesh* SphereMesh = FAssetManager::CreateAsset<UMesh>("SM_Sphere");
-	SphereMesh->SetMaterial(BaseMaterial);
 	SphereMesh->Load(MeshDirectory + "sphere.fbx");
+	SphereMesh->SetMaterial(BaseMaterial);
 
 	UMesh* LightSourceMesh = FAssetManager::CreateAsset<UMesh>("SM_LightSource");
-	LightSourceMesh->SetMaterial(LightSourceMaterial);
 	LightSourceMesh->Load(MeshDirectory + "sphere.fbx");
+	LightSourceMesh->SetMaterial(LightSourceMaterial);
 
 	FWorld* World = GEngine->GetWorld();
 
