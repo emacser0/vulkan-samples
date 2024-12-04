@@ -1,14 +1,26 @@
 #pragma once
 
-#include "MeshActorBase.h"
+#include "Actor.h"
 #include "Texture.h"
+#include "Mesh.h"
+#include "Material.h"
 
-class AMeshActor : public AMeshActorBase
+class AMeshActor : public AActor
 {
 public:
-	DECLARE_ACTOR_BODY(AMeshActor, AMeshActorBase);
+	DECLARE_ACTOR_BODY(AMeshActor, AActor);
 
 	AMeshActor();
 
-	virtual class FVulkanModel* CreateRenderModel() override;
+	UMesh* GetMesh() const { return Mesh; }
+	void SetMesh(UMesh* InMesh) { Mesh = InMesh; }
+
+	class FVulkanModel* GetRenderModel() const;
+	class FVulkanModel* CreateRenderModel();
+	void UpdateRenderModel();
+
+private:
+	UMesh* Mesh;
+
+	class FVulkanModel* RenderModel;
 };

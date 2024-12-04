@@ -1,6 +1,6 @@
 #pragma once
 
-#include "MeshActorBase.h"
+#include "Actor.h"
 
 #include "glm/glm.hpp"
 

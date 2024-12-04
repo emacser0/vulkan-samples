@@ -9,8 +9,15 @@
 #include "VulkanTexture.h"
 
 AMeshActor::AMeshActor()
-	: AMeshActorBase()
+	: AActor()
+	, Mesh(nullptr)
+	, RenderModel(nullptr)
 {
+}
+
+FVulkanModel* AMeshActor::GetRenderModel() const
+{
+	return RenderModel;
 }
 
 FVulkanModel* AMeshActor::CreateRenderModel()
@@ -38,4 +45,14 @@ FVulkanModel* AMeshActor::CreateRenderModel()
 	}
 
 	return RenderModel;
+}
+
+void AMeshActor::UpdateRenderModel()
+{	
+	if (RenderModel == nullptr)
+	{
+		CreateRenderModel();
+	}
+
+	RenderModel->SetModelMatrix(GetCachedModelMatrix());
 }

@@ -79,9 +79,6 @@
     <ClInclude Include="Engine\MeshActor.h">
       <Filter>Engine</Filter>
     </ClInclude>
-    <ClInclude Include="Engine\MeshActorBase.h">
-      <Filter>Engine</Filter>
-    </ClInclude>
     <ClInclude Include="Engine\PointLightActor.h">
       <Filter>Engine</Filter>
     </ClInclude>
@@ -193,9 +190,6 @@
       <Filter>Engine</Filter>
     </ClCompile>
     <ClCompile Include="Engine\MeshActor.cpp">
-      <Filter>Engine</Filter>
-    </ClCompile>
-    <ClCompile Include="Engine\MeshActorBase.cpp">
       <Filter>Engine</Filter>
     </ClCompile>
     <ClCompile Include="Engine\PointLightActor.cpp">

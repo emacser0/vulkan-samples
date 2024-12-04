@@ -39,7 +39,6 @@
     <ClInclude Include="Engine\Engine.h" />
     <ClInclude Include="Engine\LightActor.h" />
     <ClInclude Include="Engine\MeshActor.h" />
-    <ClInclude Include="Engine\MeshActorBase.h" />
     <ClInclude Include="Engine\PointLightActor.h" />
     <ClInclude Include="Engine\SkyActor.h" />
     <ClInclude Include="Engine\World.h" />
@@ -80,7 +79,6 @@
     <ClCompile Include="Engine\Engine.cpp" />
     <ClCompile Include="Engine\LightActor.cpp" />
     <ClCompile Include="Engine\MeshActor.cpp" />
-    <ClCompile Include="Engine\MeshActorBase.cpp" />
     <ClCompile Include="Engine\PointLightActor.cpp" />
     <ClCompile Include="Engine\SkyActor.cpp" />
     <ClCompile Include="Engine\World.cpp" />
