@@ -247,6 +247,21 @@ void Run(int argc, char** argv)
 		NormalParameter.TexParam = BrickNormalTexture;
 		BaseMaterial->SetNormal(NormalParameter);
 
+		FShaderParameter AmbientParameter{};
+		AmbientParameter.Type = EShaderParameterType::Vector3;
+		AmbientParameter.Vec3Param = glm::vec3(0.05f, 0.05f, 0.05f);
+		BaseMaterial->SetAmbient(AmbientParameter);
+
+		FShaderParameter DiffuseParameter{};
+		DiffuseParameter.Type = EShaderParameterType::Vector3;
+		DiffuseParameter.Vec3Param = glm::vec3(1.0f);
+		BaseMaterial->SetDiffuse(DiffuseParameter);
+
+		FShaderParameter SpecularParameter{};
+		SpecularParameter.Type = EShaderParameterType::Vector3;
+		SpecularParameter.Vec3Param = glm::vec3(1.0f);
+		BaseMaterial->SetSpecular(SpecularParameter);
+
 		BaseMaterial->CreateRenderMaterial();
 	}
 
@@ -266,6 +281,21 @@ void Run(int argc, char** argv)
 		NormalParameter.Type = EShaderParameterType::Texture;
 		NormalParameter.TexParam = PlaneNormalTexture;
 		LightSourceMaterial->SetNormal(NormalParameter);
+
+		FShaderParameter AmbientParameter{};
+		AmbientParameter.Type = EShaderParameterType::Vector3;
+		AmbientParameter.Vec3Param = glm::vec3(0.05f, 0.05f, 0.05f);
+		LightSourceMaterial->SetAmbient(AmbientParameter);
+
+		FShaderParameter DiffuseParameter{};
+		DiffuseParameter.Type = EShaderParameterType::Vector3;
+		DiffuseParameter.Vec3Param = glm::vec3(1.0f);
+		LightSourceMaterial->SetDiffuse(DiffuseParameter);
+
+		FShaderParameter SpecularParameter{};
+		SpecularParameter.Type = EShaderParameterType::Vector3;
+		SpecularParameter.Vec3Param = glm::vec3(1.0f);
+		LightSourceMaterial->SetSpecular(SpecularParameter);
 
 		LightSourceMaterial->CreateRenderMaterial();
 	}

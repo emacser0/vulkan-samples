@@ -28,10 +28,19 @@ public:
 	FVulkanShader* GetFS() const { return FS; }
 
 	FShaderParameter GetBaseColor() const { return BaseColor; }
-	FShaderParameter GetNormal() const { return Normal; }
-
 	void SetBaseColor(const FShaderParameter& InBaseColor) { BaseColor = InBaseColor; }
+
+	FShaderParameter GetNormal() const { return Normal; }
 	void SetNormal(const FShaderParameter& InNormal) { Normal = InNormal; }
+
+	FShaderParameter GetAmbient() const { return Ambient; }
+	void SetAmbient(const FShaderParameter& InAmbient) { Ambient = InAmbient; }
+
+	FShaderParameter GetDiffuse() const { return Diffuse; }
+	void SetDiffuse(const FShaderParameter& InDiffuse) { Diffuse = InDiffuse; }
+
+	FShaderParameter GetSpecular() const { return Specular; }
+	void SetSpecular(const FShaderParameter& InSpecular) { Specular = InSpecular; }
 
 	virtual void Destroy() override;
 

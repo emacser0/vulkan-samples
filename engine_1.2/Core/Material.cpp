@@ -10,6 +10,9 @@ UMaterial::UMaterial()
 	, ShaderPath()
 	, BaseColor()
 	, Normal()
+	, Ambient()
+	, Diffuse()
+	, Specular()
 	, RenderMaterial()
 {
 }
@@ -48,6 +51,9 @@ void UMaterial::CreateRenderMaterial()
 
 	RenderMaterial->SetBaseColor(BaseColor);
 	RenderMaterial->SetNormal(Normal);
+	RenderMaterial->SetAmbient(Ambient);
+	RenderMaterial->SetDiffuse(Diffuse);
+	RenderMaterial->SetSpecular(Specular);
 }
 
 void UMaterial::DestroyRenderMaterial()

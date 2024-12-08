@@ -39,6 +39,13 @@ struct FLightBufferObject
 	FVulkanDirectionalLight DirectionalLights[16];
 };
 
+struct FMaterialBufferObject
+{
+	alignas(16) glm::vec4 Ambient;
+	alignas(16) glm::vec4 Diffuse;
+	alignas(16) glm::vec4 Specular;
+};
+
 struct FDebugBufferObject
 {
 	alignas(4) bool bAttenuation;
@@ -57,6 +64,7 @@ FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	: FVulkanObject(InContext)
 	, TBNPipeline(nullptr)
 	, DescriptorSetLayout(VK_NULL_HANDLE)
+	, Sampler(nullptr)
 	, bInitialized(false)
 	, bEnableTBNVisualization(false)
 	, bEnableAttenuation(false)
@@ -91,6 +99,12 @@ void FVulkanMeshRenderer::CreateDescriptorSetLayout()
 	LightBufferBinding.pImmutableSamplers = nullptr;
 	LightBufferBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
+	VkDescriptorSetLayoutBinding MaterialBufferBinding{};
+	MaterialBufferBinding.descriptorCount = 1;
+	MaterialBufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	MaterialBufferBinding.pImmutableSamplers = nullptr;
+	MaterialBufferBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
 	VkDescriptorSetLayoutBinding DebugBufferBinding{};
 	DebugBufferBinding.descriptorCount = 1;
 	DebugBufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
@@ -113,6 +127,7 @@ void FVulkanMeshRenderer::CreateDescriptorSetLayout()
 	{
 		TransformBufferBinding,
 		LightBufferBinding,
+		MaterialBufferBinding,
 		DebugBufferBinding,
 		BaseColorSamplerBinding,
 		NormalSamplerBinding
@@ -367,6 +382,7 @@ void FVulkanMeshRenderer::CreateUniformBuffers()
 	{
 		{ sizeof(FTransformBufferObject), TransformBuffers },
 		{ sizeof(FLightBufferObject), LightBuffers },
+		{ sizeof(FMaterialBufferObject), MaterialBuffers },
 		{ sizeof(FDebugBufferObject), DebugBuffers }
 	};
 
@@ -564,6 +580,29 @@ void FVulkanMeshRenderer::UpdateUniformBuffer()
 	memcpy(DebugBuffers[CurrentFrame]->GetMappedAddress(), &DBO, sizeof(FDebugBufferObject));
 }
 
+void FVulkanMeshRenderer::UpdateMaterialBuffer(FVulkanMesh* InMesh)
+{
+	if (InMesh == nullptr)
+	{
+		return;
+	}
+
+	FVulkanMaterial* Material = InMesh->GetMaterial();
+	if (Material == nullptr)
+	{
+		return;
+	}
+
+	FMaterialBufferObject MBO{};
+	MBO.Ambient = glm::vec4(Material->GetAmbient().Vec3Param, 1.0);
+	MBO.Diffuse = glm::vec4(Material->GetDiffuse().Vec3Param, 1.0);
+	MBO.Specular = glm::vec4(Material->GetSpecular().Vec3Param, 1.0);
+
+	uint32_t CurrentFrame = Context->GetCurrentFrame();
+
+	memcpy(MaterialBuffers[CurrentFrame]->GetMappedAddress(), &MBO, sizeof(FMaterialBufferObject));
+}
+
 void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMesh* InMesh)
 {
 	if (Scene == nullptr)
@@ -681,6 +720,16 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 			LightBufferDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
 			LightBufferDescriptor.pBufferInfo = &LightBufferInfo;
 
+			VkDescriptorBufferInfo MaterialBufferInfo{};
+			MaterialBufferInfo.buffer = MaterialBuffers[i]->GetBuffer();
+			MaterialBufferInfo.offset = 0;
+			MaterialBufferInfo.range = sizeof(FMaterialBufferObject);
+
+			VkWriteDescriptorSet MaterialBufferDescriptor{};
+			MaterialBufferDescriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			MaterialBufferDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			MaterialBufferDescriptor.pBufferInfo = &MaterialBufferInfo;
+
 			VkDescriptorBufferInfo DebugBufferInfo{};
 			DebugBufferInfo.buffer = DebugBuffers[i]->GetBuffer();
 			DebugBufferInfo.offset = 0;
@@ -715,6 +764,7 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 			{
 				TransformBufferDescriptor,
 				LightBufferDescriptor,
+				MaterialBufferDescriptor,
 				DebugBufferDescriptor,
 				BaseColorDescriptor,
 				NormalDescriptor
@@ -778,6 +828,13 @@ void FVulkanMeshRenderer::Render()
 	{
 		FVulkanMesh* Mesh = Pair.first;
 		const FInstancedDrawingInfo& DrawingInfo = Pair.second;
+
+		if (Mesh == nullptr)
+		{
+			continue;
+		}
+
+		UpdateMaterialBuffer(Mesh);
 		Draw(Mesh, DrawingInfo, Viewport, Scissor);
 	}
 }

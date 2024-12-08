@@ -36,15 +36,22 @@ layout(std140, binding = 1) uniform LightBuffer
     DirectionalLight directionalLights[16];
 } lightBuffer;
 
-layout(std140, binding = 2) uniform DebugBuffer
+layout(std140, binding = 2) uniform MaterialBuffer
+{
+    vec4 ambient;
+    vec4 diffuse;
+    vec4 specular;
+} materialBuffer;
+
+layout(std140, binding = 3) uniform DebugBuffer
 {
     bool bAttenuation;
     bool bGammaCorrection;
     bool bToneMapping;
 } debugBuffer;
 
-layout(binding = 3) uniform samplerCube cubemapSampler;
-layout(binding = 4) uniform sampler2D normalSampler;
+layout(binding = 4) uniform samplerCube cubemapSampler;
+layout(binding = 5) uniform sampler2D normalSampler;
 
 layout(location = 0) in vec4 inPosition;
 layout(location = 1) in vec3 inNormal;

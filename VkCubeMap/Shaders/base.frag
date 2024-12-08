@@ -29,15 +29,22 @@ layout(std140, binding = 1) uniform LightBuffer
     DirectionalLight directionalLights[16];
 } lightBuffer;
 
-layout(std140, binding = 2) uniform DebugBuffer
+layout(std140, binding = 2) uniform MaterialBuffer
+{
+    vec4 ambient;
+    vec4 diffuse;
+    vec4 specular;
+} materialBuffer;
+
+layout(std140, binding = 3) uniform DebugBuffer
 {
     bool bAttenuation;
     bool bGammaCorrection;
     bool bToneMapping;
 } debugBuffer;
 
-layout(binding = 3) uniform sampler2D baseColorSampler;
-layout(binding = 4) uniform sampler2D normalSampler;
+layout(binding = 4) uniform sampler2D baseColorSampler;
+layout(binding = 5) uniform sampler2D normalSampler;
 
 layout(location = 0) in vec4 inPosition;
 layout(location = 1) in vec3 inNormal;
@@ -57,7 +64,7 @@ vec4 hdrToneMapping(vec4 inColor)
 vec4 gammaCorrection(vec4 inColor)
 {
     vec3 outColor = vec3(inColor);
-    outColor = pow(outColor, vec3(1.0 / 2.2));
+    outColor = pow(outColor, vec3(1.0 / 1.2));
 
     return vec4(outColor, inColor.a);
 }
@@ -72,7 +79,7 @@ void main()
 
     vec4 baseColor = texture(baseColorSampler, inTexCoord);
 
-    vec4 ambient = lightBuffer.pointLights[0].ambient;
+    vec4 ambient = vec4(0.0);
     vec4 diffuse = vec4(0.0);
     vec4 specular = vec4(0.0);
 
@@ -85,14 +92,15 @@ void main()
 		
 		float d = length(light.position - inPosition.xyz);
 		float denom = light.attenuation.x + light.attenuation.y * d + light.attenuation.z * d * d;
-        
+
         if (!debugBuffer.bAttenuation)
         {
             denom = 1.0;
         }
 
-		diffuse += max(dot(L, N), 0.0) * light.diffuse / denom;
-		specular += pow(max(dot(N, H), 0.0), 3 * light.shininess) * light.specular / denom;
+        ambient += materialBuffer.ambient * light.ambient;
+		diffuse += materialBuffer.diffuse * light.diffuse * max(dot(L, N), 0.0) / denom;
+		specular += materialBuffer.specular * light.specular * pow(max(dot(N, H), 0.0), 3 * light.shininess) / denom;
     }
 
     for (int i = 0; i < lightBuffer.numDirectionalLights; ++i)
@@ -102,9 +110,9 @@ void main()
         vec3 L = normalize(light.direction);
         vec3 H = normalize(L + V);
 
-		vec4 ambient = light.ambient;
-		diffuse += max(dot(L, N), 0.0) * light.diffuse;
-		specular += pow(max(dot(N, H), 0.0), 3 * light.shininess) * light.specular;
+        ambient += materialBuffer.ambient * light.ambient;
+		diffuse += materialBuffer.diffuse * light.diffuse * max(dot(L, N), 0.0);
+		specular += materialBuffer.specular * light.specular * pow(max(dot(N, H), 0.0), 3 * light.shininess);
     }
 
     outColor = (ambient + diffuse + specular) * texture(baseColorSampler, inTexCoord);

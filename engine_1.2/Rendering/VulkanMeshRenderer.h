@@ -53,6 +53,7 @@ protected:
 	void GetVertexInputAttributes(std::vector<VkVertexInputAttributeDescription>& OutDescs);
 
 	void UpdateUniformBuffer();
+	void UpdateMaterialBuffer(FVulkanMesh* InMesh);
 	void UpdateInstanceBuffer(FVulkanMesh* InMesh);
 	void UpdateDescriptorSets();
 
@@ -76,6 +77,7 @@ protected:
 
 	std::vector<FVulkanBuffer*> TransformBuffers;
 	std::vector<FVulkanBuffer*> LightBuffers;
+	std::vector<FVulkanBuffer*> MaterialBuffers;
 	std::vector<FVulkanBuffer*> DebugBuffers;
 
 	FVulkanSampler* Sampler;
