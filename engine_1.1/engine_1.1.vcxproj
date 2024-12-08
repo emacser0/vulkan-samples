@@ -19,12 +19,50 @@
     </ProjectConfiguration>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\Camera.h" />
-    <ClInclude Include="include\Engine.h" />
+    <ClInclude Include="Core\Asset.h" />
+    <ClInclude Include="Core\AssetManager.h" />
+    <ClInclude Include="Core\Config.h" />
+    <ClInclude Include="Core\Mesh.h" />
+    <ClInclude Include="Core\TextureSource.h" />
+    <ClInclude Include="Core\Transform.h" />
+    <ClInclude Include="Core\Utils.h" />
+    <ClInclude Include="Core\Vertex.h" />
+    <ClInclude Include="Core\Widget.h" />
+    <ClInclude Include="Engine\Camera.h" />
+    <ClInclude Include="Engine\Engine.h" />
+    <ClInclude Include="Rendering\VulkanBuffer.h" />
+    <ClInclude Include="Rendering\VulkanContext.h" />
+    <ClInclude Include="Rendering\VulkanHelpers.h" />
+    <ClInclude Include="Rendering\VulkanLight.h" />
+    <ClInclude Include="Rendering\VulkanMesh.h" />
+    <ClInclude Include="Rendering\VulkanModel.h" />
+    <ClInclude Include="Rendering\VulkanObject.h" />
+    <ClInclude Include="Rendering\VulkanScene.h" />
+    <ClInclude Include="Rendering\VulkanShader.h" />
+    <ClInclude Include="Rendering\VulkanTexture.h" />
+    <ClInclude Include="Rendering\VulkanUIRenderer.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="Engine.cpp" />
+    <ClCompile Include="Core\Asset.cpp" />
+    <ClCompile Include="Core\AssetManager.cpp" />
+    <ClCompile Include="Core\Config.cpp" />
+    <ClCompile Include="Core\Mesh.cpp" />
+    <ClCompile Include="Core\TextureSource.cpp" />
+    <ClCompile Include="Core\Transform.cpp" />
+    <ClCompile Include="Core\Utils.cpp" />
+    <ClCompile Include="Core\Vertex.cpp" />
+    <ClCompile Include="Core\Widget.cpp" />
+    <ClCompile Include="Engine\Camera.cpp" />
+    <ClCompile Include="Engine\Engine.cpp" />
+    <ClCompile Include="Rendering\VulkanContext.cpp" />
+    <ClCompile Include="Rendering\VulkanHelpers.cpp" />
+    <ClCompile Include="Rendering\VulkanMesh.cpp" />
+    <ClCompile Include="Rendering\VulkanModel.cpp" />
+    <ClCompile Include="Rendering\VulkanObject.cpp" />
+    <ClCompile Include="Rendering\VulkanScene.cpp" />
+    <ClCompile Include="Rendering\VulkanShader.cpp" />
+    <ClCompile Include="Rendering\VulkanTexture.cpp" />
+    <ClCompile Include="Rendering\VulkanUIRenderer.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
@@ -128,7 +166,7 @@
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)core_1.1\include;$(SolutionDir)rendering_1.1\include;$(SolutionDir)external\include;C:\VulkanSDK\1.3.290.0\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Core;$(ProjectDir)Rendering;$(ProjectDir)Engine;$(SolutionDir)external\include;C:\VulkanSDK\1.3.290.0\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
@@ -148,7 +186,7 @@
       <PrecompiledHeaderFile>
       </PrecompiledHeaderFile>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)include;$(SolutionDir)core_1.1\include;$(SolutionDir)rendering_1.1\include;$(SolutionDir)external\include;C:\VulkanSDK\1.3.290.0\Include</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)Core;$(ProjectDir)Rendering;$(ProjectDir)Engine;$(SolutionDir)external\include;C:\VulkanSDK\1.3.290.0\Include</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>
