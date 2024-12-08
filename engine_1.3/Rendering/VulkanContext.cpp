@@ -213,10 +213,7 @@ void FVulkanContext::CreateInstance()
 		InstanceCI.pNext = nullptr;
 	}
 
-	if (vkCreateInstance(&InstanceCI, nullptr, &Instance) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create instance.");
-	}
+	VK_ASSERT(vkCreateInstance(&InstanceCI, nullptr, &Instance));
 }
 
 void FVulkanContext::SetupDebugMessenger()
@@ -323,10 +320,7 @@ void FVulkanContext::CreateLogicalDevice()
 		DeviceCI.enabledLayerCount = 0;
 	}
 
-	if (vkCreateDevice(PhysicalDevice, &DeviceCI, nullptr, &Device) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create logical device.");
-	}
+	VK_ASSERT(vkCreateDevice(PhysicalDevice, &DeviceCI, nullptr, &Device));
 
 	vkGetDeviceQueue(Device, GraphicsFamily, 0, &GfxQueue);
 	vkGetDeviceQueue(Device, PresentFamily, 0, &PresentQueue);
@@ -426,10 +420,7 @@ void FVulkanContext::CreateSwapchain()
 	SwapchainCI.presentMode = ChoosenPresentMode;
 	SwapchainCI.clipped = VK_TRUE;
 
-	if (vkCreateSwapchainKHR(Device, &SwapchainCI, nullptr, &Swapchain) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create swap chain.");
-	}
+	VK_ASSERT(vkCreateSwapchainKHR(Device, &SwapchainCI, nullptr, &Swapchain));
 
 	uint32_t SwapchainImageCount;
 	vkGetSwapchainImagesKHR(Device, Swapchain, &SwapchainImageCount, nullptr);
@@ -462,10 +453,7 @@ void FVulkanContext::CreateImageViews()
 		ImageViewCI.subresourceRange.baseArrayLayer = 0;
 		ImageViewCI.subresourceRange.layerCount = 1;
 
-		if (vkCreateImageView(Device, &ImageViewCI, nullptr, &SwapchainImageViews[Idx]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create image views.");
-		}
+		VK_ASSERT(vkCreateImageView(Device, &ImageViewCI, nullptr, &SwapchainImageViews[Idx]));
 	}
 }
 
@@ -491,10 +479,7 @@ void FVulkanContext::CreateFramebuffers()
 		FramebufferCI.layers = 1;
 		FramebufferCI.pNext = nullptr;
 
-		if (vkCreateFramebuffer(Device, &FramebufferCI, nullptr, &SwapchainFramebuffers[Idx]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create framebuffer.");
-		}
+		VK_ASSERT(vkCreateFramebuffer(Device, &FramebufferCI, nullptr, &SwapchainFramebuffers[Idx]));
 	}
 }
 
@@ -553,10 +538,7 @@ void FVulkanContext::CreateRenderPass()
 	RenderPassCI.dependencyCount = 1;
 	RenderPassCI.pDependencies = &SubpassDependency;
 
-	if (vkCreateRenderPass(Device, &RenderPassCI, nullptr, &RenderPass) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create render pass.");
-	}
+	VK_ASSERT(vkCreateRenderPass(Device, &RenderPassCI, nullptr, &RenderPass));
 }
 
 void FVulkanContext::CreateCommandPool()
@@ -570,10 +552,7 @@ void FVulkanContext::CreateCommandPool()
 	CommandPoolCI.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 	CommandPoolCI.queueFamilyIndex = GraphicsFamily;
 
-	if (vkCreateCommandPool(Device, &CommandPoolCI, nullptr, &CommandPool) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create graphics command pool.");
-	}
+	VK_ASSERT(vkCreateCommandPool(Device, &CommandPoolCI, nullptr, &CommandPool));
 }
 
 void FVulkanContext::CreateCommandBuffers()
@@ -586,10 +565,7 @@ void FVulkanContext::CreateCommandBuffers()
 	CommandBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	CommandBufferAllocInfo.commandBufferCount = static_cast<uint32_t>(CommandBuffers.size());
 
-	if (vkAllocateCommandBuffers(Device, &CommandBufferAllocInfo, CommandBuffers.data()) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to allocate command buffers.");
-	}
+	VK_ASSERT(vkAllocateCommandBuffers(Device, &CommandBufferAllocInfo, CommandBuffers.data()));
 }
 
 void FVulkanContext::CreateSyncObjects()
@@ -642,10 +618,7 @@ void FVulkanContext::CreateDescriptorPool()
 	DescriptorPoolCI.maxSets = 1000U;
 	DescriptorPoolCI.flags = VK_DESCRIPTOR_POOL_CREATE_FREE_DESCRIPTOR_SET_BIT;
 
-	if (vkCreateDescriptorPool(Device, &DescriptorPoolCI, nullptr, &DescriptorPool) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create descriptor pool.");
-	}
+	VK_ASSERT(vkCreateDescriptorPool(Device, &DescriptorPoolCI, nullptr, &DescriptorPool));
 }
 
 void FVulkanContext::CreateDepthResources()
@@ -745,10 +718,7 @@ void FVulkanContext::BeginRender()
 	VkCommandBufferBeginInfo CommandBufferBeginInfo{};
 	CommandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-	if (vkBeginCommandBuffer(CommandBuffers[CurrentFrame], &CommandBufferBeginInfo) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to begin recording command buffer.");
-	}
+	VK_ASSERT(vkBeginCommandBuffer(CommandBuffers[CurrentFrame], &CommandBufferBeginInfo));
 
 	VkRenderPassBeginInfo RenderPassBeginInfo{};
 	RenderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -770,10 +740,7 @@ void FVulkanContext::EndRender()
 {
 	vkCmdEndRenderPass(CommandBuffers[CurrentFrame]);
 
-	if (vkEndCommandBuffer(CommandBuffers[CurrentFrame]) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to record command buffer.");
-	}
+	VK_ASSERT(vkEndCommandBuffer(CommandBuffers[CurrentFrame]));
 
 	VkSemaphore WaitSemaphores[] = { ImageAvailableSemaphores[CurrentFrame] };
 	VkPipelineStageFlags WaitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
@@ -790,10 +757,7 @@ void FVulkanContext::EndRender()
 	SubmitInfo.signalSemaphoreCount = 1;
 	SubmitInfo.pSignalSemaphores = SignalSemaphores;
 
-	if (vkQueueSubmit(GfxQueue, 1, &SubmitInfo, Fences[CurrentFrame]) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to submit draw command buffer.");
-	}
+	VK_ASSERT(vkQueueSubmit(GfxQueue, 1, &SubmitInfo, Fences[CurrentFrame]));
 
 	VkSwapchainKHR Swapchains[] = { Swapchain };
 
