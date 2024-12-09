@@ -27,6 +27,8 @@ bool FTextureSource::Load(const std::string& InFilename)
 {
 	int OutWidth, OutHeight, OutNumChannels;
 
+	stbi_set_flip_vertically_on_load(true);
+
 	Pixels = stbi_load(InFilename.c_str(), &OutWidth, &OutHeight, &OutNumChannels, STBI_rgb_alpha);
 	if (Pixels == nullptr)
 	{
