@@ -31,13 +31,13 @@ bool UTexture2D::Load(const std::string& InFilename, bool InbIsNormal)
 {
 	int OutWidth, OutHeight, OutNumChannels;
 
+	stbi_set_flip_vertically_on_load(true);
+
 	Pixels = stbi_load(InFilename.c_str(), &OutWidth, &OutHeight, &OutNumChannels, STBI_rgb_alpha);
 	if (Pixels == nullptr)
 	{
 		return false;
 	}
-
-	stbi_set_flip_vertically_on_load(true);
 
 	assert(OutWidth >= 0);
 	assert(OutHeight >= 0);

@@ -209,7 +209,7 @@ void Run(int argc, char** argv)
 	BrickBaseColorTexture->Load(ImageDirectory + "Brick_BaseColor.jpg");
 
 	UTexture2D* BrickNormalTexture = FAssetManager::CreateAsset<UTexture2D>("T_BrickNormal");
-	BrickNormalTexture->Load(ImageDirectory + "Brick_Normal.png");
+	BrickNormalTexture->Load(ImageDirectory + "Brick_Normal.png", true);
 
 	UTexture2D* WhiteTexture = FAssetManager::CreateAsset<UTexture2D>("T_White");
 	WhiteTexture->Load(ImageDirectory + "white.png");

@@ -94,6 +94,9 @@ EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "engine_1.3", "engine_1.3\engine_1.3.vcxproj", "{3235917B-786A-4E7C-8C39-7B7E4FB3CA5D}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VkShadowMap", "VkShadowMap\VkShadowMap.vcxproj", "{CBE663F0-9044-401E-9E51-C7ACB5790E8F}"
+	ProjectSection(ProjectDependencies) = postProject
+		{3235917B-786A-4E7C-8C39-7B7E4FB3CA5D} = {3235917B-786A-4E7C-8C39-7B7E4FB3CA5D}
+	EndProjectSection
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "1.4", "1.4", "{2619B47A-4A24-45F0-A7FB-3DF447D6522A}"
 EndProject
