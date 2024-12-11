@@ -28,10 +28,7 @@ bool UTextureCube::Load(const std::vector<std::string>& InFilenames)
 	{
 		return false;
 	}
-}
 
-bool UTextureCube::Load(const std::array<std::string, 6>& InFilenames)
-{
 	for (int Idx = 0; Idx < InFilenames.size(); ++Idx)
 	{
 		const std::string& Filename = InFilenames[Idx];
@@ -61,6 +58,13 @@ bool UTextureCube::Load(const std::array<std::string, 6>& InFilenames)
 	}
 
 	CreateRenderTexture();
+
+	return true;
+}
+
+bool UTextureCube::Load(const std::array<std::string, 6>& InFilenames)
+{
+	return Load(std::vector<std::string>(InFilenames.begin(), InFilenames.end()));
 }
 
 void UTextureCube::Unload()

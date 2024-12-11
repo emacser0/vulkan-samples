@@ -28,10 +28,10 @@ public:
 	VkRenderPass GetRenderPass() const { return RenderPass; }
 	VkCommandPool GetCommandPool() const { return CommandPool; }
 	const std::vector<VkCommandBuffer>& GetCommandBuffers() const { return CommandBuffers; }
+	VkCommandBuffer GetCommandBuffer() const { return CommandBuffers[CurrentFrame]; }
 	VkDescriptorPool GetDescriptorPool() const { return DescriptorPool; }
 	uint32_t GetCurrentFrame() const { return CurrentFrame; }
 	uint32_t GetMaxConcurrentFrames() const { return MAX_CONCURRENT_FRAME; }
-	uint32_t GetCurrentImageIndex() const { return CurrentImageIndex; }
 
 	bool IsFramebufferResized() const { return bFramebufferResized; }
 	void SetFramebufferResized(bool InbFramebufferResized) { bFramebufferResized = InbFramebufferResized; }
@@ -45,8 +45,8 @@ public:
 		LiveObjects.push_back(static_cast<FVulkanObject*>(NewObject));
 		return NewObject;
 	}
-
 	void DestroyObject(FVulkanObject* InObject);
+	bool IsValidObject(FVulkanObject* InObject);
 
 public:
 
@@ -91,7 +91,7 @@ protected:
 	VkFormat SwapchainImageFormat;
 	VkExtent2D SwapchainExtent;
 	std::vector<VkImageView> SwapchainImageViews;
-	std::vector<VkFramebuffer> SwapchainFramebuffers;
+	std::vector<class FVulkanFramebuffer*> SwapchainFramebuffers;
 
 	class FVulkanImage* DepthImage;
 
@@ -102,7 +102,7 @@ protected:
 
 	VkDescriptorPool DescriptorPool;
 
-	std::vector<VkSemaphore> ImageAvailableSemaphores;
+	std::vector<VkSemaphore> ImageAcquiredSemaphores;
 	std::vector<VkSemaphore> RenderFinishedSemaphores;
 	std::vector<VkFence> Fences;
 

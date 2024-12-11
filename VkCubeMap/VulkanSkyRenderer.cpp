@@ -271,7 +271,7 @@ void FVulkanSkyRenderer::UpdateDescriptorSets()
 		std::array<VkWriteDescriptorSet, 2> DescriptorWrites{};
 
 		VkDescriptorBufferInfo UniformBufferInfo{};
-		UniformBufferInfo.buffer = UniformBuffers[Idx]->GetBuffer();
+		UniformBufferInfo.buffer = UniformBuffers[Idx]->GetHandle();
 		UniformBufferInfo.offset = 0;
 		UniformBufferInfo.range = sizeof(FUniformBufferObject);
 
@@ -405,11 +405,11 @@ void FVulkanSkyRenderer::Render()
 
 	vkCmdBindDescriptorSets(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipeline->GetLayout(), 0, 1, &DescriptorSet, 0, nullptr);
 
-	VkBuffer VertexBuffers[] = { SkyMesh->GetVertexBuffer()->GetBuffer() };
+	VkBuffer VertexBuffers[] = { SkyMesh->GetVertexBuffer()->GetHandle() };
 	VkDeviceSize Offsets[] = { 0 };
 	vkCmdBindVertexBuffers(CommandBuffer, 0, 1, VertexBuffers, Offsets);
 
-	vkCmdBindIndexBuffer(CommandBuffer, SkyMesh->GetIndexBuffer()->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(CommandBuffer, SkyMesh->GetIndexBuffer()->GetHandle(), 0, VK_INDEX_TYPE_UINT32);
 
 	vkCmdDrawIndexed(CommandBuffer, static_cast<uint32_t>(SkyMesh->GetMeshAsset()->GetIndices().size()), 1, 0, 0, 0);
 }

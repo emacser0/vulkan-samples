@@ -1,6 +1,7 @@
 #include "VulkanContext.h"
 #include "VulkanHelpers.h"
 #include "VulkanImage.h"
+#include "VulkanFramebuffer.h"
 
 #include "Config.h"
 
@@ -91,23 +92,15 @@ FVulkanContext::~FVulkanContext()
 {
 	RenderContextMap.erase(Window);
 
-	for (FVulkanObject* LiveObject : LiveObjects)
-	{
-		if (LiveObject != nullptr)
-		{
-			LiveObject->Destroy();
-		}
-	}
-
 	for (int Idx = 0; Idx < LiveObjects.size(); ++Idx)
 	{
 		if (LiveObjects[Idx] != nullptr)
 		{
+			LiveObjects[Idx]->Destroy();
 			delete LiveObjects[Idx];
+			LiveObjects[Idx] = nullptr;
 		}
 	}
-
-	DepthImage = nullptr;
 
 	CleanupSwapchain();
 
@@ -117,7 +110,7 @@ FVulkanContext::~FVulkanContext()
 
 	for (size_t Idx = 0; Idx < GetMaxConcurrentFrames(); ++Idx)
 	{
-		vkDestroySemaphore(Device, ImageAvailableSemaphores[Idx], nullptr);
+		vkDestroySemaphore(Device, ImageAcquiredSemaphores[Idx], nullptr);
 		vkDestroySemaphore(Device, RenderFinishedSemaphores[Idx], nullptr);
 		vkDestroyFence(Device, Fences[Idx], nullptr);
 	}
@@ -160,6 +153,16 @@ void FVulkanContext::DestroyObject(FVulkanObject* InObject)
 			break;
 		}
 	}
+}
+
+bool FVulkanContext::IsValidObject(FVulkanObject* InObject)
+{
+	if (InObject == nullptr)
+	{
+		return false;
+	}
+
+	return std::find(LiveObjects.begin(), LiveObjects.end(), InObject) != LiveObjects.end();
 }
 
 void FVulkanContext::CreateInstance()
@@ -463,23 +466,13 @@ void FVulkanContext::CreateFramebuffers()
 
 	for (size_t Idx = 0; Idx < SwapchainImages.size(); ++Idx)
 	{
-		std::array<VkImageView, 2> Attachments =
+		std::vector<VkImageView> Attachments =
 		{
 			SwapchainImageViews[Idx],
 			DepthImage->GetView()
 		};
 
-		VkFramebufferCreateInfo FramebufferCI{};
-		FramebufferCI.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO;
-		FramebufferCI.renderPass = RenderPass;
-		FramebufferCI.attachmentCount = static_cast<uint32_t>(Attachments.size());
-		FramebufferCI.pAttachments = Attachments.data();
-		FramebufferCI.width = SwapchainExtent.width;
-		FramebufferCI.height = SwapchainExtent.height;
-		FramebufferCI.layers = 1;
-		FramebufferCI.pNext = nullptr;
-
-		VK_ASSERT(vkCreateFramebuffer(Device, &FramebufferCI, nullptr, &SwapchainFramebuffers[Idx]));
+		SwapchainFramebuffers[Idx] = FVulkanFramebuffer::Create(this, RenderPass, Attachments, SwapchainExtent);
 	}
 }
 
@@ -572,7 +565,7 @@ void FVulkanContext::CreateSyncObjects()
 {
 	uint32_t MaxConcurrentFrames = GetMaxConcurrentFrames();
 
-	ImageAvailableSemaphores.resize(MaxConcurrentFrames);
+	ImageAcquiredSemaphores.resize(MaxConcurrentFrames);
 	RenderFinishedSemaphores.resize(MaxConcurrentFrames);
 	Fences.resize(MaxConcurrentFrames);
 
@@ -585,7 +578,7 @@ void FVulkanContext::CreateSyncObjects()
 
 	for (size_t Idx = 0; Idx < MaxConcurrentFrames; ++Idx)
 	{
-		if (vkCreateSemaphore(Device, &SemaphoreCI, nullptr, &ImageAvailableSemaphores[Idx]) != VK_SUCCESS ||
+		if (vkCreateSemaphore(Device, &SemaphoreCI, nullptr, &ImageAcquiredSemaphores[Idx]) != VK_SUCCESS ||
 			vkCreateSemaphore(Device, &SemaphoreCI, nullptr, &RenderFinishedSemaphores[Idx]) != VK_SUCCESS ||
 			vkCreateFence(Device, &FenceCI, nullptr, &Fences[Idx]) != VK_SUCCESS)
 		{
@@ -625,7 +618,7 @@ void FVulkanContext::CreateDepthResources()
 {
 	VkFormat DepthFormat = Vk::FindDepthFormat(PhysicalDevice);
 
-	if (DepthImage != nullptr)
+	if (IsValidObject(DepthImage))
 	{
 		DestroyObject(DepthImage);
 		DepthImage = nullptr;
@@ -649,21 +642,28 @@ void FVulkanContext::CreateDepthResources()
 
 void FVulkanContext::CleanupSwapchain()
 {
-	if (DepthImage != nullptr)
+	if (IsValidObject(DepthImage))
 	{
 		DestroyObject(DepthImage);
 		DepthImage = nullptr;
 	}
 
-	for (VkFramebuffer Framebuffer : SwapchainFramebuffers)
+	for (FVulkanFramebuffer* Framebuffer : SwapchainFramebuffers)
 	{
-		vkDestroyFramebuffer(Device, Framebuffer, nullptr);
+		if (IsValidObject(Framebuffer) == false)
+		{
+			continue;
+		}
+
+		DestroyObject(Framebuffer);
 	}
+	SwapchainFramebuffers.clear();
 
 	for (VkImageView ImageView : SwapchainImageViews)
 	{
 		vkDestroyImageView(Device, ImageView, nullptr);
 	}
+	SwapchainImageViews.clear();
 
 	vkDestroySwapchainKHR(Device, Swapchain, nullptr);
 }
@@ -697,7 +697,7 @@ void FVulkanContext::BeginRender()
 		Device,
 		Swapchain,
 		UINT64_MAX,
-		ImageAvailableSemaphores[CurrentFrame],
+		ImageAcquiredSemaphores[CurrentFrame],
 		VK_NULL_HANDLE,
 		&CurrentImageIndex);
 
@@ -723,7 +723,7 @@ void FVulkanContext::BeginRender()
 	VkRenderPassBeginInfo RenderPassBeginInfo{};
 	RenderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 	RenderPassBeginInfo.renderPass = RenderPass;
-	RenderPassBeginInfo.framebuffer = SwapchainFramebuffers[CurrentImageIndex];
+	RenderPassBeginInfo.framebuffer = SwapchainFramebuffers[CurrentImageIndex]->GetHandle();
 	RenderPassBeginInfo.renderArea.offset = { 0, 0 };
 	RenderPassBeginInfo.renderArea.extent = SwapchainExtent;
 
@@ -742,7 +742,7 @@ void FVulkanContext::EndRender()
 
 	VK_ASSERT(vkEndCommandBuffer(CommandBuffers[CurrentFrame]));
 
-	VkSemaphore WaitSemaphores[] = { ImageAvailableSemaphores[CurrentFrame] };
+	VkSemaphore WaitSemaphores[] = { ImageAcquiredSemaphores[CurrentFrame] };
 	VkPipelineStageFlags WaitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
 	VkSemaphore SignalSemaphores[] = { RenderFinishedSemaphores[CurrentFrame] };

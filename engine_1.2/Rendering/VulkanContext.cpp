@@ -91,23 +91,15 @@ FVulkanContext::~FVulkanContext()
 {
 	RenderContextMap.erase(Window);
 
-	for (FVulkanObject* LiveObject : LiveObjects)
-	{
-		if (LiveObject != nullptr)
-		{
-			LiveObject->Destroy();
-		}
-	}
-
 	for (int Idx = 0; Idx < LiveObjects.size(); ++Idx)
 	{
 		if (LiveObjects[Idx] != nullptr)
 		{
+			LiveObjects[Idx]->Destroy();
 			delete LiveObjects[Idx];
+			LiveObjects[Idx] = nullptr;
 		}
 	}
-
-	DepthImage = nullptr;
 
 	CleanupSwapchain();
 
@@ -160,6 +152,16 @@ void FVulkanContext::DestroyObject(FVulkanObject* InObject)
 			break;
 		}
 	}
+}
+
+bool FVulkanContext::IsValidObject(FVulkanObject* InObject)
+{
+	if (InObject == nullptr)
+	{
+		return false;
+	}
+
+	return std::find(LiveObjects.begin(), LiveObjects.end(), InObject) != LiveObjects.end();
 }
 
 void FVulkanContext::CreateInstance()
@@ -625,7 +627,7 @@ void FVulkanContext::CreateDepthResources()
 {
 	VkFormat DepthFormat = Vk::FindDepthFormat(PhysicalDevice);
 
-	if (DepthImage != nullptr)
+	if (IsValidObject(DepthImage))
 	{
 		DestroyObject(DepthImage);
 		DepthImage = nullptr;
@@ -649,7 +651,7 @@ void FVulkanContext::CreateDepthResources()
 
 void FVulkanContext::CleanupSwapchain()
 {
-	if (DepthImage != nullptr)
+	if (IsValidObject(DepthImage))
 	{
 		DestroyObject(DepthImage);
 		DepthImage = nullptr;

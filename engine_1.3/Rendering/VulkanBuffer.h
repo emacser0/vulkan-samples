@@ -13,7 +13,7 @@ public:
 
 	virtual void Destroy() override;
 
-	VkBuffer GetBuffer() const { return Buffer; }
+	VkBuffer GetHandle() const { return Buffer; }
 	VkDeviceMemory GetMemory() const { return Memory; }
 	void* GetMappedAddress() const { return Mapped; }
 

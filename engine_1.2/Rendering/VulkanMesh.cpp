@@ -36,8 +36,8 @@ bool FVulkanMesh::Load(UMesh* InMesh)
 		return false;
 	}
 
-	if (VertexBuffer->GetBuffer() != VK_NULL_HANDLE ||
-		IndexBuffer->GetBuffer() != VK_NULL_HANDLE)
+	if (VertexBuffer->GetHandle() != VK_NULL_HANDLE ||
+		IndexBuffer->GetHandle() != VK_NULL_HANDLE)
 	{
 		Unload();
 	}

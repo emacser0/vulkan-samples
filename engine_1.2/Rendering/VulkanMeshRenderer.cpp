@@ -701,7 +701,7 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 		for (int32_t i = 0; i < DescriptorSets.size(); ++i)
 		{
 			VkDescriptorBufferInfo TransformBufferInfo{};
-			TransformBufferInfo.buffer = TransformBuffers[i]->GetBuffer();
+			TransformBufferInfo.buffer = TransformBuffers[i]->GetHandle();
 			TransformBufferInfo.offset = 0;
 			TransformBufferInfo.range = sizeof(FTransformBufferObject);
 
@@ -711,7 +711,7 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 			TransformBufferDescriptor.pBufferInfo = &TransformBufferInfo;
 
 			VkDescriptorBufferInfo LightBufferInfo{};
-			LightBufferInfo.buffer = LightBuffers[i]->GetBuffer();
+			LightBufferInfo.buffer = LightBuffers[i]->GetHandle();
 			LightBufferInfo.offset = 0;
 			LightBufferInfo.range = sizeof(FLightBufferObject);
 
@@ -721,7 +721,7 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 			LightBufferDescriptor.pBufferInfo = &LightBufferInfo;
 
 			VkDescriptorBufferInfo MaterialBufferInfo{};
-			MaterialBufferInfo.buffer = MaterialBuffers[i]->GetBuffer();
+			MaterialBufferInfo.buffer = MaterialBuffers[i]->GetHandle();
 			MaterialBufferInfo.offset = 0;
 			MaterialBufferInfo.range = sizeof(FMaterialBufferObject);
 
@@ -731,7 +731,7 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 			MaterialBufferDescriptor.pBufferInfo = &MaterialBufferInfo;
 
 			VkDescriptorBufferInfo DebugBufferInfo{};
-			DebugBufferInfo.buffer = DebugBuffers[i]->GetBuffer();
+			DebugBufferInfo.buffer = DebugBuffers[i]->GetHandle();
 			DebugBufferInfo.offset = 0;
 			DebugBufferInfo.range = sizeof(FDebugBufferObject);
 
@@ -869,10 +869,10 @@ void FVulkanMeshRenderer::Draw(
 	FVulkanBuffer* InstanceBuffer = InDrawingInfo.InstanceBuffers[CurrentFrame];
 	VkDescriptorSet DescriptorSet = InDrawingInfo.DescriptorSets[CurrentFrame];
 
-	VkBuffer VertexBuffers[] = { InMesh->GetVertexBuffer()->GetBuffer(), InstanceBuffer->GetBuffer() };
+	VkBuffer VertexBuffers[] = { InMesh->GetVertexBuffer()->GetHandle(), InstanceBuffer->GetHandle() };
 	VkDeviceSize Offsets[] = { 0, 0 };
 	vkCmdBindVertexBuffers(CommandBuffer, 0, 2, VertexBuffers, Offsets);
-	vkCmdBindIndexBuffer(CommandBuffer, InMesh->GetIndexBuffer()->GetBuffer(), 0, VK_INDEX_TYPE_UINT32);
+	vkCmdBindIndexBuffer(CommandBuffer, InMesh->GetIndexBuffer()->GetHandle(), 0, VK_INDEX_TYPE_UINT32);
 
 	uint32_t NumIndices = static_cast<uint32_t>(InMesh->GetMeshAsset()->GetIndices().size());
 	uint32_t NumModels = static_cast<uint32_t>(InDrawingInfo.Models.size());

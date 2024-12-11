@@ -136,6 +136,15 @@
     <ClInclude Include="Rendering\VulkanHelpers.h">
       <Filter>Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="Rendering\VulkanRenderPass.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\VulkanFramebuffer.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
+    <ClInclude Include="Rendering\VulkanSwapchain.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Texture.cpp">
@@ -244,6 +253,15 @@
       <Filter>Rendering</Filter>
     </ClCompile>
     <ClCompile Include="Rendering\VulkanImage.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\VulkanRenderPass.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\VulkanFramebuffer.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\VulkanSwapchain.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
   </ItemGroup>

@@ -45,8 +45,8 @@ public:
 		LiveObjects.push_back(static_cast<FVulkanObject*>(NewObject));
 		return NewObject;
 	}
-
 	void DestroyObject(FVulkanObject* InObject);
+	bool IsValidObject(FVulkanObject* InObject);
 
 public:
 
