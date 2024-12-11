@@ -557,14 +557,14 @@ void FVulkanMeshRenderer::UpdateUniformBuffer()
 		for (int Idx = 0; Idx < LBO.NumPointLights; ++Idx)
 		{
 			LBO.PointLights[Idx] = PointLights[Idx];
-			LBO.PointLights[Idx].Position = TBO.View * glm::vec4(LBO.PointLights[Idx].Position, 1.0);
+			LBO.PointLights[Idx].Position = TBO.View * glm::vec4(LBO.PointLights[Idx].Position, 1.0f);
 		}
 
 		LBO.NumDirectionalLights = static_cast<uint32_t>(DirectionalLights.size());
 		for (int Idx = 0; Idx < LBO.NumDirectionalLights; ++Idx)
 		{
 			LBO.DirectionalLights[Idx] = DirectionalLights[Idx];
-			LBO.DirectionalLights[Idx].Direction = TBO.View * glm::vec4(LBO.DirectionalLights[Idx].Direction, 1.0);
+			LBO.DirectionalLights[Idx].Direction = TBO.View * glm::vec4(LBO.DirectionalLights[Idx].Direction, 0.0f);
 		}
 	}
 
