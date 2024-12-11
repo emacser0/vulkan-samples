@@ -3,6 +3,8 @@
 #include "VulkanHelpers.h"
 #include "VulkanTexture.h"
 #include "VulkanScene.h"
+#include "VulkanSwapchain.h"
+#include "VulkanRenderPass.h"
 
 #include "Utils.h"
 #include "Engine.h"
@@ -119,7 +121,7 @@ void FVulkanSkyRenderer::CreateGraphicsPipelines()
 	PipelineCI.pColorBlendState = &ColorBlendStateCI;
 	PipelineCI.pDynamicState = &DynamicStateCI;
 	PipelineCI.layout = Pipeline->GetLayout();
-	PipelineCI.renderPass = Context->GetRenderPass();
+	PipelineCI.renderPass = Context->GetRenderPass()->GetHandle();
 	PipelineCI.subpass = 0;
 	PipelineCI.basePipelineHandle = VK_NULL_HANDLE;
 
@@ -316,7 +318,7 @@ void FVulkanSkyRenderer::UpdateUniformBuffer()
 
 	FVulkanCamera Camera = Scene->GetCamera();
 
-	VkExtent2D SwapchainExtent = Context->GetSwapchainExtent();
+	VkExtent2D SwapchainExtent = Context->GetSwapchain()->GetExtent();
 
 	float FOVRadians = glm::radians(Camera.FOV);
 	float AspectRatio = SwapchainExtent.width / (float)SwapchainExtent.height;
@@ -371,7 +373,7 @@ void FVulkanSkyRenderer::Render()
 	uint32_t CurrentFrame = Context->GetCurrentFrame();
 	VkCommandBuffer CommandBuffer = Context->GetCommandBuffer();
 
-	VkExtent2D SwapchainExtent = Context->GetSwapchainExtent();
+	VkExtent2D SwapchainExtent = Context->GetSwapchain()->GetExtent();
 
 	VkViewport Viewport{};
 	Viewport.x = 0.0f;

@@ -6,6 +6,8 @@
 #include "VulkanLight.h"
 #include "VulkanMesh.h"
 #include "VulkanMaterial.h"
+#include "VulkanSwapchain.h"
+#include "VulkanRenderPass.h"
 
 #include "Utils.h"
 #include "Config.h"
@@ -263,7 +265,7 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 		PipelineCI.pColorBlendState = &ColorBlendStateCI;
 		PipelineCI.pDynamicState = &DynamicStateCI;
 		PipelineCI.layout = Pipeline->GetLayout();
-		PipelineCI.renderPass = Context->GetRenderPass();
+		PipelineCI.renderPass = Context->GetRenderPass()->GetHandle();
 		PipelineCI.subpass = 0;
 		PipelineCI.basePipelineHandle = VK_NULL_HANDLE;
 
@@ -355,7 +357,7 @@ void FVulkanMeshRenderer::CreateTBNPipeline()
 	PipelineCI.pColorBlendState = &ColorBlendStateCI;
 	PipelineCI.pDynamicState = &DynamicStateCI;
 	PipelineCI.layout = TBNPipeline->GetLayout();
-	PipelineCI.renderPass = Context->GetRenderPass();
+	PipelineCI.renderPass = Context->GetRenderPass()->GetHandle();
 	PipelineCI.subpass = 0;
 	PipelineCI.basePipelineHandle = VK_NULL_HANDLE;
 
@@ -535,7 +537,7 @@ void FVulkanMeshRenderer::UpdateUniformBuffer()
 
 	FVulkanCamera Camera = Scene->GetCamera();
 
-	VkExtent2D SwapchainExtent = Context->GetSwapchainExtent();
+	VkExtent2D SwapchainExtent = Context->GetSwapchain()->GetExtent();
 
 	float FOVRadians = glm::radians(Camera.FOV);
 	float AspectRatio = SwapchainExtent.width / (float)SwapchainExtent.height;
@@ -803,7 +805,7 @@ void FVulkanMeshRenderer::PreRender()
 void FVulkanMeshRenderer::Render()
 {
 	VkCommandBuffer CommandBuffer = Context->GetCommandBuffer();
-	VkExtent2D SwapchainExtent = Context->GetSwapchainExtent();
+	VkExtent2D SwapchainExtent = Context->GetSwapchain()->GetExtent();
 
 	VkViewport Viewport{};
 	Viewport.x = 0.0f;

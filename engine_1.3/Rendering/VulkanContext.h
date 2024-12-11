@@ -22,10 +22,8 @@ public:
 	VkDevice GetDevice() const { return Device; }
 	VkQueue GetGfxQueue() const { return GfxQueue; }
 	VkQueue GetPresentQueue() const { return PresentQueue; }
-	VkSwapchainKHR GetSwapchain() const { return Swapchain; }
-	VkFormat GetSwapchainImageFormat() const { return SwapchainImageFormat; }
-	VkExtent2D GetSwapchainExtent() const { return SwapchainExtent; }
-	VkRenderPass GetRenderPass() const { return RenderPass; }
+	class FVulkanSwapchain* GetSwapchain() const { return Swapchain; }
+	class FVulkanRenderPass* GetRenderPass() const { return RenderPass; }
 	VkCommandPool GetCommandPool() const { return CommandPool; }
 	const std::vector<VkCommandBuffer>& GetCommandBuffers() const { return CommandBuffers; }
 	VkCommandBuffer GetCommandBuffer() const { return CommandBuffers[CurrentFrame]; }
@@ -86,16 +84,13 @@ protected:
 	VkQueue GfxQueue;
 	VkQueue PresentQueue;
 
-	VkSwapchainKHR Swapchain;
-	std::vector<VkImage> SwapchainImages;
-	VkFormat SwapchainImageFormat;
-	VkExtent2D SwapchainExtent;
+	class FVulkanSwapchain* Swapchain;
 	std::vector<VkImageView> SwapchainImageViews;
 	std::vector<class FVulkanFramebuffer*> SwapchainFramebuffers;
 
 	class FVulkanImage* DepthImage;
 
-	VkRenderPass RenderPass;
+	class FVulkanRenderPass* RenderPass;
 	VkCommandPool CommandPool;
 
 	std::vector<VkCommandBuffer> CommandBuffers;
@@ -107,7 +102,6 @@ protected:
 	std::vector<VkFence> Fences;
 
 	uint32_t CurrentFrame;
-	uint32_t CurrentImageIndex;
 
 	bool bFramebufferResized = false;
 

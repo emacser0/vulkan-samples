@@ -12,19 +12,31 @@ public:
 	FVulkanSwapchain(class FVulkanContext* InContext);
 	virtual ~FVulkanSwapchain() = default;
 
-	VkSwapchainKHR GetHandle() const { return Handle; }
+	static FVulkanSwapchain* Create(
+		class FVulkanContext* InContext,
+		const VkSwapchainCreateInfoKHR& InSwapchainCI);
+
+	virtual void Destroy() override;
+
+	VkSwapchainKHR GetHandle() const { return Swapchain; }
 	VkFormat GetFormat() const { return Format; }
 	VkExtent2D GetExtent() const { return Extent; }
 
+	uint32_t GetImageCount() const { return ImageCount; }
+	const std::vector<VkImage>& GetImages() const { return Images; }
+
+	uint32_t GetCurrentImageIndex() const { return CurrentImageIndex; }
+
 	VkResult Present(VkQueue InGfxQueue, VkQueue InPresentQueue, VkSemaphore InRenderFinishedSemaphore);
+	VkResult AcquireNextImage(VkSemaphore InImageAcquiredSemaphore);
 
 private:
-	VkSwapchainKHR Handle;
+	VkSwapchainKHR Swapchain;
 	VkFormat Format;
 	VkExtent2D Extent;
 
-	uint32_t CurrentFrame;
-	uint32_t CurrentImageIndex;
+	uint32_t ImageCount;
+	std::vector<VkImage> Images;
 
-	std::vector<VkSemaphore> ImageAcquiredSemaphores;
+	uint32_t CurrentImageIndex;
 };

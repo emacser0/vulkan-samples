@@ -36,7 +36,7 @@ FVulkanFramebuffer::FVulkanFramebuffer(FVulkanContext* InContext)
 {
 }
 
-FVulkanFramebuffer::~FVulkanFramebuffer()
+void FVulkanFramebuffer::Destroy()
 {
 	VkDevice Device = Context->GetDevice();
 	if (Framebuffer != VK_NULL_HANDLE)

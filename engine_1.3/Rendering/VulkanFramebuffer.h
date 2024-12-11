@@ -16,7 +16,9 @@ public:
 		VkExtent2D InSize);
 
 	FVulkanFramebuffer(class FVulkanContext* InContext);
-	virtual ~FVulkanFramebuffer();
+	virtual ~FVulkanFramebuffer() = default;
+
+	virtual void Destroy() override;
 
 	VkFramebuffer GetHandle() const { return Framebuffer; }
 

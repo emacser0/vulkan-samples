@@ -3,6 +3,8 @@
 #include "VulkanHelpers.h"
 #include "VulkanBuffer.h"
 #include "VulkanTexture.h"
+#include "VulkanRenderPass.h"
+
 #include "Utils.h"
 #include "Config.h"
 #include "Widget.h"
@@ -72,7 +74,7 @@ void FVulkanUIRenderer::Ready()
 	init_info.MinImageCount = 3;
 	init_info.ImageCount = 3;
 	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-	init_info.RenderPass = Context->GetRenderPass();
+	init_info.RenderPass = Context->GetRenderPass()->GetHandle();
 
 	ImGui_ImplVulkan_Init(&init_info);
 
