@@ -528,11 +528,7 @@ void FVulkanContext::CreateRenderPass()
 	RenderPassCI.dependencyCount = 1;
 	RenderPassCI.pDependencies = &SubpassDependency;
 
-	VkRect2D RenderArea;
-	RenderArea.offset = { 0, 0 };
-	RenderArea.extent = Swapchain->GetExtent();
-
-	RenderPass = FVulkanRenderPass::Create(this, RenderPassCI, RenderArea);
+	RenderPass = FVulkanRenderPass::Create(this, RenderPassCI);
 }
 
 void FVulkanContext::CreateCommandPool()
@@ -653,18 +649,19 @@ void FVulkanContext::CleanupSwapchain()
 
 	for (FVulkanFramebuffer* Framebuffer : SwapchainFramebuffers)
 	{
-		if (IsValidObject(Framebuffer) == false)
+		if (IsValidObject(Framebuffer))
 		{
-			continue;
+			DestroyObject(Framebuffer);
 		}
-
-		DestroyObject(Framebuffer);
 	}
 	SwapchainFramebuffers.clear();
 
 	for (VkImageView ImageView : SwapchainImageViews)
 	{
-		vkDestroyImageView(Device, ImageView, nullptr);
+		if (ImageView != VK_NULL_HANDLE)
+		{
+			vkDestroyImageView(Device, ImageView, nullptr);
+		}
 	}
 	SwapchainImageViews.clear();
 
@@ -723,12 +720,16 @@ void FVulkanContext::BeginRender()
 
 	VK_ASSERT(vkBeginCommandBuffer(CommandBuffer, &CommandBufferBeginInfo));
 
+	VkRect2D RenderArea;
+	RenderArea.offset = { 0, 0 };
+	RenderArea.extent = Swapchain->GetExtent();
+
 	std::vector<VkClearValue> ClearValues{};
 	ClearValues.resize(2);
 	ClearValues[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
 	ClearValues[1].depthStencil = { 1.0f, 0 };
 
-	RenderPass->Begin(CommandBuffer, SwapchainFramebuffer, ClearValues);
+	RenderPass->Begin(CommandBuffer, SwapchainFramebuffer, RenderArea, ClearValues);
 }
 
 void FVulkanContext::EndRender()

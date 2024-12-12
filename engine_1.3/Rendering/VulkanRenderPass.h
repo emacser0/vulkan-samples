@@ -21,8 +21,7 @@ public:
 
 	static FVulkanRenderPass* Create(
 		class FVulkanContext* InContext,
-		const VkRenderPassCreateInfo& RenderPassCI,
-		VkRect2D InRenderArea);
+		const VkRenderPassCreateInfo& RenderPassCI);
 
 	virtual void Destroy() override;
 
@@ -31,10 +30,10 @@ public:
 	void Begin(
 		VkCommandBuffer InCommandBuffer,
 		class FVulkanFramebuffer* InFramebuffer,
+		VkRect2D InRenderArea,
 		const std::vector<VkClearValue>& InClearValues);
 	void End(VkCommandBuffer InCommandBuffer);
 
 private:
 	VkRenderPass RenderPass;
-	VkRect2D RenderArea;
 };
