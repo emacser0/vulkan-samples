@@ -2,12 +2,14 @@
 #include "VulkanContext.h"
 #include "VulkanHelpers.h"
 #include "VulkanTexture.h"
+#include "VulkanSampler.h"
 #include "VulkanScene.h"
 #include "VulkanLight.h"
 #include "VulkanMesh.h"
 #include "VulkanMaterial.h"
 #include "VulkanSwapchain.h"
 #include "VulkanRenderPass.h"
+#include "VulkanPipeline.h"
 
 #include "Utils.h"
 #include "Config.h"
@@ -82,7 +84,44 @@ FVulkanMeshRenderer::~FVulkanMeshRenderer()
 {
 	VkDevice Device = Context->GetDevice();
 
+	Context->DestroyObject(RenderPass);
 	vkDestroyDescriptorSetLayout(Device, DescriptorSetLayout, nullptr);
+}
+
+void FVulkanMeshRenderer::GenerateInstancedDrawingInfo()
+{
+	if (Scene == nullptr)
+	{
+		return;
+	}
+
+	InstancedDrawingMap.clear();
+	for (FVulkanModel* Model : Scene->GetModels())
+	{
+		if (Model == nullptr)
+		{
+			continue;
+		}
+
+		FVulkanMesh* Mesh = Model->GetMesh();
+		if (Mesh == nullptr)
+		{
+			continue;
+		}
+
+		auto Iter = InstancedDrawingMap.find(Mesh);
+		if (Iter == InstancedDrawingMap.end())
+		{
+			Iter = InstancedDrawingMap.insert({ Mesh, {} }).first;
+		}
+
+		Iter->second.Models.push_back(Model);
+	}
+}
+
+void FVulkanMeshRenderer::CreateRenderPass()
+{
+	RenderPass = FVulkanRenderPass::CreateBasePass(Context, Context->GetSwapchain());
 }
 
 void FVulkanMeshRenderer::CreateDescriptorSetLayout()
@@ -146,37 +185,6 @@ void FVulkanMeshRenderer::CreateDescriptorSetLayout()
 	DescriptorSetLayoutCI.pBindings = Bindings.data();
 
 	VK_ASSERT(vkCreateDescriptorSetLayout(Device, &DescriptorSetLayoutCI, nullptr, &DescriptorSetLayout));
-}
-
-void FVulkanMeshRenderer::GenerateInstancedDrawingInfo()
-{
-	if (Scene == nullptr)
-	{
-		return;
-	}
-
-	InstancedDrawingMap.clear();
-	for (FVulkanModel* Model : Scene->GetModels())
-	{
-		if (Model == nullptr)
-		{
-			continue;
-		}
-
-		FVulkanMesh* Mesh = Model->GetMesh();
-		if (Mesh == nullptr)
-		{
-			continue;
-		}
-
-		auto Iter = InstancedDrawingMap.find(Mesh);
-		if (Iter == InstancedDrawingMap.end())
-		{
-			Iter = InstancedDrawingMap.insert({ Mesh, {} }).first;
-		}
-
-		Iter->second.Models.push_back(Model);
-	}
 }
 
 void FVulkanMeshRenderer::CreateGraphicsPipelines()
@@ -265,7 +273,7 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 		PipelineCI.pColorBlendState = &ColorBlendStateCI;
 		PipelineCI.pDynamicState = &DynamicStateCI;
 		PipelineCI.layout = Pipeline->GetLayout();
-		PipelineCI.renderPass = Context->GetRenderPass()->GetHandle();
+		PipelineCI.renderPass = Context->GetBasePass()->GetHandle();
 		PipelineCI.subpass = 0;
 		PipelineCI.basePipelineHandle = VK_NULL_HANDLE;
 
@@ -357,7 +365,7 @@ void FVulkanMeshRenderer::CreateTBNPipeline()
 	PipelineCI.pColorBlendState = &ColorBlendStateCI;
 	PipelineCI.pDynamicState = &DynamicStateCI;
 	PipelineCI.layout = TBNPipeline->GetLayout();
-	PipelineCI.renderPass = Context->GetRenderPass()->GetHandle();
+	PipelineCI.renderPass = Context->GetBasePass()->GetHandle();
 	PipelineCI.subpass = 0;
 	PipelineCI.basePipelineHandle = VK_NULL_HANDLE;
 
@@ -519,13 +527,6 @@ void FVulkanMeshRenderer::GetVertexInputAttributes(std::vector<VkVertexInputAttr
 		OutDescs[12 + Idx].format = VK_FORMAT_R32G32B32A32_SFLOAT;
 		OutDescs[12 + Idx].offset = offsetof(FInstanceBuffer, NormalMatrix) + sizeof(glm::vec4) * Idx;
 	}
-}
-
-void FVulkanMeshRenderer::WaitIdle()
-{
-	VkDevice Device = Context->GetDevice();
-
-	vkDeviceWaitIdle(Device);
 }
 
 void FVulkanMeshRenderer::UpdateUniformBuffer()
@@ -805,6 +806,18 @@ void FVulkanMeshRenderer::PreRender()
 void FVulkanMeshRenderer::Render()
 {
 	VkCommandBuffer CommandBuffer = Context->GetCommandBuffer();
+
+	VkRect2D RenderArea;
+	RenderArea.offset = { 0, 0 };
+	RenderArea.extent = Swapchain->GetExtent();
+
+	std::vector<VkClearValue> ClearValues{};
+	ClearValues.resize(2);
+	ClearValues[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+	ClearValues[1].depthStencil = { 1.0f, 0 };
+
+	RenderPass->Begin(CommandBuffer, Context->GetSwapchainFramebuffer(), RenderArea, ClearValues);
+
 	VkExtent2D SwapchainExtent = Context->GetSwapchain()->GetExtent();
 
 	VkViewport Viewport{};
@@ -834,6 +847,8 @@ void FVulkanMeshRenderer::Render()
 		UpdateMaterialBuffer(Mesh);
 		Draw(Mesh, DrawingInfo, Viewport, Scissor);
 	}
+
+	RenderPass->End(CommandBuffer);
 }
 
 void FVulkanMeshRenderer::Draw(

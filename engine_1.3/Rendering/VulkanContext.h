@@ -23,7 +23,8 @@ public:
 	VkQueue GetGfxQueue() const { return GfxQueue; }
 	VkQueue GetPresentQueue() const { return PresentQueue; }
 	class FVulkanSwapchain* GetSwapchain() const { return Swapchain; }
-	class FVulkanRenderPass* GetRenderPass() const { return RenderPass; }
+	class FVulkanFramebuffer* GetSwapchainFramebuffer() const { return SwapchainFramebuffers[Swapchain->GetCurrentImageIndex()]; }
+	class FVulkanRenderPass* GetBasePass() const { return BasePass; }
 	VkCommandPool GetCommandPool() const { return CommandPool; }
 	const std::vector<VkCommandBuffer>& GetCommandBuffers() const { return CommandBuffers; }
 	VkCommandBuffer GetCommandBuffer() const { return CommandBuffers[CurrentFrame]; }
@@ -47,7 +48,6 @@ public:
 	bool IsValidObject(FVulkanObject* InObject);
 
 public:
-
 	void BeginRender();
 	void EndRender();
 
@@ -90,7 +90,8 @@ protected:
 
 	class FVulkanImage* DepthImage;
 
-	class FVulkanRenderPass* RenderPass;
+	class FVulkanRenderPass* ShadowPass;
+	class FVulkanRenderPass* BasePass;
 	VkCommandPool CommandPool;
 
 	std::vector<VkCommandBuffer> CommandBuffers;

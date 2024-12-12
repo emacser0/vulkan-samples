@@ -121,7 +121,7 @@ void FVulkanSkyRenderer::CreateGraphicsPipelines()
 	PipelineCI.pColorBlendState = &ColorBlendStateCI;
 	PipelineCI.pDynamicState = &DynamicStateCI;
 	PipelineCI.layout = Pipeline->GetLayout();
-	PipelineCI.renderPass = Context->GetRenderPass()->GetHandle();
+	PipelineCI.renderPass = Context->GetBasePass()->GetHandle();
 	PipelineCI.subpass = 0;
 	PipelineCI.basePipelineHandle = VK_NULL_HANDLE;
 

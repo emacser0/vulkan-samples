@@ -74,7 +74,7 @@ void FVulkanUIRenderer::Ready()
 	init_info.MinImageCount = 3;
 	init_info.ImageCount = 3;
 	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-	init_info.RenderPass = Context->GetRenderPass()->GetHandle();
+	init_info.RenderPass = Context->GetBasePass()->GetHandle();
 
 	ImGui_ImplVulkan_Init(&init_info);
 

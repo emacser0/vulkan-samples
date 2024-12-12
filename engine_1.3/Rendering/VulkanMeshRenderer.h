@@ -6,14 +6,10 @@
 #include "glm/glm.hpp"
 
 #include "VulkanObject.h"
-#include "VulkanContext.h"
 #include "VulkanBuffer.h"
 #include "VulkanMesh.h"
 #include "VulkanShader.h"
 #include "VulkanModel.h"
-#include "VulkanPipeline.h"
-#include "VulkanSampler.h"
-#include "VulkanScene.h"
 
 #include "Vertex.h"
 
@@ -23,15 +19,13 @@
 class FVulkanMeshRenderer : public FVulkanObject
 {
 public:
-	FVulkanMeshRenderer(FVulkanContext* InContext);
+	FVulkanMeshRenderer(class FVulkanContext* InContext);
 	virtual ~FVulkanMeshRenderer();
 
 	void PreRender();
 	void Render();
 
-	void WaitIdle();
-
-	void SetScene(FVulkanScene* InScene) { Scene = InScene; }
+	void SetScene(class FVulkanScene* InScene) { Scene = InScene; }
 
 	void SetEnableTBNVisualization(bool bEnabled) { bEnableTBNVisualization = bEnabled; }
 	void SetEnableAttenuation(bool bEnabled) { bEnableAttenuation = bEnabled; }
@@ -41,12 +35,13 @@ public:
 protected:
 	void GenerateInstancedDrawingInfo();
 
+	void CreateRenderPass();
+	void CreateDescriptorSetLayout();
 	void CreateGraphicsPipelines();
 	void CreateTBNPipeline();
 	void CreateTextureSampler();
 	void CreateUniformBuffers();
 	void CreateInstanceBuffers();
-	void CreateDescriptorSetLayout();
 	void CreateDescriptorSets();
 
 	void GetVertexInputBindings(std::vector<VkVertexInputBindingDescription>& OutDescs);
@@ -59,7 +54,7 @@ protected:
 
 	struct FInstancedDrawingInfo
 	{
-		FVulkanPipeline* Pipeline;
+		class FVulkanPipeline* Pipeline;
 		std::vector<FVulkanModel*> Models;
 		std::vector<FVulkanBuffer*> InstanceBuffers;
 		std::vector<VkDescriptorSet> DescriptorSets;
@@ -67,9 +62,10 @@ protected:
 	void Draw(FVulkanMesh* InMesh, const FInstancedDrawingInfo& InDrawingInfo, VkViewport& InViewport, VkRect2D& InScissor);
 
 protected:
-	FVulkanScene* Scene;
+	class FVulkanScene* Scene;
+	class FVulkanRenderPass* RenderPass;
 
-	FVulkanPipeline* TBNPipeline;
+	class FVulkanPipeline* TBNPipeline;
 
 	VkDescriptorSetLayout DescriptorSetLayout;
 
@@ -80,7 +76,7 @@ protected:
 	std::vector<FVulkanBuffer*> MaterialBuffers;
 	std::vector<FVulkanBuffer*> DebugBuffers;
 
-	FVulkanSampler* Sampler;
+	class FVulkanSampler* Sampler;
 
 	bool bInitialized;
 	bool bEnableTBNVisualization;

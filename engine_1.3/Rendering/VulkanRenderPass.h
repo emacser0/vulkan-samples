@@ -6,22 +6,15 @@
 
 #include <vector>
 
-struct FVulkanRenderTargetLayout
-{
-public:
-	VkOffset2D Offset;
-	VkExtent2D Extent;
-};
-
 class FVulkanRenderPass : public FVulkanObject
 {
 public:
 	FVulkanRenderPass(class FVulkanContext* InContext);
 	virtual ~FVulkanRenderPass() = default;
 
-	static FVulkanRenderPass* Create(
-		class FVulkanContext* InContext,
-		const VkRenderPassCreateInfo& RenderPassCI);
+	static FVulkanRenderPass* Create(class FVulkanContext* InContext, const VkRenderPassCreateInfo& RenderPassCI);
+	static FVulkanRenderPass* CreateShadowPass(class FVulkanContext* InContext);
+	static FVulkanRenderPass* CreateBasePass(class FVulkanContext* InContext, class FVulkanSwapchain* InSwapchain);
 
 	virtual void Destroy() override;
 
