@@ -28,6 +28,26 @@ FVulkanSwapchain* FVulkanSwapchain::Create(
 	Swapchain->Images.resize(Swapchain->ImageCount);
 	vkGetSwapchainImagesKHR(Device, Swapchain->Swapchain, &Swapchain->ImageCount, Swapchain->Images.data());
 
+	for (uint32_t Idx = 0; Idx < Swapchain->GetImageCount(); ++Idx)
+	{
+		VkImageViewCreateInfo ImageViewCI{};
+		ImageViewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+		ImageViewCI.image = Swapchain->Images[Idx];
+		ImageViewCI.viewType = VK_IMAGE_VIEW_TYPE_2D;
+		ImageViewCI.format = Swapchain->GetFormat();
+		ImageViewCI.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
+		ImageViewCI.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
+		ImageViewCI.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
+		ImageViewCI.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
+		ImageViewCI.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		ImageViewCI.subresourceRange.baseMipLevel = 0;
+		ImageViewCI.subresourceRange.levelCount = 1;
+		ImageViewCI.subresourceRange.baseArrayLayer = 0;
+		ImageViewCI.subresourceRange.layerCount = 1;
+
+		VK_ASSERT(vkCreateImageView(Device, &ImageViewCI, nullptr, &Swapchain->ImageViews[Idx]));
+	}
+
 	return Swapchain;
 }
 
@@ -38,6 +58,15 @@ void FVulkanSwapchain::Destroy()
 	{
 		vkDestroySwapchainKHR(Device, Swapchain, nullptr);
 	}
+
+	for (VkImageView ImageView : ImageViews)
+	{
+		if (ImageView != VK_NULL_HANDLE)
+		{
+			vkDestroyImageView(Device, ImageView, nullptr);
+		}
+	}
+	ImageViews.clear();
 }
 
 VkResult FVulkanSwapchain::Present(VkQueue InGfxQueue, VkQueue InPresentQueue, VkSemaphore InRenderFinishedSemaphore)

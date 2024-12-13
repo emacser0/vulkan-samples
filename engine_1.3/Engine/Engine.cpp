@@ -101,6 +101,9 @@ void FEngine::Tick(float DeltaTime)
 		World->Tick(DeltaTime);
 		MeshRenderer->SetScene(World->GetRenderScene());
 	}
+
+	assert(RenderContext != nullptr);
+	RenderContext->Render();
 }
 
 void FEngine::InitializeGLFW()

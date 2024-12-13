@@ -20,40 +20,12 @@ public:
 	FVulkanRenderer(class FVulkanContext* InContext);
 	virtual ~FVulkanRenderer();
 
-	virtual void Render(FVulkanScene* InScene) = 0;
+	void SetScene(class FVulkanScene* InScene) { Scene = InScene; }
+
+	virtual void Render() = 0;
+	virtual void OnRecreateSwapchain() { }
 
 protected:
-
-	struct FInstancedDrawingInfo
-	{
-		FVulkanPipeline* Pipeline;
-		std::vector<FVulkanModel*> Models;
-		std::vector<FVulkanBuffer*> InstanceBuffers;
-		std::vector<VkDescriptorSet> DescriptorSets;
-	};
-	void Draw(FVulkanMesh* InMesh, const FInstancedDrawingInfo& InDrawingInfo, VkViewport& InViewport, VkRect2D& InScissor);
-
-protected:
-	FVulkanScene* Scene;
-
-	FVulkanPipeline* TBNPipeline;
-
-	VkDescriptorSetLayout DescriptorSetLayout;
-
-	std::unordered_map<FVulkanMesh*, FInstancedDrawingInfo> InstancedDrawingMap;
-
-	std::vector<FVulkanBuffer*> TransformBuffers;
-	std::vector<FVulkanBuffer*> LightBuffers;
-	std::vector<FVulkanBuffer*> MaterialBuffers;
-	std::vector<FVulkanBuffer*> DebugBuffers;
-
-	FVulkanSampler* Sampler;
-
-	bool bInitialized;
-	bool bEnableTBNVisualization;
-	bool bEnableAttenuation;
-	bool bEnableGammaCorrection;
-	bool bEnableToneMapping;
+	class FVulkanScene* Scene;
+	class FVulkanRenderPass* RenderPass;
 };
-
-pragma once

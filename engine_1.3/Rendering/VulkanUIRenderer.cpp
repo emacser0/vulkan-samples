@@ -22,7 +22,7 @@
 #include <string>
 
 FVulkanUIRenderer::FVulkanUIRenderer(FVulkanContext* InContext)
-	: FVulkanObject(InContext)
+	: FVulkanRenderer(InContext)
 {
 	ImGui::CreateContext();
 
@@ -45,19 +45,10 @@ FVulkanUIRenderer::FVulkanUIRenderer(FVulkanContext* InContext)
 
 	IO.FontGlobalScale = 1.0f;
 	Style.ScaleAllSizes(1.0f);
-}
 
-void FVulkanUIRenderer::Destroy()
-{
-	ImGui_ImplVulkan_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
-
-	ImGui::DestroyContext();
-}
-
-void FVulkanUIRenderer::Ready()
-{
 	ImGui_ImplGlfw_InitForVulkan(Context->GetWindow(), true);
+
+	RenderPass = FVulkanRenderPass::CreateUIPass(Context, Context->GetSwapchain());
 
 	VkPhysicalDevice PhysicalDevice = Context->GetPhysicalDevice();
 	VkDevice Device = Context->GetDevice();
@@ -74,12 +65,21 @@ void FVulkanUIRenderer::Ready()
 	init_info.MinImageCount = 3;
 	init_info.ImageCount = 3;
 	init_info.MSAASamples = VK_SAMPLE_COUNT_1_BIT;
-	init_info.RenderPass = Context->GetBasePass()->GetHandle();
+	init_info.RenderPass = RenderPass->GetHandle();
 
 	ImGui_ImplVulkan_Init(&init_info);
 
 	ImGui_ImplVulkan_CreateFontsTexture();
 	ImGui_ImplVulkan_DestroyFontsTexture();
+
+}
+
+void FVulkanUIRenderer::Destroy()
+{
+	ImGui_ImplVulkan_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
+
+	ImGui::DestroyContext();
 }
 
 void FVulkanUIRenderer::Render()

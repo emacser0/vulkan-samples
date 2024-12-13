@@ -24,6 +24,7 @@ public:
 
 	uint32_t GetImageCount() const { return ImageCount; }
 	const std::vector<VkImage>& GetImages() const { return Images; }
+	const std::vector<VkImageView> GetImageViews() const { return ImageViews; }
 
 	uint32_t GetCurrentImageIndex() const { return CurrentImageIndex; }
 
@@ -37,6 +38,7 @@ private:
 
 	uint32_t ImageCount;
 	std::vector<VkImage> Images;
+	std::vector<VkImageView> ImageViews;
 
 	uint32_t CurrentImageIndex;
 };

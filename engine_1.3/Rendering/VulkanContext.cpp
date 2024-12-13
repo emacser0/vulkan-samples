@@ -2,8 +2,12 @@
 #include "VulkanHelpers.h"
 #include "VulkanImage.h"
 #include "VulkanSwapchain.h"
+#include "VulkanViewport.h"
 #include "VulkanFramebuffer.h"
 #include "VulkanRenderPass.h"
+#include "VulkanRenderer.h"
+#include "VulkanMeshRenderer.h"
+#include "VulkanUIRenderer.h"
 
 #include "Config.h"
 
@@ -70,7 +74,10 @@ FVulkanContext::FVulkanContext(GLFWwindow* InWindow)
 	, Device(VK_NULL_HANDLE)
 	, Swapchain(nullptr)
 	, DepthImage(nullptr)
-	, ShadowPass(nullptr)
+	, SkyRenderer(nullptr)
+	, ShadowRenderer(nullptr)
+	, MeshRenderer(nullptr)
+	, UIRenderer(nullptr)
 {
 	RenderContextMap[InWindow] = this;
 
@@ -82,14 +89,12 @@ FVulkanContext::FVulkanContext(GLFWwindow* InWindow)
 	PickPhysicalDevice();
 	CreateLogicalDevice();
 	CreateSwapchain();
-	CreateImageViews();
-	CreateDepthResources();
 	CreateCommandPool();
 	CreateCommandBuffers();
-	CreateRenderPass();
 	CreateFramebuffers();
 	CreateSyncObjects();
 	CreateDescriptorPool();
+	CreateRenderers();
 }
 
 FVulkanContext::~FVulkanContext()
@@ -429,53 +434,10 @@ void FVulkanContext::CreateSwapchain()
 	Swapchain = FVulkanSwapchain::Create(this, SwapchainCI);
 }
 
-void FVulkanContext::CreateImageViews()
+void FVulkanContext::CreateRenderers()
 {
-	SwapchainImageViews.resize(Swapchain->GetImageCount());
-
-	const std::vector<VkImage>& Images = Swapchain->GetImages();
-
-	for (uint32_t Idx = 0; Idx < Swapchain->GetImageCount(); ++Idx)
-	{
-		VkImageViewCreateInfo ImageViewCI{};
-		ImageViewCI.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-		ImageViewCI.image = Images[Idx];
-		ImageViewCI.viewType = VK_IMAGE_VIEW_TYPE_2D;
-		ImageViewCI.format = Swapchain->GetFormat();
-		ImageViewCI.components.r = VK_COMPONENT_SWIZZLE_IDENTITY;
-		ImageViewCI.components.g = VK_COMPONENT_SWIZZLE_IDENTITY;
-		ImageViewCI.components.b = VK_COMPONENT_SWIZZLE_IDENTITY;
-		ImageViewCI.components.a = VK_COMPONENT_SWIZZLE_IDENTITY;
-		ImageViewCI.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
-		ImageViewCI.subresourceRange.baseMipLevel = 0;
-		ImageViewCI.subresourceRange.levelCount = 1;
-		ImageViewCI.subresourceRange.baseArrayLayer = 0;
-		ImageViewCI.subresourceRange.layerCount = 1;
-
-		VK_ASSERT(vkCreateImageView(Device, &ImageViewCI, nullptr, &SwapchainImageViews[Idx]));
-	}
-}
-
-void FVulkanContext::CreateFramebuffers()
-{
-	SwapchainFramebuffers.resize(Swapchain->GetImageCount());
-
-	for (size_t Idx = 0; Idx < Swapchain->GetImageCount(); ++Idx)
-	{
-		std::vector<VkImageView> Attachments =
-		{
-			SwapchainImageViews[Idx],
-			DepthImage->GetView()
-		};
-
-		SwapchainFramebuffers[Idx] = FVulkanFramebuffer::Create(
-			this, BasePass->GetHandle(), Attachments, Swapchain->GetExtent());
-	}
-}
-
-void FVulkanContext::CreateRenderPass()
-{
-	BasePass = FVulkanRenderPass::CreateBasePass(this, Swapchain);
+	MeshRenderer = CreateObject<FVulkanMeshRenderer>();
+	UIRenderer = CreateObject<FVulkanUIRenderer>();
 }
 
 void FVulkanContext::CreateCommandPool()
@@ -558,32 +520,9 @@ void FVulkanContext::CreateDescriptorPool()
 	VK_ASSERT(vkCreateDescriptorPool(Device, &DescriptorPoolCI, nullptr, &DescriptorPool));
 }
 
-void FVulkanContext::CreateDepthResources()
+void FVulkanContext::CreateViewport()
 {
-	VkFormat DepthFormat = Vk::FindDepthFormat(PhysicalDevice);
-
-	if (IsValidObject(DepthImage))
-	{
-		DestroyObject(DepthImage);
-		DepthImage = nullptr;
-	}
-
-	VkExtent2D SwapchainExtent = Swapchain->GetExtent();
-
-	DepthImage = CreateObject<FVulkanImage>();
-	DepthImage->CreateImage(
-		{ SwapchainExtent.width, SwapchainExtent.height, 1 },
-		1,
-		1,
-		DepthFormat,
-		VK_IMAGE_TYPE_2D,
-		VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
-		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
-
-	DepthImage->CreateView(
-		VK_IMAGE_VIEW_TYPE_2D,
-		VK_IMAGE_ASPECT_DEPTH_BIT);
+	Viewport = FVulkanViewport::Create(this, Window);
 }
 
 void FVulkanContext::CleanupSwapchain()
@@ -602,15 +541,6 @@ void FVulkanContext::CleanupSwapchain()
 		}
 	}
 	SwapchainFramebuffers.clear();
-
-	for (VkImageView ImageView : SwapchainImageViews)
-	{
-		if (ImageView != VK_NULL_HANDLE)
-		{
-			vkDestroyImageView(Device, ImageView, nullptr);
-		}
-	}
-	SwapchainImageViews.clear();
 
 	if (IsValidObject(Swapchain))
 	{
@@ -632,12 +562,30 @@ void FVulkanContext::RecreateSwapchain()
 
 	vkDeviceWaitIdle(Device);
 
-	CleanupSwapchain();
+	Viewport->Recreate();
 
-	CreateSwapchain();
-	CreateImageViews();
-	CreateDepthResources();
-	CreateFramebuffers();
+	for (FVulkanRenderer* Renderer : Renderers)
+	{
+		if (Renderer != nullptr)
+		{
+			Renderer->OnRecreateSwapchain();
+		}
+	}
+}
+
+void FVulkanContext::Render()
+{
+	BeginRender();
+
+	for (FVulkanRenderer* Renderer : Renderers)
+	{
+		if (Renderer != nullptr)
+		{
+			Renderer->Render();
+		}
+	}
+
+	EndRender();
 }
 
 void FVulkanContext::BeginRender()
@@ -658,7 +606,6 @@ void FVulkanContext::BeginRender()
 	vkResetFences(Device, 1, &Fences[CurrentFrame]);
 
 	VkCommandBuffer CommandBuffer = CommandBuffers[CurrentFrame];
-	FVulkanFramebuffer* SwapchainFramebuffer = SwapchainFramebuffers[Swapchain->GetCurrentImageIndex()];
 
 	vkResetCommandBuffer(CommandBuffer, 0);
 

@@ -128,7 +128,6 @@ void FVulkanSkyRenderer::CreateGraphicsPipelines()
 	Pipeline->CreatePipeline(PipelineCI);
 }
 
-
 void FVulkanSkyRenderer::CreateTextureSampler()
 {
 	Sampler = Context->CreateObject<FVulkanSampler>();

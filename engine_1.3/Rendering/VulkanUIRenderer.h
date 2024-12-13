@@ -1,23 +1,23 @@
 #pragma once
 
-#include "vulkan/vulkan.h"
-#include "glm/glm.hpp"
-
+#include "VulkanRenderer.h"
 #include "VulkanTexture.h"
 #include "VulkanBuffer.h"
+
+#include "vulkan/vulkan.h"
+#include "glm/glm.hpp"
 
 #include <memory>
 #include <vector>
 
 #define MAX_CONCURRENT_FRAME 2
 
-class FVulkanUIRenderer : public FVulkanObject
+class FVulkanUIRenderer : public FVulkanRenderer
 {
 public:
 	FVulkanUIRenderer(class FVulkanContext* InContext);
 	virtual void Destroy() override;
 
-	void Ready();
 	void Render();
 
 	void AddWidget(const std::shared_ptr<class FWidget>& InWidget);

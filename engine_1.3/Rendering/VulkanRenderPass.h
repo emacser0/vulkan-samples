@@ -15,6 +15,7 @@ public:
 	static FVulkanRenderPass* Create(class FVulkanContext* InContext, const VkRenderPassCreateInfo& RenderPassCI);
 	static FVulkanRenderPass* CreateShadowPass(class FVulkanContext* InContext);
 	static FVulkanRenderPass* CreateBasePass(class FVulkanContext* InContext, class FVulkanSwapchain* InSwapchain);
+	static FVulkanRenderPass* CreateUIPass(class FVulkanContext* InContext, const FVulkanSwapchain* InSwapchain);
 
 	virtual void Destroy() override;
 

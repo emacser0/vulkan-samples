@@ -23,8 +23,7 @@ public:
 	VkQueue GetGfxQueue() const { return GfxQueue; }
 	VkQueue GetPresentQueue() const { return PresentQueue; }
 	class FVulkanSwapchain* GetSwapchain() const { return Swapchain; }
-	class FVulkanFramebuffer* GetSwapchainFramebuffer() const { return SwapchainFramebuffers[Swapchain->GetCurrentImageIndex()]; }
-	class FVulkanRenderPass* GetBasePass() const { return BasePass; }
+	class FVulkanViewport* GetViewport() const { return Viewport; }
 	VkCommandPool GetCommandPool() const { return CommandPool; }
 	const std::vector<VkCommandBuffer>& GetCommandBuffers() const { return CommandBuffers; }
 	VkCommandBuffer GetCommandBuffer() const { return CommandBuffers[CurrentFrame]; }
@@ -34,6 +33,9 @@ public:
 
 	bool IsFramebufferResized() const { return bFramebufferResized; }
 	void SetFramebufferResized(bool InbFramebufferResized) { bFramebufferResized = InbFramebufferResized; }
+
+	class FVulkanMeshRenderer* GetMeshRenderer() const { return MeshRenderer; }
+	class FVulkanUIRenderer* GetUIRenderer() const { return UIRenderer; }
 
 	void WaitIdle();
 
@@ -48,6 +50,7 @@ public:
 	bool IsValidObject(FVulkanObject* InObject);
 
 public:
+	void Render();
 	void BeginRender();
 	void EndRender();
 
@@ -57,16 +60,15 @@ protected:
 	void CreateSurface();
 	void PickPhysicalDevice();
 	void CreateLogicalDevice();
-	void CreateRenderPass();
 	void CreateCommandPool();
 	void CreateCommandBuffers();
 	void CreateSyncObjects();
 	void CreateDescriptorPool();
+	void CreateViewport();
+	void CreateRenderers();
 
 	void CreateSwapchain();
-	void CreateImageViews();
 	void CreateFramebuffers();
-	void CreateDepthResources();
 
 	void CleanupSwapchain();
 	void RecreateSwapchain();
@@ -85,13 +87,17 @@ protected:
 	VkQueue PresentQueue;
 
 	class FVulkanSwapchain* Swapchain;
-	std::vector<VkImageView> SwapchainImageViews;
 	std::vector<class FVulkanFramebuffer*> SwapchainFramebuffers;
+	class FVulkanViewport* Viewport;
 
 	class FVulkanImage* DepthImage;
 
-	class FVulkanRenderPass* ShadowPass;
-	class FVulkanRenderPass* BasePass;
+	class FVulkanRenderer* SkyRenderer;
+	class FVulkanRenderer* ShadowRenderer;
+	class FVulkanMeshRenderer* MeshRenderer;
+	class FVulkanUIRenderer* UIRenderer;
+	std::vector<class FVulkanRenderer*> Renderers;
+
 	VkCommandPool CommandPool;
 
 	std::vector<VkCommandBuffer> CommandBuffers;

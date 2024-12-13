@@ -1,31 +1,30 @@
 #pragma once
 
-#include "vulkan/vulkan.h"
-#include "glfw/glfw3.h"
-
-#include "glm/glm.hpp"
-
-#include "VulkanObject.h"
+#include "VulkanRenderer.h"
 #include "VulkanBuffer.h"
 #include "VulkanMesh.h"
 #include "VulkanShader.h"
 #include "VulkanModel.h"
+
+#include "vulkan/vulkan.h"
+#include "glfw/glfw3.h"
+#include "glm/glm.hpp"
 
 #include "Vertex.h"
 
 #include <vector>
 #include <unordered_map>
 
-class FVulkanMeshRenderer : public FVulkanObject
+class FVulkanMeshRenderer : public FVulkanRenderer
 {
 public:
 	FVulkanMeshRenderer(class FVulkanContext* InContext);
 	virtual ~FVulkanMeshRenderer();
 
 	void PreRender();
-	void Render();
+	virtual void Render() override;
 
-	void SetScene(class FVulkanScene* InScene) { Scene = InScene; }
+	virtual void OnRecreateSwapchain() override;
 
 	void SetEnableTBNVisualization(bool bEnabled) { bEnableTBNVisualization = bEnabled; }
 	void SetEnableAttenuation(bool bEnabled) { bEnableAttenuation = bEnabled; }
@@ -36,6 +35,7 @@ protected:
 	void GenerateInstancedDrawingInfo();
 
 	void CreateRenderPass();
+	void CreateFramebuffers();
 	void CreateDescriptorSetLayout();
 	void CreateGraphicsPipelines();
 	void CreateTBNPipeline();
@@ -62,8 +62,7 @@ protected:
 	void Draw(FVulkanMesh* InMesh, const FInstancedDrawingInfo& InDrawingInfo, VkViewport& InViewport, VkRect2D& InScissor);
 
 protected:
-	class FVulkanScene* Scene;
-	class FVulkanRenderPass* RenderPass;
+	std::vector<class FVulkanFramebuffer*> Framebuffers;
 
 	class FVulkanPipeline* TBNPipeline;
 

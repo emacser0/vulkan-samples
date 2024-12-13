@@ -10,6 +10,8 @@
 #include "VulkanSwapchain.h"
 #include "VulkanRenderPass.h"
 #include "VulkanPipeline.h"
+#include "VulkanFramebuffer.h"
+#include "VulkanViewport.h"
 
 #include "Utils.h"
 #include "Config.h"
@@ -65,7 +67,7 @@ struct FInstanceBuffer
 };
 
 FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
-	: FVulkanObject(InContext)
+	: FVulkanRenderer(InContext)
 	, TBNPipeline(nullptr)
 	, DescriptorSetLayout(VK_NULL_HANDLE)
 	, Sampler(nullptr)
@@ -75,8 +77,11 @@ FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	, bEnableGammaCorrection(false)
 	, bEnableToneMapping(false)
 {
+	CreateRenderPass();
+	CreateFramebuffers();
 	CreateTextureSampler();
 	CreateDescriptorSetLayout();
+	CreateUniformBuffers();
 	CreateTBNPipeline();
 }
 
@@ -84,8 +89,34 @@ FVulkanMeshRenderer::~FVulkanMeshRenderer()
 {
 	VkDevice Device = Context->GetDevice();
 
-	Context->DestroyObject(RenderPass);
+	if (Context->IsValidObject(RenderPass))
+	{
+		Context->DestroyObject(RenderPass);
+	}
+
+	for (FVulkanFramebuffer* Framebuffer : Framebuffers)
+	{
+		if (Context->IsValidObject(Framebuffer))
+		{
+			Context->DestroyObject(Framebuffer);
+		}
+	}
+
 	vkDestroyDescriptorSetLayout(Device, DescriptorSetLayout, nullptr);
+}
+
+void FVulkanMeshRenderer::OnRecreateSwapchain()
+{
+	for (FVulkanFramebuffer* Framebuffer : Framebuffers)
+	{
+		if (Context->IsValidObject(Framebuffer))
+		{
+			Context->DestroyObject(Framebuffer);
+		}
+	}
+	Framebuffers.clear();
+
+	CreateFramebuffers();
 }
 
 void FVulkanMeshRenderer::GenerateInstancedDrawingInfo()
@@ -122,6 +153,32 @@ void FVulkanMeshRenderer::GenerateInstancedDrawingInfo()
 void FVulkanMeshRenderer::CreateRenderPass()
 {
 	RenderPass = FVulkanRenderPass::CreateBasePass(Context, Context->GetSwapchain());
+}
+
+void FVulkanMeshRenderer::CreateFramebuffers()
+{
+	FVulkanSwapchain* Swapchain = Context->GetSwapchain();
+	assert(Swapchain != nullptr);
+
+	FVulkanViewport* Viewport = Context->GetViewport();
+	assert(Viewport != nullptr);
+
+	FVulkanImage* DepthImage = Viewport->GetDepthImage();
+	assert(DepthImage != nullptr);
+
+	Framebuffers.resize(Swapchain->GetImageCount());
+
+	for (size_t Idx = 0; Idx < Swapchain->GetImageCount(); ++Idx)
+	{
+		std::vector<VkImageView> Attachments =
+		{
+			Swapchain->GetImageViews()[Idx],
+			DepthImage->GetView()
+		};
+
+		Framebuffers[Idx] = FVulkanFramebuffer::Create(
+			Context, RenderPass->GetHandle(), Attachments, Swapchain->GetExtent());
+	}
 }
 
 void FVulkanMeshRenderer::CreateDescriptorSetLayout()
@@ -273,7 +330,7 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 		PipelineCI.pColorBlendState = &ColorBlendStateCI;
 		PipelineCI.pDynamicState = &DynamicStateCI;
 		PipelineCI.layout = Pipeline->GetLayout();
-		PipelineCI.renderPass = Context->GetBasePass()->GetHandle();
+		PipelineCI.renderPass = RenderPass->GetHandle();
 		PipelineCI.subpass = 0;
 		PipelineCI.basePipelineHandle = VK_NULL_HANDLE;
 
@@ -365,7 +422,7 @@ void FVulkanMeshRenderer::CreateTBNPipeline()
 	PipelineCI.pColorBlendState = &ColorBlendStateCI;
 	PipelineCI.pDynamicState = &DynamicStateCI;
 	PipelineCI.layout = TBNPipeline->GetLayout();
-	PipelineCI.renderPass = Context->GetBasePass()->GetHandle();
+	PipelineCI.renderPass = RenderPass->GetHandle();
 	PipelineCI.subpass = 0;
 	PipelineCI.basePipelineHandle = VK_NULL_HANDLE;
 
@@ -788,24 +845,23 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 
 void FVulkanMeshRenderer::PreRender()
 {
-	if (bInitialized)
-	{
-		return;
-	}
-
-	GenerateInstancedDrawingInfo();
-
-	CreateGraphicsPipelines();
-	CreateUniformBuffers();
-	CreateInstanceBuffers();
-	CreateDescriptorSets();
-
-	bInitialized = true;
 }
 
 void FVulkanMeshRenderer::Render()
 {
+	if (bInitialized == false)
+	{
+		GenerateInstancedDrawingInfo();
+
+		CreateGraphicsPipelines();
+		CreateInstanceBuffers();
+		CreateDescriptorSets();
+
+		bInitialized = true;
+	}
+
 	VkCommandBuffer CommandBuffer = Context->GetCommandBuffer();
+	FVulkanSwapchain* Swapchain = Context->GetSwapchain();
 
 	VkRect2D RenderArea;
 	RenderArea.offset = { 0, 0 };
@@ -816,7 +872,9 @@ void FVulkanMeshRenderer::Render()
 	ClearValues[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
 	ClearValues[1].depthStencil = { 1.0f, 0 };
 
-	RenderPass->Begin(CommandBuffer, Context->GetSwapchainFramebuffer(), RenderArea, ClearValues);
+	uint32_t CurrentImageIndex = Swapchain->GetCurrentImageIndex();
+
+	RenderPass->Begin(CommandBuffer, Framebuffers[CurrentImageIndex], RenderArea, ClearValues);
 
 	VkExtent2D SwapchainExtent = Context->GetSwapchain()->GetExtent();
 

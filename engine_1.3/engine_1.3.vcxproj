@@ -55,6 +55,7 @@
     <ClInclude Include="Rendering\VulkanModel.h" />
     <ClInclude Include="Rendering\VulkanObject.h" />
     <ClInclude Include="Rendering\VulkanPipeline.h" />
+    <ClInclude Include="Rendering\VulkanRenderer.h" />
     <ClInclude Include="Rendering\VulkanRenderPass.h" />
     <ClInclude Include="Rendering\VulkanSampler.h" />
     <ClInclude Include="Rendering\VulkanScene.h" />
@@ -62,6 +63,7 @@
     <ClInclude Include="Rendering\VulkanSwapchain.h" />
     <ClInclude Include="Rendering\VulkanTexture.h" />
     <ClInclude Include="Rendering\VulkanUIRenderer.h" />
+    <ClInclude Include="Rendering\VulkanViewport.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Asset.cpp" />
@@ -96,6 +98,7 @@
     <ClCompile Include="Rendering\VulkanModel.cpp" />
     <ClCompile Include="Rendering\VulkanObject.cpp" />
     <ClCompile Include="Rendering\VulkanPipeline.cpp" />
+    <ClCompile Include="Rendering\VulkanRenderer.cpp" />
     <ClCompile Include="Rendering\VulkanRenderPass.cpp" />
     <ClCompile Include="Rendering\VulkanSampler.cpp" />
     <ClCompile Include="Rendering\VulkanScene.cpp" />
@@ -103,6 +106,7 @@
     <ClCompile Include="Rendering\VulkanSwapchain.cpp" />
     <ClCompile Include="Rendering\VulkanTexture.cpp" />
     <ClCompile Include="Rendering\VulkanUIRenderer.cpp" />
+    <ClCompile Include="Rendering\VulkanViewport.cpp" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

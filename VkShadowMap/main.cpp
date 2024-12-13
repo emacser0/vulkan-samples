@@ -193,8 +193,8 @@ void Run(int argc, char** argv)
 
 	GLFWwindow* Window = GEngine->GetWindow();
 
-	FVulkanUIRenderer* UIRenderer = GEngine->GetUIRenderer();
-	UIRenderer->Ready();
+	FVulkanContext* RenderContext = GEngine->GetRenderContext();
+	FVulkanUIRenderer* UIRenderer = RenderContext->GetUIRenderer();
 
 	std::shared_ptr<FWidget> MainWidget = std::make_shared<FMainWidget>();
 	UIRenderer->AddWidget(MainWidget);
@@ -354,9 +354,6 @@ void Run(int argc, char** argv)
 	ASkyActor* SkyActor = World->GetSky();
 	SkyActor->SetMesh(SkyMesh);
 
-	FVulkanContext* RenderContext = GEngine->GetRenderContext();
-	FVulkanMeshRenderer* MeshRenderer = GEngine->GetMeshRenderer();
-
 	SkyRenderer = RenderContext->CreateObject<FVulkanSkyRenderer>();
 
 	float TargetFPS;
@@ -376,15 +373,6 @@ void Run(int argc, char** argv)
 		glfwPollEvents();
 
 		GEngine->Tick(DeltaTime);
-
-		SkyRenderer->PreRender();
-		MeshRenderer->PreRender();
-
-		RenderContext->BeginRender();
-		SkyRenderer->Render();
-		MeshRenderer->Render();
-		UIRenderer->Render();
-		RenderContext->EndRender();
 
 		PreviousFrameTime = CurrentFrameTime;
 
