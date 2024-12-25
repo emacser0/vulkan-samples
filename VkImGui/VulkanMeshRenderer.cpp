@@ -11,7 +11,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/quaternion.hpp"
 
-static struct FUniformBufferObject
+struct FUniformBufferObject
 {
 	alignas(16) glm::mat4 Model;
 	alignas(16) glm::mat4 View;

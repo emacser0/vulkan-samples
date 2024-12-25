@@ -548,12 +548,12 @@ void FVulkanMeshRenderer::CreateInstanceBuffers()
 		std::vector<FVulkanBuffer*>& InstanceBuffers = Pair.second.InstanceBuffers;
 		std::vector<FVulkanModel*>& Models = Pair.second.Models;
 
-		uint32_t InstanceBufferSize = sizeof(FInstanceBuffer) * Models.size();
+		uint32_t InstanceBufferSize = static_cast<uint32_t>(sizeof(FInstanceBuffer) * Models.size());
 
 		const uint32_t MaxConcurrentFrames = Context->GetMaxConcurrentFrames();
 
 		InstanceBuffers.resize(MaxConcurrentFrames);
-		for (int Idx = 0; Idx < MaxConcurrentFrames; ++Idx)
+		for (uint32_t Idx = 0; Idx < MaxConcurrentFrames; ++Idx)
 		{
 			InstanceBuffers[Idx] = Context->CreateObject<FVulkanBuffer>();
 			InstanceBuffers[Idx]->SetUsage(VK_BUFFER_USAGE_VERTEX_BUFFER_BIT);
@@ -688,14 +688,14 @@ void FVulkanMeshRenderer::UpdateUniformBuffer()
 		const std::vector<FVulkanDirectionalLight>& DirectionalLights = Scene->GetDirectionalLights();
 
 		LBO.NumPointLights = static_cast<uint32_t>(PointLights.size());
-		for (int Idx = 0; Idx < LBO.NumPointLights; ++Idx)
+		for (uint32_t Idx = 0; Idx < LBO.NumPointLights; ++Idx)
 		{
 			LBO.PointLights[Idx] = PointLights[Idx];
 			LBO.PointLights[Idx].Position = TBO.View * glm::vec4(LBO.PointLights[Idx].Position, 1.0f);
 		}
 
 		LBO.NumDirectionalLights = static_cast<uint32_t>(DirectionalLights.size());
-		for (int Idx = 0; Idx < LBO.NumDirectionalLights; ++Idx)
+		for (uint32_t Idx = 0; Idx < LBO.NumDirectionalLights; ++Idx)
 		{
 			LBO.DirectionalLights[Idx] = DirectionalLights[Idx];
 			LBO.DirectionalLights[Idx].Direction = TBO.View * glm::vec4(LBO.DirectionalLights[Idx].Direction, 0.0f);

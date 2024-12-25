@@ -408,7 +408,7 @@ void FVulkanMeshRenderer::CreateUniformBuffers()
 		{
 			DynamicAlignment = (DynamicAlignment + MinAlignment - 1) & ~(MinAlignment - 1);
 		}
-		uint32_t UniformBufferSize = DynamicAlignment * DrawingInfo.Models.size();
+		uint32_t UniformBufferSize = DynamicAlignment * static_cast<uint32_t>(DrawingInfo.Models.size());
 
 		DrawingInfo.DynamicUniformBuffers.resize(MAX_CONCURRENT_FRAME);
 		for (size_t Idx = 0; Idx < MAX_CONCURRENT_FRAME; ++Idx)

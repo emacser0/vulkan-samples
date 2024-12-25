@@ -26,21 +26,19 @@ bool FTextureSource::Load(const std::string& InFilename)
 {
 	int TextureWidth, TextureHeight, TextureChannels;
 
-	int OutWidth, OutHeight, OutNumChannels;
-
-	Pixels = stbi_load(InFilename.c_str(), &OutWidth, &OutHeight, &OutNumChannels, STBI_rgb_alpha);
+	Pixels = stbi_load(InFilename.c_str(), &TextureWidth, &TextureHeight, &TextureChannels, STBI_rgb_alpha);
 	if (Pixels == nullptr)
 	{
 		return false;
 	}
 
-	assert(OutWidth >= 0);
-	assert(OutHeight >= 0);
-	assert(OutNumChannels >= 0);
+	assert(TextureWidth >= 0);
+	assert(TextureHeight >= 0);
+	assert(TextureChannels >= 0);
 
-	Width = static_cast<uint32_t>(OutWidth);
-	Height = static_cast<uint32_t>(OutHeight);
-	NumChannels = static_cast<uint32_t>(OutNumChannels);
+	Width = static_cast<uint32_t>(TextureWidth);
+	Height = static_cast<uint32_t>(TextureHeight);
+	NumChannels = static_cast<uint32_t>(TextureChannels);
 
 	return true;
 }

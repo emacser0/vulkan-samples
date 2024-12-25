@@ -19,7 +19,6 @@ public:
 	uint32_t GetNumChannels() const { return NumChannels; }
 	const std::array<uint8_t*, 6> GetImages() const { return Images; }
 
-	bool Load(const std::vector<std::string>& InFilenames);
 	bool Load(const std::array<std::string, 6>& InFilenames);
 	void Unload();
 

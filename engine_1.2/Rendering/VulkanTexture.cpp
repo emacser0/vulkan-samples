@@ -148,7 +148,7 @@ void FVulkanTexture::Load(UTextureCube* InTexture)
 	const std::array<uint8_t*, 6>& Images = InTexture->GetImages();
 
 	VK_ASSERT(vkMapMemory(Device, StagingBufferMemory, 0, ImageSize, 0, &Data));
-	for (int Idx = 0; Idx < ArrayLayers; ++Idx)
+	for (uint32_t Idx = 0; Idx < ArrayLayers; ++Idx)
 	{
 		uint8_t* Pixels = Images[Idx];
 		if (Pixels == nullptr)

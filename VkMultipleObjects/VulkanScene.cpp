@@ -1,4 +1,5 @@
 #include "VulkanScene.h"
+#include "VulkanModel.h"
 
 FVulkanScene::FVulkanScene(FVulkanContext* InContext)
 	: FVulkanObject(InContext)

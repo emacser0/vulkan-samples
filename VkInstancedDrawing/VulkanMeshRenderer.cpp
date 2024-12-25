@@ -436,7 +436,7 @@ void FVulkanMeshRenderer::CreateInstanceBuffers()
 		std::vector<FVulkanBuffer>& InstanceBuffers = Pair.second.InstanceBuffers;
 		std::vector<FVulkanModel*>& Models = Pair.second.Models;
 
-		uint32_t InstanceBufferSize = sizeof(FInstanceBuffer) * Models.size();
+		uint32_t InstanceBufferSize = static_cast<uint32_t>(sizeof(FInstanceBuffer) * Models.size());
 
 		InstanceBuffers.resize(MAX_CONCURRENT_FRAME);
 		for (int Idx = 0; Idx < MAX_CONCURRENT_FRAME; ++Idx)
@@ -686,6 +686,6 @@ void FVulkanMeshRenderer::Render()
 
 		vkCmdBindIndexBuffer(CommandBuffer, Mesh->GetIndexBuffer().Buffer, 0, VK_INDEX_TYPE_UINT32);
 
-		vkCmdDrawIndexed(CommandBuffer, static_cast<uint32_t>(MeshAsset->GetIndices().size()), Models.size(), 0, 0, 0);
+		vkCmdDrawIndexed(CommandBuffer, static_cast<uint32_t>(MeshAsset->GetIndices().size()), static_cast<uint32_t>(Models.size()), 0, 0, 0);
 	}
 }

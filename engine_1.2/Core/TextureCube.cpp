@@ -22,14 +22,6 @@ UTextureCube::~UTextureCube()
 
 }
 
-bool UTextureCube::Load(const std::vector<std::string>& InFilenames)
-{
-	if (InFilenames.size() != 6)
-	{
-		return false;
-	}
-}
-
 bool UTextureCube::Load(const std::array<std::string, 6>& InFilenames)
 {
 	for (int Idx = 0; Idx < InFilenames.size(); ++Idx)
@@ -61,6 +53,8 @@ bool UTextureCube::Load(const std::array<std::string, 6>& InFilenames)
 	}
 
 	CreateRenderTexture();
+
+	return true;
 }
 
 void UTextureCube::Unload()

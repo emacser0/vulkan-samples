@@ -216,7 +216,7 @@ void FMainWidget::OnShaderItemSelected(const std::string& NewSelectedItem)
 
 void Run(int argc, char** argv)
 {
-	srand(time(0));
+	srand(static_cast<unsigned int>(time(0)));
 
 	FConfig::Startup();
 

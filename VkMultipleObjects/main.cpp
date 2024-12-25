@@ -135,7 +135,7 @@ void CompileShaders(const std::string& InDirectory)
 
 void Run(int argc, char** argv)
 {
-	srand(time(0));
+	srand(static_cast<unsigned int>(time(NULL)));
 
 	FConfig::Startup();
 

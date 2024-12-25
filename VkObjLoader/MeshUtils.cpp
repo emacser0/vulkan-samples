@@ -59,7 +59,6 @@ bool LoadModel(const std::string& InFilename, std::vector<FVertex>& OutVertices,
 
 bool LoadTexture(const std::string& InFilename, FTexture& OutTexture)
 {
-	int TextureWidth, TextureHeight, TextureChannels;
 	OutTexture.Pixels = stbi_load(InFilename.c_str(), &OutTexture.Width, &OutTexture.Height, &OutTexture.Channels, STBI_rgb_alpha);
 
 	return OutTexture.Pixels != nullptr;

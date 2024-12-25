@@ -25,7 +25,7 @@ UMesh::~UMesh()
 
 static aiMesh* FindFirstMesh(const aiScene* InScene, const aiNode* InNode)
 {
-	for (int Idx = 0; Idx < InNode->mNumMeshes; ++Idx)
+	for (uint32_t Idx = 0; Idx < InNode->mNumMeshes; ++Idx)
 	{
 		aiMesh* Mesh = InScene->mMeshes[InNode->mMeshes[Idx]];
 		if (Mesh != nullptr)
@@ -34,7 +34,7 @@ static aiMesh* FindFirstMesh(const aiScene* InScene, const aiNode* InNode)
 		}
 	}
 
-	for (int Idx = 0; Idx < InNode->mNumChildren; ++Idx)
+	for (uint32_t Idx = 0; Idx < InNode->mNumChildren; ++Idx)
 	{
 		aiNode* ChildNode = InNode->mChildren[Idx];
 		if (ChildNode == nullptr)
@@ -77,7 +77,7 @@ bool UMesh::Load(const std::string& InFilename)
 	bool bHasNormals = Mesh->HasNormals();
 	bool bHasTangents = Mesh->HasTangentsAndBitangents();
 
-	for (int Idx = 0; Idx < Mesh->mNumVertices; ++Idx)
+	for (uint32_t Idx = 0; Idx < Mesh->mNumVertices; ++Idx)
 	{
 		const aiVector3D& PositionData = Mesh->mVertices[Idx];
 
@@ -105,10 +105,10 @@ bool UMesh::Load(const std::string& InFilename)
 		Vertices.push_back(NewVertex);
 	}
 
-	for (int FaceIdx = 0; FaceIdx < Mesh->mNumFaces; ++FaceIdx)
+	for (uint32_t FaceIdx = 0; FaceIdx < Mesh->mNumFaces; ++FaceIdx)
 	{
 		const aiFace& Face = Mesh->mFaces[FaceIdx];
-		for (int Idx = 0; Idx < Face.mNumIndices; ++Idx)
+		for (uint32_t Idx = 0; Idx < Face.mNumIndices; ++Idx)
 		{
 			Indices.push_back(Face.mIndices[Idx]);
 		}
@@ -116,7 +116,7 @@ bool UMesh::Load(const std::string& InFilename)
 
 	if (bHasTangents == false)
 	{
-		for (int Idx = 0; Idx < Indices.size(); Idx += 3)
+		for (uint32_t Idx = 0; Idx < Indices.size(); Idx += 3)
 		{
 			FVertex& V0 = Vertices[Indices[Idx]];
 			FVertex& V1 = Vertices[Indices[Idx + 1]];

@@ -43,7 +43,7 @@ FVulkanUIRenderer::FVulkanUIRenderer(FVulkanContext* InContext)
 	GConfig->Get("WindowWidth", WindowWidth);
 	GConfig->Get("WindowHeight", WindowHeight);
 
-	IO.DisplaySize = ImVec2(WindowWidth, WindowHeight);
+	IO.DisplaySize = ImVec2(static_cast<float>(WindowWidth), static_cast<float>(WindowHeight));
 	IO.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
 
 	IO.FontGlobalScale = 1.0f;
