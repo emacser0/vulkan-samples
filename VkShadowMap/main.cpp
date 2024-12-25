@@ -10,7 +10,6 @@
 #include "VulkanModel.h"
 #include "VulkanScene.h"
 #include "VulkanMeshRenderer.h"
-#include "VulkanSkyRenderer.h"
 #include "VulkanUIRenderer.h"
 
 #include "Engine.h"
@@ -35,8 +34,6 @@
 #include "glm/gtx/quaternion.hpp"
 
 #include "imgui/imgui.h"
-
-FVulkanSkyRenderer* SkyRenderer;
 
 APointLightActor* PointLight;
 ADirectionalLightActor* DirectionalLight;
@@ -353,8 +350,6 @@ void Run(int argc, char** argv)
 
 	ASkyActor* SkyActor = World->GetSky();
 	SkyActor->SetMesh(SkyMesh);
-
-	SkyRenderer = RenderContext->CreateObject<FVulkanSkyRenderer>();
 
 	float TargetFPS;
 	GConfig->Get("TargetFPS", TargetFPS);

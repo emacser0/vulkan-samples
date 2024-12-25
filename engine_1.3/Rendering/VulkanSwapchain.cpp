@@ -26,6 +26,7 @@ FVulkanSwapchain* FVulkanSwapchain::Create(
 	vkGetSwapchainImagesKHR(Device, Swapchain->Swapchain, &Swapchain->ImageCount, nullptr);
 
 	Swapchain->Images.resize(Swapchain->ImageCount);
+	Swapchain->ImageViews.resize(Swapchain->ImageCount);
 	vkGetSwapchainImagesKHR(Device, Swapchain->Swapchain, &Swapchain->ImageCount, Swapchain->Images.data());
 
 	for (uint32_t Idx = 0; Idx < Swapchain->GetImageCount(); ++Idx)

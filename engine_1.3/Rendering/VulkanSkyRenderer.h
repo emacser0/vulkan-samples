@@ -1,34 +1,30 @@
 #pragma once
 
-#include "vulkan/vulkan.h"
-#include "glfw/glfw3.h"
-
-#include "glm/glm.hpp"
-
-#include "VulkanObject.h"
-#include "VulkanContext.h"
-#include "VulkanBuffer.h"
-#include "VulkanMesh.h"
-#include "VulkanShader.h"
-#include "VulkanModel.h"
-#include "VulkanPipeline.h"
-#include "VulkanSampler.h"
+#include "VulkanRenderer.h"
 
 #include "Vertex.h"
+
+#include "vulkan/vulkan.h"
+#include "glfw/glfw3.h"
+#include "glm/glm.hpp"
 
 #include <vector>
 #include <unordered_map>
 
-class FVulkanSkyRenderer : public FVulkanObject
+class FVulkanSkyRenderer : public FVulkanRenderer
 {
 public:
-	FVulkanSkyRenderer(FVulkanContext* InContext);
+	FVulkanSkyRenderer(class FVulkanContext* InContext);
 	virtual ~FVulkanSkyRenderer();
 
-	void PreRender();
-	void Render();
+	virtual void Destroy() override;
+
+	virtual void Render() override;
+	virtual void OnRecreateSwapchain() override;
 
 protected:
+	void CreateRenderPass();
+	void CreateFramebuffers();
 	void CreateGraphicsPipelines();
 	void CreateTextureSampler();
 	void CreateDescriptorSetLayout();
@@ -44,14 +40,17 @@ protected:
 	class FVulkanMesh* GetSkyMesh() const;
 
 protected:
-	FVulkanPipeline* Pipeline;
+	class FVulkanRenderPass* RenderPass;
+	std::vector<class FVulkanFramebuffer*> Framebuffers;
+
+	class FVulkanPipeline* Pipeline;
 
 	VkDescriptorSetLayout DescriptorSetLayout;
 	std::vector<VkDescriptorSet> DescriptorSets;
 
-	std::vector<FVulkanBuffer*> UniformBuffers;
+	std::vector<class FVulkanBuffer*> UniformBuffers;
 
-	FVulkanSampler* Sampler;
+	class FVulkanSampler* Sampler;
 
 	bool bInitialized;
 };

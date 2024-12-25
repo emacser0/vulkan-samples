@@ -13,10 +13,14 @@ public:
 	virtual ~FVulkanRenderPass() = default;
 
 	static FVulkanRenderPass* Create(class FVulkanContext* InContext, const VkRenderPassCreateInfo& RenderPassCI);
-	static FVulkanRenderPass* CreateShadowPass(class FVulkanContext* InContext);
-	static FVulkanRenderPass* CreateBasePass(class FVulkanContext* InContext, class FVulkanSwapchain* InSwapchain);
-	static FVulkanRenderPass* CreateUIPass(class FVulkanContext* InContext, const FVulkanSwapchain* InSwapchain);
+	static FVulkanRenderPass* CreateSkyPass(class FVulkanContext* InContext);
+	static FVulkanRenderPass* CreateBasePass(class FVulkanContext* InContext);
+	static FVulkanRenderPass* CreateUIPass(class FVulkanContext* InContext);
 
+private:
+	static FVulkanRenderPass* CreateBasePass_Internal(class FVulkanContext* InContext, bool bFirstPass = false);
+
+public:
 	virtual void Destroy() override;
 
 	VkRenderPass GetHandle() const { return RenderPass; }

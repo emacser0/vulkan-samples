@@ -140,10 +140,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="VulkanSkyRenderer.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="VulkanSkyRenderer.h" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\base.frag" />

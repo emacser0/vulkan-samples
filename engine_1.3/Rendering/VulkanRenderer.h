@@ -27,5 +27,4 @@ public:
 
 protected:
 	class FVulkanScene* Scene;
-	class FVulkanRenderPass* RenderPass;
 };

@@ -1,17 +1,19 @@
 #include "VulkanMeshRenderer.h"
 #include "VulkanContext.h"
 #include "VulkanHelpers.h"
-#include "VulkanTexture.h"
-#include "VulkanSampler.h"
-#include "VulkanScene.h"
-#include "VulkanLight.h"
-#include "VulkanMesh.h"
-#include "VulkanMaterial.h"
 #include "VulkanSwapchain.h"
 #include "VulkanRenderPass.h"
-#include "VulkanPipeline.h"
 #include "VulkanFramebuffer.h"
+#include "VulkanPipeline.h"
 #include "VulkanViewport.h"
+#include "VulkanSampler.h"
+#include "VulkanScene.h"
+#include "VulkanShader.h"
+#include "VulkanMaterial.h"
+#include "VulkanModel.h"
+#include "VulkanMesh.h"
+#include "VulkanTexture.h"
+#include "VulkanLight.h"
 
 #include "Utils.h"
 #include "Config.h"
@@ -68,6 +70,7 @@ struct FInstanceBuffer
 
 FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	: FVulkanRenderer(InContext)
+	, RenderPass(nullptr)
 	, TBNPipeline(nullptr)
 	, DescriptorSetLayout(VK_NULL_HANDLE)
 	, Sampler(nullptr)
@@ -87,6 +90,10 @@ FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 
 FVulkanMeshRenderer::~FVulkanMeshRenderer()
 {
+}
+
+void FVulkanMeshRenderer::Destroy()
+{
 	VkDevice Device = Context->GetDevice();
 
 	if (Context->IsValidObject(RenderPass))
@@ -100,6 +107,62 @@ FVulkanMeshRenderer::~FVulkanMeshRenderer()
 		{
 			Context->DestroyObject(Framebuffer);
 		}
+	}
+
+	if (TBNPipeline != nullptr)
+	{
+		Context->DestroyObject(TBNPipeline);
+		TBNPipeline = nullptr;
+	}
+
+	for (FVulkanBuffer* TransformBuffer : TransformBuffers)
+	{
+		if (TransformBuffer == nullptr)
+		{
+			continue;
+		}
+
+		Context->DestroyObject(TransformBuffer);
+	}
+	TransformBuffers.clear();
+
+	for (FVulkanBuffer* LightBuffer : LightBuffers)
+	{
+		if (LightBuffer == nullptr)
+		{
+			continue;
+		}
+
+		Context->DestroyObject(LightBuffer);
+	}
+	LightBuffers.clear();
+
+	for (FVulkanBuffer* MaterialBuffer : MaterialBuffers)
+	{
+		if (MaterialBuffer == nullptr)
+		{
+			continue;
+		}
+
+		Context->DestroyObject(MaterialBuffer);
+	}
+	MaterialBuffers.clear();
+
+	for (FVulkanBuffer* DebugBuffer : DebugBuffers)
+	{
+		if (DebugBuffer == nullptr)
+		{
+			continue;
+		}
+
+		Context->DestroyObject(DebugBuffer);
+	}
+	DebugBuffers.clear();
+
+	if (Sampler != nullptr)
+	{
+		Context->DestroyObject(Sampler);
+		Sampler = nullptr;
 	}
 
 	vkDestroyDescriptorSetLayout(Device, DescriptorSetLayout, nullptr);
@@ -152,16 +215,21 @@ void FVulkanMeshRenderer::GenerateInstancedDrawingInfo()
 
 void FVulkanMeshRenderer::CreateRenderPass()
 {
-	RenderPass = FVulkanRenderPass::CreateBasePass(Context, Context->GetSwapchain());
+	FVulkanViewport* Viewport = Context->GetViewport();
+	assert(Viewport != nullptr);
+
+	FVulkanSwapchain* Swapchain = Viewport->GetSwapchain();
+
+	RenderPass = FVulkanRenderPass::CreateBasePass(Context);
 }
 
 void FVulkanMeshRenderer::CreateFramebuffers()
 {
-	FVulkanSwapchain* Swapchain = Context->GetSwapchain();
-	assert(Swapchain != nullptr);
-
 	FVulkanViewport* Viewport = Context->GetViewport();
 	assert(Viewport != nullptr);
+
+	FVulkanSwapchain* Swapchain = Viewport->GetSwapchain();
+	assert(Swapchain != nullptr);
 
 	FVulkanImage* DepthImage = Viewport->GetDepthImage();
 	assert(DepthImage != nullptr);
@@ -595,7 +663,13 @@ void FVulkanMeshRenderer::UpdateUniformBuffer()
 
 	FVulkanCamera Camera = Scene->GetCamera();
 
-	VkExtent2D SwapchainExtent = Context->GetSwapchain()->GetExtent();
+	FVulkanViewport* Viewport = Context->GetViewport();
+	assert(Viewport != nullptr);
+
+	FVulkanSwapchain* Swapchain = Viewport->GetSwapchain();
+	assert(Swapchain != nullptr);
+
+	VkExtent2D SwapchainExtent = Swapchain->GetExtent();
 
 	float FOVRadians = glm::radians(Camera.FOV);
 	float AspectRatio = SwapchainExtent.width / (float)SwapchainExtent.height;
@@ -843,10 +917,6 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 	}
 }
 
-void FVulkanMeshRenderer::PreRender()
-{
-}
-
 void FVulkanMeshRenderer::Render()
 {
 	if (bInitialized == false)
@@ -861,7 +931,12 @@ void FVulkanMeshRenderer::Render()
 	}
 
 	VkCommandBuffer CommandBuffer = Context->GetCommandBuffer();
-	FVulkanSwapchain* Swapchain = Context->GetSwapchain();
+ 
+	FVulkanViewport* Viewport = Context->GetViewport();
+	assert(Viewport != nullptr);
+
+	FVulkanSwapchain* Swapchain = Viewport->GetSwapchain();
+	assert(Swapchain != nullptr);
 
 	VkRect2D RenderArea;
 	RenderArea.offset = { 0, 0 };
@@ -876,15 +951,15 @@ void FVulkanMeshRenderer::Render()
 
 	RenderPass->Begin(CommandBuffer, Framebuffers[CurrentImageIndex], RenderArea, ClearValues);
 
-	VkExtent2D SwapchainExtent = Context->GetSwapchain()->GetExtent();
+	VkExtent2D SwapchainExtent = Swapchain->GetExtent();
 
-	VkViewport Viewport{};
-	Viewport.x = 0.0f;
-	Viewport.y = 0.0f;
-	Viewport.width = (float)SwapchainExtent.width;
-	Viewport.height = (float)SwapchainExtent.height;
-	Viewport.minDepth = 0.0f;
-	Viewport.maxDepth = 1.0f;
+	VkViewport ViewportState{};
+	ViewportState.x = 0.0f;
+	ViewportState.y = 0.0f;
+	ViewportState.width = (float)SwapchainExtent.width;
+	ViewportState.height = (float)SwapchainExtent.height;
+	ViewportState.minDepth = 0.0f;
+	ViewportState.maxDepth = 1.0f;
 
 	VkRect2D Scissor{};
 	Scissor.offset = { 0, 0 };
@@ -903,7 +978,7 @@ void FVulkanMeshRenderer::Render()
 		}
 
 		UpdateMaterialBuffer(Mesh);
-		Draw(Mesh, DrawingInfo, Viewport, Scissor);
+		Draw(Mesh, DrawingInfo, ViewportState, Scissor);
 	}
 
 	RenderPass->End(CommandBuffer);

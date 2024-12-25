@@ -22,7 +22,6 @@ public:
 	VkDevice GetDevice() const { return Device; }
 	VkQueue GetGfxQueue() const { return GfxQueue; }
 	VkQueue GetPresentQueue() const { return PresentQueue; }
-	class FVulkanSwapchain* GetSwapchain() const { return Swapchain; }
 	class FVulkanViewport* GetViewport() const { return Viewport; }
 	VkCommandPool GetCommandPool() const { return CommandPool; }
 	const std::vector<VkCommandBuffer>& GetCommandBuffers() const { return CommandBuffers; }
@@ -67,10 +66,8 @@ protected:
 	void CreateViewport();
 	void CreateRenderers();
 
-	void CreateSwapchain();
 	void CreateFramebuffers();
 
-	void CleanupSwapchain();
 	void RecreateSwapchain();
 
 protected:
@@ -86,14 +83,10 @@ protected:
 	VkQueue GfxQueue;
 	VkQueue PresentQueue;
 
-	class FVulkanSwapchain* Swapchain;
 	std::vector<class FVulkanFramebuffer*> SwapchainFramebuffers;
 	class FVulkanViewport* Viewport;
 
-	class FVulkanImage* DepthImage;
-
-	class FVulkanRenderer* SkyRenderer;
-	class FVulkanRenderer* ShadowRenderer;
+	class FVulkanSkyRenderer* SkyRenderer;
 	class FVulkanMeshRenderer* MeshRenderer;
 	class FVulkanUIRenderer* UIRenderer;
 	std::vector<class FVulkanRenderer*> Renderers;

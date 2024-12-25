@@ -32,8 +32,6 @@ private:
 	struct GLFWwindow* Window;
 	class FWorld* World;
 	class FVulkanContext* RenderContext;
-	class FVulkanMeshRenderer* MeshRenderer;
-	class FVulkanUIRenderer* UIRenderer;
 };
 
 extern FEngine* GEngine;

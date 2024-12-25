@@ -12,12 +12,10 @@ FVulkanViewport::FVulkanViewport(FVulkanContext* InContext)
 	, Swapchain(nullptr)
 	, DepthImage(nullptr)
 {
-
 }
 
 FVulkanViewport::~FVulkanViewport()
 {
-	Cleanup();
 }
 
 FVulkanViewport* FVulkanViewport::Create(FVulkanContext* InContext, GLFWwindow* InWindow)
@@ -31,7 +29,7 @@ FVulkanViewport* FVulkanViewport::Create(FVulkanContext* InContext, GLFWwindow* 
 
 void FVulkanViewport::Destroy()
 {
-
+	Cleanup();
 }
 
 void FVulkanViewport::CreateSwapchain(GLFWwindow* InWindow)

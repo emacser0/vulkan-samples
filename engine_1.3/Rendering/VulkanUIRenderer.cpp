@@ -4,6 +4,9 @@
 #include "VulkanBuffer.h"
 #include "VulkanTexture.h"
 #include "VulkanRenderPass.h"
+#include "VulkanSwapchain.h"
+#include "VulkanViewport.h"
+#include "VulkanFramebuffer.h"
 
 #include "Utils.h"
 #include "Config.h"
@@ -48,7 +51,7 @@ FVulkanUIRenderer::FVulkanUIRenderer(FVulkanContext* InContext)
 
 	ImGui_ImplGlfw_InitForVulkan(Context->GetWindow(), true);
 
-	RenderPass = FVulkanRenderPass::CreateUIPass(Context, Context->GetSwapchain());
+	RenderPass = FVulkanRenderPass::CreateUIPass(Context);
 
 	VkPhysicalDevice PhysicalDevice = Context->GetPhysicalDevice();
 	VkDevice Device = Context->GetDevice();
@@ -72,6 +75,7 @@ FVulkanUIRenderer::FVulkanUIRenderer(FVulkanContext* InContext)
 	ImGui_ImplVulkan_CreateFontsTexture();
 	ImGui_ImplVulkan_DestroyFontsTexture();
 
+	CreateFramebuffers();
 }
 
 void FVulkanUIRenderer::Destroy()
@@ -80,10 +84,74 @@ void FVulkanUIRenderer::Destroy()
 	ImGui_ImplGlfw_Shutdown();
 
 	ImGui::DestroyContext();
+
+	if (RenderPass != nullptr)
+	{
+		Context->DestroyObject(RenderPass);
+	}
+
+	for (FVulkanFramebuffer* Framebuffer : Framebuffers)
+	{
+		if (Framebuffer == nullptr)
+		{
+			continue;
+		}
+
+		Context->DestroyObject(Framebuffer);
+	}
+	Framebuffers.clear();
+}
+
+void FVulkanUIRenderer::CreateFramebuffers()
+{
+	FVulkanViewport* Viewport = Context->GetViewport();
+	assert(Viewport != nullptr);
+
+	FVulkanSwapchain* Swapchain = Viewport->GetSwapchain();
+	assert(Swapchain != nullptr);
+
+	FVulkanImage* DepthImage = Viewport->GetDepthImage();
+	assert(DepthImage != nullptr);
+
+	Framebuffers.resize(Swapchain->GetImageCount());
+
+	for (size_t Idx = 0; Idx < Swapchain->GetImageCount(); ++Idx)
+	{
+		std::vector<VkImageView> Attachments =
+		{
+			Swapchain->GetImageViews()[Idx],
+			DepthImage->GetView()
+		};
+
+		Framebuffers[Idx] = FVulkanFramebuffer::Create(
+			Context, RenderPass->GetHandle(), Attachments, Swapchain->GetExtent());
+	}
 }
 
 void FVulkanUIRenderer::Render()
-{
+{	
+	uint32_t CurrentFrame = Context->GetCurrentFrame();
+	VkCommandBuffer CommandBuffer = Context->GetCommandBuffer();
+
+	FVulkanViewport* Viewport = Context->GetViewport();
+	assert(Viewport != nullptr);
+
+	FVulkanSwapchain* Swapchain = Viewport->GetSwapchain();
+	assert(Swapchain != nullptr);
+
+	VkRect2D RenderArea;
+	RenderArea.offset = { 0, 0 };
+	RenderArea.extent = Swapchain->GetExtent();
+
+	std::vector<VkClearValue> ClearValues{};
+	ClearValues.resize(2);
+	ClearValues[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+	ClearValues[1].depthStencil = { 1.0f, 0 };
+
+	uint32_t CurrentImageIndex = Swapchain->GetCurrentImageIndex();
+
+	RenderPass->Begin(CommandBuffer, Framebuffers[CurrentImageIndex], RenderArea, ClearValues);
+
 	ImGuiIO& IO = ImGui::GetIO();
 
 	ImGui_ImplGlfw_NewFrame();
@@ -99,6 +167,8 @@ void FVulkanUIRenderer::Render()
 	ImGui::Render();
 
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), Context->GetCommandBuffers()[Context->GetCurrentFrame()]);
+
+	RenderPass->End(CommandBuffer);
 }
 
 void FVulkanUIRenderer::AddWidget(const std::shared_ptr<FWidget>& InWidget)

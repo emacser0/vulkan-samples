@@ -7,6 +7,7 @@
 #include "VulkanRenderPass.h"
 #include "VulkanRenderer.h"
 #include "VulkanMeshRenderer.h"
+#include "VulkanSkyRenderer.h"
 #include "VulkanUIRenderer.h"
 
 #include "Config.h"
@@ -72,11 +73,8 @@ FVulkanContext::FVulkanContext(GLFWwindow* InWindow)
 	, Surface(VK_NULL_HANDLE)
 	, PhysicalDevice(VK_NULL_HANDLE)
 	, Device(VK_NULL_HANDLE)
-	, Swapchain(nullptr)
-	, DepthImage(nullptr)
-	, SkyRenderer(nullptr)
-	, ShadowRenderer(nullptr)
 	, MeshRenderer(nullptr)
+	, SkyRenderer(nullptr)
 	, UIRenderer(nullptr)
 {
 	RenderContextMap[InWindow] = this;
@@ -88,12 +86,11 @@ FVulkanContext::FVulkanContext(GLFWwindow* InWindow)
 	CreateSurface();
 	PickPhysicalDevice();
 	CreateLogicalDevice();
-	CreateSwapchain();
 	CreateCommandPool();
 	CreateCommandBuffers();
-	CreateFramebuffers();
 	CreateSyncObjects();
 	CreateDescriptorPool();
+	CreateViewport();
 	CreateRenderers();
 }
 
@@ -110,8 +107,6 @@ FVulkanContext::~FVulkanContext()
 			LiveObjects[Idx] = nullptr;
 		}
 	}
-
-	CleanupSwapchain();
 
 	vkDestroyDescriptorPool(Device, DescriptorPool, nullptr);
 	vkDestroyCommandPool(Device, CommandPool, nullptr);
@@ -145,7 +140,7 @@ void FVulkanContext::WaitIdle()
 
 void FVulkanContext::DestroyObject(FVulkanObject* InObject)
 {
-	if (InObject == nullptr)
+	if (IsValidObject(InObject) == false)
 	{
 		return;
 	}
@@ -337,107 +332,15 @@ void FVulkanContext::CreateLogicalDevice()
 	vkGetDeviceQueue(Device, PresentFamily, 0, &PresentQueue);
 }
 
-void FVulkanContext::CreateSwapchain()
-{
-	VkSurfaceCapabilitiesKHR Capabilities;
-	std::vector<VkSurfaceFormatKHR> Formats;
-	std::vector<VkPresentModeKHR> PresentModes;
-	Vk::QuerySwapchainSupport(PhysicalDevice, Surface, Capabilities, Formats, PresentModes);
-
-	assert(Formats.size() > 0);
-	assert(PresentModes.size() > 0);
-
-	VkSurfaceFormatKHR ChoosenFormat = Formats[0];
-	for (VkSurfaceFormatKHR Format : Formats)
-	{
-		if (Format.format == VK_FORMAT_B8G8R8A8_SRGB && Format.colorSpace == VK_COLOR_SPACE_SRGB_NONLINEAR_KHR)
-		{
-			ChoosenFormat = Format;
-			break;
-		}
-	}
-
-	VkPresentModeKHR ChoosenPresentMode = VK_PRESENT_MODE_FIFO_KHR;
-	for (VkPresentModeKHR PresentMode : PresentModes)
-	{
-		if (PresentMode == VK_PRESENT_MODE_MAILBOX_KHR)
-		{
-			ChoosenPresentMode = PresentMode;
-			break;
-		}
-	}
-
-	VkExtent2D ChoosenSwapchainExtent;
-	if (Capabilities.currentExtent.width != std::numeric_limits<uint32_t>::max())
-	{
-		ChoosenSwapchainExtent = Capabilities.currentExtent;
-	}
-	else
-	{
-		int Width, Height;
-		glfwGetFramebufferSize(Window, &Width, &Height);
-
-		ChoosenSwapchainExtent =
-		{
-			static_cast<uint32_t>(Width),
-			static_cast<uint32_t>(Height)
-		};
-
-		ChoosenSwapchainExtent.width = std::clamp(
-			ChoosenSwapchainExtent.width,
-			Capabilities.minImageExtent.width,
-			Capabilities.maxImageExtent.width);
-		ChoosenSwapchainExtent.height = std::clamp(
-			ChoosenSwapchainExtent.height,
-			Capabilities.minImageExtent.height,
-			Capabilities.maxImageExtent.height);
-	}
-
-	uint32_t ChoosenImageCount = std::clamp(
-		Capabilities.minImageCount + 1,
-		1U,
-		Capabilities.maxImageCount);
-
-	VkSwapchainCreateInfoKHR SwapchainCI{};
-	SwapchainCI.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR;
-	SwapchainCI.surface = Surface;
-
-	SwapchainCI.minImageCount = ChoosenImageCount;
-	SwapchainCI.imageFormat = ChoosenFormat.format;
-	SwapchainCI.imageColorSpace = ChoosenFormat.colorSpace;
-	SwapchainCI.imageExtent = ChoosenSwapchainExtent;
-	SwapchainCI.imageArrayLayers = 1;
-	SwapchainCI.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT;
-
-	uint32_t GraphicsFamily = -1;
-	uint32_t PresentFamily = -1;
-	Vk::FindQueueFamilies(PhysicalDevice, Surface, GraphicsFamily, PresentFamily);
-
-	uint32_t QueueFamilyIndices[] = { GraphicsFamily, PresentFamily };
-
-	if (GraphicsFamily == PresentFamily)
-	{
-		SwapchainCI.imageSharingMode = VK_SHARING_MODE_EXCLUSIVE;
-	}
-	else
-	{
-		SwapchainCI.imageSharingMode = VK_SHARING_MODE_CONCURRENT;
-		SwapchainCI.queueFamilyIndexCount = 2;
-		SwapchainCI.pQueueFamilyIndices = QueueFamilyIndices;
-	}
-
-	SwapchainCI.preTransform = Capabilities.currentTransform;
-	SwapchainCI.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR;
-	SwapchainCI.presentMode = ChoosenPresentMode;
-	SwapchainCI.clipped = VK_TRUE;
-
-	Swapchain = FVulkanSwapchain::Create(this, SwapchainCI);
-}
-
 void FVulkanContext::CreateRenderers()
 {
+	SkyRenderer = CreateObject<FVulkanSkyRenderer>();
 	MeshRenderer = CreateObject<FVulkanMeshRenderer>();
 	UIRenderer = CreateObject<FVulkanUIRenderer>();
+
+	Renderers.push_back(SkyRenderer);
+	Renderers.push_back(MeshRenderer);
+	Renderers.push_back(UIRenderer);
 }
 
 void FVulkanContext::CreateCommandPool()
@@ -525,30 +428,6 @@ void FVulkanContext::CreateViewport()
 	Viewport = FVulkanViewport::Create(this, Window);
 }
 
-void FVulkanContext::CleanupSwapchain()
-{
-	if (IsValidObject(DepthImage))
-	{
-		DestroyObject(DepthImage);
-		DepthImage = nullptr;
-	}
-
-	for (FVulkanFramebuffer* Framebuffer : SwapchainFramebuffers)
-	{
-		if (IsValidObject(Framebuffer))
-		{
-			DestroyObject(Framebuffer);
-		}
-	}
-	SwapchainFramebuffers.clear();
-
-	if (IsValidObject(Swapchain))
-	{
-		DestroyObject(Swapchain);
-		Swapchain = nullptr;
-	}
-}
-
 void FVulkanContext::RecreateSwapchain()
 {
 	int Width = 0, Height = 0;
@@ -591,6 +470,9 @@ void FVulkanContext::Render()
 void FVulkanContext::BeginRender()
 {
 	vkWaitForFences(Device, 1, &Fences[CurrentFrame], VK_TRUE, UINT64_MAX);
+
+	FVulkanSwapchain* Swapchain = Viewport->GetSwapchain();
+	assert(Swapchain != nullptr);
 
 	VkResult AcquireResult = Swapchain->AcquireNextImage(ImageAcquiredSemaphores[CurrentFrame]);
 	if (AcquireResult == VK_ERROR_OUT_OF_DATE_KHR)
@@ -637,6 +519,9 @@ void FVulkanContext::EndRender()
 	SubmitInfo.pSignalSemaphores = SignalSemaphores;
 
 	VK_ASSERT(vkQueueSubmit(GfxQueue, 1, &SubmitInfo, Fences[CurrentFrame]));
+
+	FVulkanSwapchain* Swapchain = Viewport->GetSwapchain();
+	assert(Swapchain != nullptr);
 
 	VkResult PresentResult = Swapchain->Present(GfxQueue, PresentQueue, RenderFinishedSemaphores[CurrentFrame]);
 	if (PresentResult == VK_ERROR_OUT_OF_DATE_KHR || PresentResult == VK_SUBOPTIMAL_KHR || bFramebufferResized)

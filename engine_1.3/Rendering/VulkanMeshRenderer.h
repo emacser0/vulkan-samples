@@ -2,9 +2,6 @@
 
 #include "VulkanRenderer.h"
 #include "VulkanBuffer.h"
-#include "VulkanMesh.h"
-#include "VulkanShader.h"
-#include "VulkanModel.h"
 
 #include "vulkan/vulkan.h"
 #include "glfw/glfw3.h"
@@ -21,9 +18,9 @@ public:
 	FVulkanMeshRenderer(class FVulkanContext* InContext);
 	virtual ~FVulkanMeshRenderer();
 
-	void PreRender();
-	virtual void Render() override;
+	virtual void Destroy() override;
 
+	virtual void Render() override;
 	virtual void OnRecreateSwapchain() override;
 
 	void SetEnableTBNVisualization(bool bEnabled) { bEnableTBNVisualization = bEnabled; }
@@ -48,32 +45,33 @@ protected:
 	void GetVertexInputAttributes(std::vector<VkVertexInputAttributeDescription>& OutDescs);
 
 	void UpdateUniformBuffer();
-	void UpdateMaterialBuffer(FVulkanMesh* InMesh);
-	void UpdateInstanceBuffer(FVulkanMesh* InMesh);
+	void UpdateMaterialBuffer(class FVulkanMesh* InMesh);
+	void UpdateInstanceBuffer(class FVulkanMesh* InMesh);
 	void UpdateDescriptorSets();
 
 	struct FInstancedDrawingInfo
 	{
 		class FVulkanPipeline* Pipeline;
-		std::vector<FVulkanModel*> Models;
-		std::vector<FVulkanBuffer*> InstanceBuffers;
+		std::vector<class FVulkanModel*> Models;
+		std::vector<class FVulkanBuffer*> InstanceBuffers;
 		std::vector<VkDescriptorSet> DescriptorSets;
 	};
-	void Draw(FVulkanMesh* InMesh, const FInstancedDrawingInfo& InDrawingInfo, VkViewport& InViewport, VkRect2D& InScissor);
+	void Draw(class FVulkanMesh* InMesh, const FInstancedDrawingInfo& InDrawingInfo, VkViewport& InViewport, VkRect2D& InScissor);
 
 protected:
+	class FVulkanRenderPass* RenderPass;
 	std::vector<class FVulkanFramebuffer*> Framebuffers;
 
 	class FVulkanPipeline* TBNPipeline;
 
 	VkDescriptorSetLayout DescriptorSetLayout;
 
-	std::unordered_map<FVulkanMesh*, FInstancedDrawingInfo> InstancedDrawingMap;
+	std::unordered_map<class FVulkanMesh*, FInstancedDrawingInfo> InstancedDrawingMap;
 
-	std::vector<FVulkanBuffer*> TransformBuffers;
-	std::vector<FVulkanBuffer*> LightBuffers;
-	std::vector<FVulkanBuffer*> MaterialBuffers;
-	std::vector<FVulkanBuffer*> DebugBuffers;
+	std::vector<class FVulkanBuffer*> TransformBuffers;
+	std::vector<class FVulkanBuffer*> LightBuffers;
+	std::vector<class FVulkanBuffer*> MaterialBuffers;
+	std::vector<class FVulkanBuffer*> DebugBuffers;
 
 	class FVulkanSampler* Sampler;
 

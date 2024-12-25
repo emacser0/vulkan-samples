@@ -151,6 +151,9 @@
     <ClInclude Include="Rendering\VulkanRenderer.h">
       <Filter>Rendering</Filter>
     </ClInclude>
+    <ClInclude Include="Rendering\VulkanSkyRenderer.h">
+      <Filter>Rendering</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Core\Texture.cpp">
@@ -274,6 +277,9 @@
       <Filter>Rendering</Filter>
     </ClCompile>
     <ClCompile Include="Rendering\VulkanRenderer.cpp">
+      <Filter>Rendering</Filter>
+    </ClCompile>
+    <ClCompile Include="Rendering\VulkanSkyRenderer.cpp">
       <Filter>Rendering</Filter>
     </ClCompile>
   </ItemGroup>

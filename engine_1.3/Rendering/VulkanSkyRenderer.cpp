@@ -5,6 +5,14 @@
 #include "VulkanScene.h"
 #include "VulkanSwapchain.h"
 #include "VulkanRenderPass.h"
+#include "VulkanFramebuffer.h"
+#include "VulkanPipeline.h"
+#include "VulkanViewport.h"
+#include "VulkanSampler.h"
+#include "VulkanBuffer.h"
+#include "VulkanMesh.h"
+#include "VulkanShader.h"
+#include "VulkanModel.h"
 
 #include "Utils.h"
 #include "Engine.h"
@@ -28,11 +36,13 @@ struct FUniformBufferObject
 };
 
 FVulkanSkyRenderer::FVulkanSkyRenderer(FVulkanContext* InContext)
-	: FVulkanObject(InContext)
+	: FVulkanRenderer(InContext)
 	, DescriptorSetLayout(VK_NULL_HANDLE)
 	, Sampler(nullptr)
 	, bInitialized(false)
 {
+	CreateRenderPass();
+	CreateFramebuffers();
 	CreateTextureSampler();
 	CreateDescriptorSetLayout();
 	CreateGraphicsPipelines();
@@ -40,9 +50,86 @@ FVulkanSkyRenderer::FVulkanSkyRenderer(FVulkanContext* InContext)
 
 FVulkanSkyRenderer::~FVulkanSkyRenderer()
 {
+}
+
+void FVulkanSkyRenderer::Destroy()
+{
 	VkDevice Device = Context->GetDevice();
 
+	if (RenderPass != nullptr)
+	{
+		Context->DestroyObject(RenderPass);
+		RenderPass = nullptr;
+	}
+
+	for (FVulkanFramebuffer* Framebuffer : Framebuffers)
+	{
+		if (Framebuffer == nullptr)
+		{
+			continue;
+		}
+
+		Context->DestroyObject(Framebuffer);
+	}
+	Framebuffers.clear();
+
+	if (Pipeline != nullptr)
+	{
+		Context->DestroyObject(Pipeline);
+		Pipeline = nullptr;
+	}
+
+	for (FVulkanBuffer* UniformBuffer : UniformBuffers)
+	{
+		if (UniformBuffer == nullptr)
+		{
+			continue;
+		}
+
+		Context->DestroyObject(UniformBuffer);
+	}
+	UniformBuffers.clear();
+
+	if (Sampler != nullptr)
+	{
+		Context->DestroyObject(Sampler);
+		Sampler = nullptr;
+	}
+
 	vkDestroyDescriptorSetLayout(Device, DescriptorSetLayout, nullptr);
+
+	bInitialized = false;
+}
+
+void FVulkanSkyRenderer::CreateRenderPass()
+{
+	RenderPass = FVulkanRenderPass::CreateSkyPass(Context);
+}
+
+void FVulkanSkyRenderer::CreateFramebuffers()
+{
+	FVulkanViewport* Viewport = Context->GetViewport();
+	assert(Viewport != nullptr);
+
+	FVulkanSwapchain* Swapchain = Viewport->GetSwapchain();
+	assert(Swapchain != nullptr);
+
+	FVulkanImage* DepthImage = Viewport->GetDepthImage();
+	assert(DepthImage != nullptr);
+
+	Framebuffers.resize(Swapchain->GetImageCount());
+
+	for (size_t Idx = 0; Idx < Swapchain->GetImageCount(); ++Idx)
+	{
+		std::vector<VkImageView> Attachments =
+		{
+			Swapchain->GetImageViews()[Idx],
+			DepthImage->GetView()
+		};
+
+		Framebuffers[Idx] = FVulkanFramebuffer::Create(
+			Context, RenderPass->GetHandle(), Attachments, Swapchain->GetExtent());
+	}
 }
 
 void FVulkanSkyRenderer::CreateGraphicsPipelines()
@@ -121,7 +208,7 @@ void FVulkanSkyRenderer::CreateGraphicsPipelines()
 	PipelineCI.pColorBlendState = &ColorBlendStateCI;
 	PipelineCI.pDynamicState = &DynamicStateCI;
 	PipelineCI.layout = Pipeline->GetLayout();
-	PipelineCI.renderPass = Context->GetBasePass()->GetHandle();
+	PipelineCI.renderPass = RenderPass->GetHandle();
 	PipelineCI.subpass = 0;
 	PipelineCI.basePipelineHandle = VK_NULL_HANDLE;
 
@@ -317,7 +404,13 @@ void FVulkanSkyRenderer::UpdateUniformBuffer()
 
 	FVulkanCamera Camera = Scene->GetCamera();
 
-	VkExtent2D SwapchainExtent = Context->GetSwapchain()->GetExtent();
+	FVulkanViewport* Viewport = Context->GetViewport();
+	assert(Viewport != nullptr);
+
+	FVulkanSwapchain* Swapchain = Viewport->GetSwapchain();
+	assert(Swapchain != nullptr);
+
+	VkExtent2D SwapchainExtent = Swapchain->GetExtent();
 
 	float FOVRadians = glm::radians(Camera.FOV);
 	float AspectRatio = SwapchainExtent.width / (float)SwapchainExtent.height;
@@ -354,43 +447,57 @@ FVulkanMesh* FVulkanSkyRenderer::GetSkyMesh() const
 	return static_cast<FVulkanMesh*>(Sky->GetMesh());
 }
 
-void FVulkanSkyRenderer::PreRender()
-{	
-	if (bInitialized)
-	{
-		return;
-	}
-
-	CreateUniformBuffers();
-	CreateDescriptorSets();
-
-	bInitialized = true;
-}
-
 void FVulkanSkyRenderer::Render()
 {	
+	if (bInitialized == false)
+	{
+		CreateUniformBuffers();
+		CreateDescriptorSets();
+
+		bInitialized = true;
+	}
+
 	uint32_t CurrentFrame = Context->GetCurrentFrame();
 	VkCommandBuffer CommandBuffer = Context->GetCommandBuffer();
 
-	VkExtent2D SwapchainExtent = Context->GetSwapchain()->GetExtent();
+	FVulkanViewport* Viewport = Context->GetViewport();
+	assert(Viewport != nullptr);
 
-	VkViewport Viewport{};
-	Viewport.x = 0.0f;
-	Viewport.y = 0.0f;
-	Viewport.width = (float)SwapchainExtent.width;
-	Viewport.height = (float)SwapchainExtent.height;
-	Viewport.minDepth = 0.0f;
-	Viewport.maxDepth = 1.0f;
+	FVulkanSwapchain* Swapchain = Viewport->GetSwapchain();
+	assert(Swapchain != nullptr);
+
+	VkRect2D RenderArea;
+	RenderArea.offset = { 0, 0 };
+	RenderArea.extent = Swapchain->GetExtent();
+
+	std::vector<VkClearValue> ClearValues{};
+	ClearValues.resize(2);
+	ClearValues[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+	ClearValues[1].depthStencil = { 1.0f, 0 };
+
+	VkExtent2D SwapchainExtent = Swapchain->GetExtent();
+
+	VkViewport ViewportState{};
+	ViewportState.x = 0.0f;
+	ViewportState.y = 0.0f;
+	ViewportState.width = (float)SwapchainExtent.width;
+	ViewportState.height = (float)SwapchainExtent.height;
+	ViewportState.minDepth = 0.0f;
+	ViewportState.maxDepth = 1.0f;
 
 	VkRect2D Scissor{};
 	Scissor.offset = { 0, 0 };
 	Scissor.extent = SwapchainExtent;
 
+	uint32_t CurrentImageIndex = Swapchain->GetCurrentImageIndex();
+
+	RenderPass->Begin(CommandBuffer, Framebuffers[CurrentImageIndex], RenderArea, ClearValues);
+
 	UpdateUniformBuffer();
 
 	vkCmdBindPipeline(CommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, Pipeline->GetPipeline());
 
-	vkCmdSetViewport(CommandBuffer, 0, 1, &Viewport);
+	vkCmdSetViewport(CommandBuffer, 0, 1, &ViewportState);
 	vkCmdSetScissor(CommandBuffer, 0, 1, &Scissor);
 
 	FVulkanMesh* SkyMesh = GetSkyMesh();
@@ -410,5 +517,21 @@ void FVulkanSkyRenderer::Render()
 	vkCmdBindIndexBuffer(CommandBuffer, SkyMesh->GetIndexBuffer()->GetHandle(), 0, VK_INDEX_TYPE_UINT32);
 
 	vkCmdDrawIndexed(CommandBuffer, static_cast<uint32_t>(SkyMesh->GetMeshAsset()->GetIndices().size()), 1, 0, 0, 0);
+
+	RenderPass->End(CommandBuffer);
+}
+
+void FVulkanSkyRenderer::OnRecreateSwapchain()
+{
+	for (FVulkanFramebuffer* Framebuffer : Framebuffers)
+	{
+		if (Context->IsValidObject(Framebuffer))
+		{
+			Context->DestroyObject(Framebuffer);
+		}
+	}
+	Framebuffers.clear();
+
+	CreateFramebuffers();
 }
 

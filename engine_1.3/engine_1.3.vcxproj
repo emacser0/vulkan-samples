@@ -60,6 +60,7 @@
     <ClInclude Include="Rendering\VulkanSampler.h" />
     <ClInclude Include="Rendering\VulkanScene.h" />
     <ClInclude Include="Rendering\VulkanShader.h" />
+    <ClInclude Include="Rendering\VulkanSkyRenderer.h" />
     <ClInclude Include="Rendering\VulkanSwapchain.h" />
     <ClInclude Include="Rendering\VulkanTexture.h" />
     <ClInclude Include="Rendering\VulkanUIRenderer.h" />
@@ -103,6 +104,7 @@
     <ClCompile Include="Rendering\VulkanSampler.cpp" />
     <ClCompile Include="Rendering\VulkanScene.cpp" />
     <ClCompile Include="Rendering\VulkanShader.cpp" />
+    <ClCompile Include="Rendering\VulkanSkyRenderer.cpp" />
     <ClCompile Include="Rendering\VulkanSwapchain.cpp" />
     <ClCompile Include="Rendering\VulkanTexture.cpp" />
     <ClCompile Include="Rendering\VulkanUIRenderer.cpp" />

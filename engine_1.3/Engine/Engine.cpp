@@ -39,8 +39,6 @@ FEngine::FEngine()
 	: Window(nullptr)
 	, World(nullptr)
 	, RenderContext(nullptr)
-	, MeshRenderer(nullptr)
-	, UIRenderer(nullptr)
 {
 }
 
@@ -63,8 +61,6 @@ void FEngine::Initialize()
 
 	World = new FWorld();
 	RenderContext = new FVulkanContext(Window);
-	MeshRenderer = RenderContext->CreateObject<FVulkanMeshRenderer>();
-	UIRenderer = RenderContext->CreateObject<FVulkanUIRenderer>();
 
 	FAssetManager::Startup();
 }
@@ -86,12 +82,12 @@ FVulkanContext* FEngine::GetRenderContext() const
 
 FVulkanMeshRenderer* FEngine::GetMeshRenderer() const
 {
-	return MeshRenderer;
+	return RenderContext->GetMeshRenderer();
 }
 
 FVulkanUIRenderer* FEngine::GetUIRenderer() const
 {
-	return UIRenderer;
+	return RenderContext->GetUIRenderer();
 }
 
 void FEngine::Tick(float DeltaTime)
@@ -99,7 +95,7 @@ void FEngine::Tick(float DeltaTime)
 	if (World != nullptr)
 	{
 		World->Tick(DeltaTime);
-		MeshRenderer->SetScene(World->GetRenderScene());
+		RenderContext->GetMeshRenderer()->SetScene(World->GetRenderScene());
 	}
 
 	assert(RenderContext != nullptr);

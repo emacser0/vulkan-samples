@@ -6,7 +6,6 @@
 FVulkanRenderer::FVulkanRenderer(FVulkanContext* InContext)
 	: FVulkanObject(InContext)
 	, Scene(nullptr)
-	, RenderPass(nullptr)
 {
 
 }
