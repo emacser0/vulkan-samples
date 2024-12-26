@@ -14,7 +14,20 @@
 ![image](https://github.com/user-attachments/assets/e4f1c0ad-5af5-4ca9-95d3-788282217cd1)
 
 ## 6. VkImGui
-![image](https://github.com/user-attachments/assets/00013e57-577f-4cf4-8132-9362106a2245)
+![image](https://github.com/user-attachments/assets/0e1b8d56-98e4-44ee-a5ff-8963c785bbeb)
 
 ## 7. VkMultipleObjects
 ![image](https://github.com/user-attachments/assets/6ec18201-02c8-4f64-aedb-401a48decc58)
+
+## 8. VkLight
+![image](https://github.com/user-attachments/assets/272d624e-6c91-4956-99f4-0bba05800b6d)
+
+## 9. VkDynamicUniformBuffer (Same as VkLight)
+![image](https://github.com/user-attachments/assets/4cb9432f-fc6f-4fd7-9fbb-37aa60919b95)
+
+## 10. VkInstancedDrawing
+![image](https://github.com/user-attachments/assets/42dfa6c9-7fb2-436b-8ce1-0db87ce21124)
+
+## 11. VkStorageBuffer (Same as VkInstancedDrawing)
+![image](https://github.com/user-attachments/assets/07d2fbc3-8174-4262-9034-c6add273a1db)
+
