@@ -31,3 +31,12 @@
 ## 11. VkStorageBuffer (Same as VkInstancedDrawing)
 ![image](https://github.com/user-attachments/assets/07d2fbc3-8174-4262-9034-c6add273a1db)
 
+## 12. VkNormalMap
+![image](https://github.com/user-attachments/assets/8eccb09c-2f18-4ea3-aecb-c05e3502a9e6)
+
+## 13. VkCubeMap
+![image](https://github.com/user-attachments/assets/27e14407-1ee6-43d6-ad32-c4ec694c156f)
+
+## 14. VkEnvironmentMap
+![image](https://github.com/user-attachments/assets/d63879d5-3f83-4000-9896-392831cab8c3)
+
