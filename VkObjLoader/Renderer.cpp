@@ -168,7 +168,7 @@ void FSingleObjectRenderer::RecordCommandBuffer(VkCommandBuffer InCommandBuffer,
 	VkDeviceSize Offsets[] = { 0 };
 	vkCmdBindVertexBuffers(InCommandBuffer, 0, 1, VertexBuffers, Offsets);
 
-	vkCmdBindIndexBuffer(InCommandBuffer, IndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+	vkCmdBindIndexBuffer(InCommandBuffer, IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 	vkCmdBindDescriptorSets(InCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, PipelineLayout, 0, 1, &DescriptorSets[GCurrentFrame], 0, nullptr);
 
@@ -763,7 +763,7 @@ void FSingleObjectRenderer::CreateCommandPool()
 
 void FSingleObjectRenderer::CreateTextureImage()
 {
-	VkDeviceSize ImageSize = Texture.Width * Texture.Height * 4U;
+	VkDeviceSize ImageSize = Texture.GetWidth() * Texture.GetHeight() * 4U;
 
 	VkBuffer StagingBuffer;
 	VkDeviceMemory StagingBufferMemory;
@@ -781,14 +781,14 @@ void FSingleObjectRenderer::CreateTextureImage()
 	{
 		throw std::runtime_error("Failed to map buffer memory.");
 	}
-	memcpy(Data, Texture.Pixels, static_cast<size_t>(ImageSize));
+	memcpy(Data, Texture.GetPixels(), static_cast<size_t>(ImageSize));
 	vkUnmapMemory(Device, StagingBufferMemory);
 
 	Vk::CreateImage(
 		PhysicalDevice,
 		Device,
-		static_cast<uint32_t>(Texture.Width),
-		static_cast<uint32_t>(Texture.Height),
+		static_cast<uint32_t>(Texture.GetWidth()),
+		static_cast<uint32_t>(Texture.GetHeight()),
 		VK_FORMAT_R8G8B8A8_SRGB,
 		VK_IMAGE_TILING_OPTIMAL,
 		VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL | VK_IMAGE_USAGE_SAMPLED_BIT,
@@ -810,8 +810,8 @@ void FSingleObjectRenderer::CreateTextureImage()
 		GraphicsQueue,
 		StagingBuffer,
 		TextureImage,
-		static_cast<uint32_t>(Texture.Width),
-		static_cast<uint32_t>(Texture.Height));
+		static_cast<uint32_t>(Texture.GetWidth()),
+		static_cast<uint32_t>(Texture.GetHeight()));
 	Vk::TransitionImageLayout(
 		Device,
 		CommandPool,
@@ -896,7 +896,7 @@ void FSingleObjectRenderer::CreateVertexBuffer()
 
 void FSingleObjectRenderer::CreateIndexBuffer()
 {
-	VkDeviceSize BufferSize = sizeof(uint16_t) * Indices.size();
+	VkDeviceSize BufferSize = sizeof(uint32_t) * Indices.size();
 
 	VkBuffer StagingBuffer;
 	VkDeviceMemory StagingBufferMemory;

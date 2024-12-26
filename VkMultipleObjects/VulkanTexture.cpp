@@ -3,7 +3,7 @@
 #include "VulkanHelpers.h"
 
 #include "Engine.h"
-#include "TextureSource.h"
+#include "Texture.h"
 
 #include <cassert>
 
@@ -31,7 +31,7 @@ FVulkanTexture::~FVulkanTexture()
 	}
 }
 
-void FVulkanTexture::LoadSource(const FTextureSource& InSource)
+void FVulkanTexture::LoadSource(const FTexture& InSource)
 {
 	if (InSource.GetWidth() <= 0)
 	{

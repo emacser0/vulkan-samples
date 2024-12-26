@@ -3,11 +3,11 @@
 #include <cstdint>
 #include <string>
 
-class FTextureSource
+class FTexture
 {
 public:
-	FTextureSource();
-	virtual ~FTextureSource();
+	FTexture();
+	virtual ~FTexture();
 
 	uint32_t GetWidth() const { return Width; }
 	uint32_t GetHeight() const { return Height; }

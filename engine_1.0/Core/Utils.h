@@ -6,3 +6,5 @@
 #include "stb_image.h"
 
 bool ReadFile(const std::string& InFilename, std::vector<char>& OutBytes);
+void CompileShaders(const std::string& InDirectory);
+

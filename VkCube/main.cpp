@@ -1,5 +1,6 @@
 #include "Engine.h"
 #include "Config.h"
+#include "Utils.h"
 #include "Rendering.h"
 #include "Camera.h"
 
@@ -85,24 +86,6 @@ void Update(float InDeltaTime)
 	Camera->SetTransform(CameraTransform);
 
 	bInitialized = true;
-}
-
-void CompileShaders(const std::string& InDirectory)
-{
-	for (const auto& Entry : std::filesystem::directory_iterator(InDirectory))
-	{
-		std::string Filename = Entry.path().string();
-		std::string Extension = Entry.path().extension().string();
-		if (Extension == ".vert" || Extension == ".frag" || Extension == ".geom")
-		{
-			std::string Command = "glslang -g -V ";
-			Command += Filename;
-			Command += " -o ";
-			Command += Filename + ".spv";
-
-			system(Command.c_str());
-		}
-	}
 }
 
 void Run(int argc, char** argv)

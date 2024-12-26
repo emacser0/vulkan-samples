@@ -145,7 +145,6 @@
     <ClInclude Include="VulkanObject.h" />
     <ClInclude Include="VulkanScene.h" />
     <ClInclude Include="VulkanShader.h" />
-    <ClInclude Include="Utils.h" />
     <ClInclude Include="VulkanBuffer.h" />
     <ClInclude Include="VulkanContext.h" />
     <ClInclude Include="VulkanHelpers.h" />
@@ -158,7 +157,6 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Utils.cpp" />
     <ClCompile Include="VulkanContext.cpp" />
     <ClCompile Include="VulkanHelpers.cpp" />
     <ClCompile Include="VulkanMesh.cpp" />
@@ -169,6 +167,10 @@
     <ClCompile Include="VulkanShader.cpp" />
     <ClCompile Include="VulkanTexture.cpp" />
     <ClCompile Include="VulkanUIRenderer.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\main.frag" />
+    <None Include="Shaders\main.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

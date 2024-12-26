@@ -34,10 +34,10 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\VkCamera.frag">
+    <None Include="Shaders\main.frag">
       <Filter>리소스 파일</Filter>
     </None>
-    <None Include="Shaders\VkCamera.vert">
+    <None Include="Shaders\main.vert">
       <Filter>리소스 파일</Filter>
     </None>
   </ItemGroup>

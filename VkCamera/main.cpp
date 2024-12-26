@@ -1,6 +1,7 @@
 #include "Rendering.h"
-#include "Camera.h"
 #include "Config.h"
+#include "Utils.h"
+#include "Camera.h"
 
 #include <ctime>
 #include <chrono>
@@ -78,24 +79,6 @@ void Update(float InDeltaTime)
 	if (glm::length(FinalMoveDelta) > FLT_EPSILON)
 	{
 		GCamera.Position += FinalMoveDelta * GCamera.MoveSpeed * InDeltaTime;
-	}
-}
-
-void CompileShaders(const std::string& InDirectory)
-{
-	for (const auto& Entry : std::filesystem::directory_iterator(InDirectory))
-	{
-		std::string Filename = Entry.path().string();
-		std::string Extension = Entry.path().extension().string();
-		if (Extension == ".vert" || Extension == ".frag" || Extension == ".geom")
-		{
-			std::string Command = "glslang -g -V ";
-			Command += Filename;
-			Command += " -o ";
-			Command += Filename + ".spv";
-
-			system(Command.c_str());
-		}
 	}
 }
 

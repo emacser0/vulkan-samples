@@ -46,9 +46,26 @@ FVulkanMeshRenderer::~FVulkanMeshRenderer()
 	vkDestroyPipelineLayout(Device, PipelineLayout, nullptr);
 	vkDestroyPipeline(Device, Pipeline, nullptr);
 
+	vkDestroySampler(Device, TextureSampler, nullptr);
+
 	vkDestroyDescriptorSetLayout(Device, DescriptorSetLayout, nullptr);
 
-	vkDestroySampler(Device, TextureSampler, nullptr);
+	for (const auto& Pair : UniformBufferMap)
+	{
+		const std::vector<FVulkanBuffer>& UniformBuffers = Pair.second;
+		for (const FVulkanBuffer& UniformBuffer : UniformBuffers)
+		{
+			if (UniformBuffer.Buffer != VK_NULL_HANDLE)
+			{
+				vkDestroyBuffer(Device, UniformBuffer.Buffer, nullptr);
+			}
+
+			if (UniformBuffer.Memory != VK_NULL_HANDLE)
+			{
+				vkFreeMemory(Device, UniformBuffer.Memory, nullptr);
+			}
+		}
+	}
 
 	delete VertexShader;
 	delete FragmentShader;
@@ -102,8 +119,8 @@ void FVulkanMeshRenderer::CreateGraphicsPipeline()
 	std::string ShaderDirectory;
 	GConfig->Get("ShaderDirectory", ShaderDirectory);
 
-	assert(VertexShader->LoadFile(ShaderDirectory + "vert.spv"));
-	assert(FragmentShader->LoadFile(ShaderDirectory + "frag.spv"));
+	assert(VertexShader->LoadFile(ShaderDirectory + "main.vert.spv"));
+	assert(FragmentShader->LoadFile(ShaderDirectory + "main.frag.spv"));
 
 	VkPipelineShaderStageCreateInfo VertexShaderStageCI{};
 	VertexShaderStageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;

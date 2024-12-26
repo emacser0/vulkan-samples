@@ -1,21 +1,15 @@
-#include "Mesh.h"
+#include "Utils.h"
+#include "Math.h"
+#include "Vertex.h"
+#include "Texture.h"
+
+#include "glm/glm.hpp"
+
+#include <unordered_map>
 
 #include "assimp/Importer.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
-
-#include "glm/glm.hpp"
-
-FMesh::FMesh()
-	: FAsset()
-{
-
-}
-
-FMesh::~FMesh()
-{
-
-}
 
 static aiMesh* FindFirstMesh(const aiScene* InScene, const aiNode* InNode)
 {
@@ -46,10 +40,10 @@ static aiMesh* FindFirstMesh(const aiScene* InScene, const aiNode* InNode)
 	return nullptr;
 }
 
-bool FMesh::Load(const std::string& InFilename)
+bool LoadModel(const std::string& InFilename, std::vector<FVertex>& OutVertices, std::vector<uint32_t>& OutIndices)
 {
 	Assimp::Importer Importer;
-	const aiScene* Scene = Importer.ReadFile(InFilename, aiProcess_Triangulate | aiProcess_FlipUVs);
+	const aiScene* Scene = Importer.ReadFile(InFilename, aiProcess_Triangulate);
 	if (Scene == nullptr)
 	{
 		return false;
@@ -67,20 +61,20 @@ bool FMesh::Load(const std::string& InFilename)
 		return false;
 	}
 
+	bool bHasColor = Mesh->HasVertexColors(0);
 	bool bHasTexCoords = Mesh->HasTextureCoords(0);
-	bool bHasNormals = Mesh->HasNormals();
 
 	for (uint32_t Idx = 0; Idx < Mesh->mNumVertices; ++Idx)
 	{
 		const aiVector3D& PositionData = Mesh->mVertices[Idx];
+		const aiColor4D& ColorData = Mesh->mColors[0][Idx];
 
 		FVertex NewVertex{};
 		NewVertex.Position = glm::vec3(PositionData.x, PositionData.y, PositionData.z);
 
-		if (bHasNormals)
+		if (bHasColor)
 		{
-			const aiVector3D& NormalData = Mesh->mNormals[Idx];
-			NewVertex.Normal = glm::vec3(NormalData.x, NormalData.y, NormalData.z);
+			NewVertex.Color = glm::vec4(ColorData.r, ColorData.g, ColorData.b, ColorData.a);
 		}
 
 		if (bHasTexCoords)
@@ -89,15 +83,15 @@ bool FMesh::Load(const std::string& InFilename)
 			NewVertex.TexCoords = glm::vec2(TexCoordsData.x, TexCoordsData.y);
 		}
 
-		Vertices.push_back(NewVertex);
+		OutVertices.push_back(NewVertex);
 	}
 
-	for (uint32_t FaceIdx = 0; FaceIdx < Mesh->mNumFaces; ++FaceIdx)
+	for (int FaceIdx = 0; FaceIdx < Mesh->mNumFaces; ++FaceIdx)
 	{
 		const aiFace& Face = Mesh->mFaces[FaceIdx];
 		for (uint32_t Idx = 0; Idx < Face.mNumIndices; ++Idx)
 		{
-			Indices.push_back(Face.mIndices[Idx]);
+			OutIndices.push_back(Face.mIndices[Idx]);
 		}
 	}
 

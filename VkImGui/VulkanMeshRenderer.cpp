@@ -20,6 +20,10 @@ struct FUniformBufferObject
 
 FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	: Context(InContext)
+	, PipelineLayout(VK_NULL_HANDLE)
+	, Pipeline(VK_NULL_HANDLE)
+	, DescriptorSetLayout(VK_NULL_HANDLE)
+	, TextureSampler(VK_NULL_HANDLE)
 {
 }
 
@@ -31,6 +35,19 @@ FVulkanMeshRenderer::~FVulkanMeshRenderer()
 	vkDestroyPipeline(Device, Pipeline, nullptr);
 
 	vkDestroyDescriptorSetLayout(Device, DescriptorSetLayout, nullptr);
+
+	for (const FVulkanBuffer& UniformBuffer : UniformBuffers)
+	{
+		if (UniformBuffer.Buffer != VK_NULL_HANDLE)
+		{
+			vkDestroyBuffer(Device, UniformBuffer.Buffer, nullptr);
+		}
+
+		if (UniformBuffer.Memory != VK_NULL_HANDLE)
+		{
+			vkFreeMemory(Device, UniformBuffer.Memory, nullptr);
+		}
+	}
 
 	vkDestroyImage(Device, Texture.Image, nullptr);
 	vkFreeMemory(Device, Texture.Memory, nullptr);
@@ -131,13 +148,13 @@ void FVulkanMeshRenderer::CreateGraphicsPipeline()
 	GConfig->Get("ShaderDirectory", ShaderDirectory);
 
 	std::vector<char> VertexShaderCode;
-	if (ReadFile(ShaderDirectory + "vert.spv", VertexShaderCode) == false)
+	if (ReadFile(ShaderDirectory + "main.vert.spv", VertexShaderCode) == false)
 	{
 		throw std::runtime_error("Failed to open file.");
 	}
 
 	std::vector<char> FragmentShaderCode;
-	if (ReadFile(ShaderDirectory + "frag.spv", FragmentShaderCode) == false)
+	if (ReadFile(ShaderDirectory + "main.frag.spv", FragmentShaderCode) == false)
 	{
 		throw std::runtime_error("Failed to open file.");
 	}
@@ -571,7 +588,7 @@ void FVulkanMeshRenderer::UpdateUniformBuffer()
 	float AspectRatio = SwapchainExtent.width / (float)SwapchainExtent.height;
 
 	FUniformBufferObject UBO{};
-	UBO.Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.0f)) * glm::toMat4(glm::quat(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f)));
+	UBO.Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.0f));
 	UBO.View = Camera->GetViewMatrix();
 	UBO.Projection = glm::perspective(FOVRadians, AspectRatio, 0.1f, 10.0f);
 

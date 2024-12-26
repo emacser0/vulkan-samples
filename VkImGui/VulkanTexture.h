@@ -1,7 +1,7 @@
 #pragma once
 
 #include "vulkan/vulkan.h"
-#include "TextureSource.h"
+#include "Texture.h"
 
 struct FVulkanTexture
 {
@@ -10,7 +10,7 @@ public:
 	uint32_t GetHeight() const { return Source.GetHeight(); }
 	uint32_t GetNumChannels() const { return Source.GetNumChannels(); }
 
-	FTextureSource Source;
+	FTexture Source;
 	VkImage Image;
 	VkDeviceMemory Memory;
 	VkImageView View;

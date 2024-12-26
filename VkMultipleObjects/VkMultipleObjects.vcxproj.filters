@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Utils.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="VulkanBuffer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -59,9 +56,6 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Utils.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="VulkanContext.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
@@ -101,5 +95,13 @@
     <ClCompile Include="VulkanObject.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="Shaders\main.frag">
+      <Filter>리소스 파일</Filter>
+    </None>
+    <None Include="Shaders\main.vert">
+      <Filter>리소스 파일</Filter>
+    </None>
   </ItemGroup>
 </Project>

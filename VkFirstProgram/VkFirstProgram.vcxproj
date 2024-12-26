@@ -143,8 +143,8 @@
     <ClCompile Include="Rendering.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\VkFirstProgram.frag" />
-    <None Include="Shaders\VkFirstProgram.vert" />
+    <None Include="Shaders\main.frag" />
+    <None Include="Shaders\main.vert" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Rendering.h" />

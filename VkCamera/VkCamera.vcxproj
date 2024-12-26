@@ -148,8 +148,8 @@
     <ClInclude Include="Rendering.h" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="Shaders\VkCamera.frag" />
-    <None Include="Shaders\VkCamera.vert" />
+    <None Include="Shaders\main.frag" />
+    <None Include="Shaders\main.vert" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

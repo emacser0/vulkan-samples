@@ -694,8 +694,10 @@ void FVulkanContext::EndRender()
 		bFramebufferResized = false;
 		RecreateSwapchain();
 	}
-
-	VK_ASSERT(PresentResult);
+	else if (PresentResult != VK_SUCCESS)
+	{
+		throw std::runtime_error("Failed to present swap chain image.");
+	}
 
 	CurrentFrame = (CurrentFrame + 1) % MAX_CONCURRENT_FRAME;
 }

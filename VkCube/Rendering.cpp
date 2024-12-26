@@ -90,7 +90,7 @@ const std::vector<FVertex> GVertices =
 	{{ -0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f }}
 };
 
-const std::vector<uint16_t> GIndices =
+const std::vector<uint32_t> GIndices =
 {
 	0, 1, 3, 3, 1, 2,
 	1, 5, 2, 2, 5, 6,
@@ -159,7 +159,7 @@ void RecordCommandBuffer(VkCommandBuffer InCommandBuffer, uint32_t InImageIndex)
 	VkDeviceSize Offsets[] = { 0 };
 	vkCmdBindVertexBuffers(InCommandBuffer, 0, 1, VertexBuffers, Offsets);
 
-	vkCmdBindIndexBuffer(InCommandBuffer, GIndexBuffer, 0, VK_INDEX_TYPE_UINT16);
+	vkCmdBindIndexBuffer(InCommandBuffer, GIndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
 	vkCmdBindDescriptorSets(InCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, GPipelineLayout, 0, 1, &GDescriptorSets[GCurrentFrame], 0, nullptr);
 
@@ -588,13 +588,13 @@ void CreateGraphicsPipeline()
 	GConfig->Get("ShaderDirectory", ShaderDirectory);
 
 	std::vector<char> VertexShaderCode;
-	if (ReadFile(ShaderDirectory + "vert.spv", VertexShaderCode) == false)
+	if (ReadFile(ShaderDirectory + "main.vert.spv", VertexShaderCode) == false)
 	{
 		throw std::runtime_error("Failed to open file.");
 	}
 
 	std::vector<char> FragmentShaderCode;
-	if (ReadFile(ShaderDirectory + "frag.spv", FragmentShaderCode) == false)
+	if (ReadFile(ShaderDirectory + "main.frag.spv", FragmentShaderCode) == false)
 	{
 		throw std::runtime_error("Failed to open file.");
 	}
@@ -925,7 +925,7 @@ void CreateVertexBuffer()
 
 void CreateIndexBuffer()
 {
-	VkDeviceSize BufferSize = sizeof(uint16_t) * GIndices.size();
+	VkDeviceSize BufferSize = sizeof(uint32_t) * GIndices.size();
 
 	VkBuffer StagingBuffer;
 	VkDeviceMemory StagingBufferMemory;

@@ -93,7 +93,7 @@ struct FUniformBufferObject
 };
 
 extern const std::vector<FVertex> GVertices;
-extern const std::vector<uint16_t> GIndices;
+extern const std::vector<uint32_t> GIndices;
 
 void InitializeGLFW();
 void CreateGLFWWindow();

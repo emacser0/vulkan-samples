@@ -1,12 +1,13 @@
 #include "Engine.h"
 #include "Config.h"
+#include "Utils.h"
 #include "VulkanContext.h"
 #include "VulkanModel.h"
 #include "VulkanScene.h"
 #include "VulkanMeshRenderer.h"
 #include "VulkanUIRenderer.h"
 #include "Camera.h"
-#include "TextureSource.h"
+#include "Texture.h"
 
 #include <ctime>
 #include <chrono>
@@ -115,24 +116,6 @@ int RandRange(int Min, int Max)
 	return rand() % (Max - Min + 1) + Min;
 }
 
-void CompileShaders(const std::string& InDirectory)
-{
-	for (const auto& Entry : std::filesystem::directory_iterator(InDirectory))
-	{
-		std::string Filename = Entry.path().string();
-		std::string Extension = Entry.path().extension().string();
-		if (Extension == ".vert" || Extension == ".frag" || Extension == ".geom")
-		{
-			std::string Command = "glslang -g -V ";
-			Command += Filename;
-			Command += " -o ";
-			Command += Filename + ".spv";
-
-			system(Command.c_str());
-		}
-	}
-}
-
 void Run(int argc, char** argv)
 {
 	srand(static_cast<unsigned int>(time(NULL)));
@@ -179,7 +162,7 @@ void Run(int argc, char** argv)
 
 	FVulkanContext* RenderContext = GEngine->GetRenderContext();
 
-	FTextureSource TextureSource;
+	FTexture TextureSource;
 	TextureSource.Load(ImageDirectory + "wood.jpg");
 
 	FVulkanTexture* Texture = new FVulkanTexture(RenderContext);
@@ -195,7 +178,7 @@ void Run(int argc, char** argv)
 		Model->SetMesh(Mesh);
 
 		FTransform ModelTransform = Model->GetTransform();
-		ModelTransform.SetTranslation(glm::vec3(RandRange(-100, 100), RandRange(-100, 100), RandRange(-100, 100)));
+		ModelTransform.SetTranslation(glm::vec3(RandRange(-50, 50), RandRange(-50, 50), RandRange(-50, 50)));
 		ModelTransform.SetRotation(glm::vec3(glm::radians(90.0f), 0.0f, 0.0f));
 		ModelTransform.SetScale(glm::vec3(1.0f, 1.0f, 1.0f));
 

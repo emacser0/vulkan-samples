@@ -55,7 +55,7 @@ public:
 	virtual ~FSingleObjectRenderer();
 
 	std::vector<FVertex>& GetVertices() { return Vertices; }
-	std::vector<uint16_t>& GetIndices() { return Indices;  }
+	std::vector<uint32_t>& GetIndices() { return Indices;  }
 	FTexture& GetTexture() { return Texture; }
 
 	virtual void Render(float InDeltaTime) override;
@@ -144,7 +144,7 @@ protected:
 	uint32_t GCurrentFrame;
 
 	std::vector<FVertex> Vertices;
-	std::vector<uint16_t> Indices;
+	std::vector<uint32_t> Indices;
 
 };
 

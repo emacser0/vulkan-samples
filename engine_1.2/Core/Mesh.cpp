@@ -81,7 +81,7 @@ bool UMesh::Load(const std::string& InFilename)
 	{
 		const aiVector3D& PositionData = Mesh->mVertices[Idx];
 
-		FVertex NewVertex;
+		FVertex NewVertex{};
 		NewVertex.Position = glm::vec3(PositionData.x, PositionData.y, PositionData.z);
 
 		if (bHasNormals)
