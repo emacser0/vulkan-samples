@@ -80,24 +80,40 @@ uint32_t GCurrentFrame = 0;
 
 const std::vector<FVertex> GVertices =
 {
-	{{ -0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f }},
-	{{ 0.5f, -0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f }},
-	{{ 0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f }},
-	{{ -0.5f,  0.5f, -0.5f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f }},
-	{{ -0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 0.0f }},
-	{{ 0.5f, -0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 0.0f }},
-	{{ 0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f }, { 1.0f, 1.0f }},
-	{{ -0.5f,  0.5f,  0.5f }, { 1.0f, 1.0f, 1.0f }, { 0.0f, 1.0f }}
+	{{ -0.5f, -0.5f, -0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.625f, 0.500f }},
+	{{ 0.5f, -0.5f, -0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.875f, 0.500f }},
+	{{ 0.5f, -0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.875f, 0.750f }},
+	{{ -0.5f, -0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.625f, 0.750f }},
+	{{ -0.5f, 0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.375f, 0.750f }},
+	{{ -0.5f, -0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.625f, 0.750f }},
+	{{ 0.5f, -0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.625f, 1.000f }},
+	{{ 0.5f, 0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.375f, 1.000f }},
+	{{ 0.5f, 0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.375f, 0.000f }},
+	{{ 0.5f, -0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.625f, 0.000f }},
+	{{ 0.5f, -0.5f, -0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.625f, 0.250f }},
+	{{ 0.5f, 0.5f, -0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.375f, 0.250f }},
+	{{ 0.5f, 0.5f, -0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.125f, 0.500f }},
+	{{ -0.5f, 0.5f, -0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.375f, 0.500f }},
+	{{ -0.5f, 0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.375f, 0.750f }},
+	{{ 0.5f, 0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.125f, 0.750f }},
+	{{ -0.5f, 0.5f, -0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.375f, 0.500f }},
+	{{ -0.5f, -0.5f, -0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.625f, 0.500f }},
+	{{ -0.5f, -0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.625f, 0.750f }},
+	{{ -0.5f, 0.5f, 0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.375f, 0.750f }},
+	{{ 0.5f, 0.5f, -0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.375f, 0.250f }},
+	{{ 0.5f, -0.5f, -0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.625f, 0.250f }},
+	{{ -0.5f, -0.5f, -0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.625f, 0.500f }},
+	{{ -0.5f, 0.5f, -0.5f }, { 0.5f, 0.5f, 0.5f }, { 0.375f, 0.500f }},
 };
 
 const std::vector<uint32_t> GIndices =
 {
-	0, 1, 3, 3, 1, 2,
-	1, 5, 2, 2, 5, 6,
-	5, 4, 6, 6, 4, 7,
-	4, 0, 7, 7, 0, 3,
-	3, 2, 7, 7, 2, 6,
-	4, 5, 0, 0, 5, 1
+	0, 1, 2, 0, 2, 3,
+	4, 5, 6, 4, 6, 7,
+	8, 9, 10, 8, 10, 11,
+	12, 13, 14, 12, 14, 15,
+	16, 17, 18, 16, 18, 19,
+	20, 21, 22, 20, 22, 23
 };
 
 void FramebufferResizeCallback(GLFWwindow* InWindow, int InWidth, int InHeight)
@@ -665,7 +681,7 @@ void CreateGraphicsPipeline()
 	RasterizerCI.polygonMode = VK_POLYGON_MODE_FILL;
 	RasterizerCI.lineWidth = 1.0f;
 	RasterizerCI.cullMode = VK_CULL_MODE_BACK_BIT;
-	RasterizerCI.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+	RasterizerCI.frontFace = VK_FRONT_FACE_CLOCKWISE;
 	RasterizerCI.depthBiasEnable = VK_FALSE;
 
 	VkPipelineMultisampleStateCreateInfo MultisampleStateCI{};
@@ -783,7 +799,7 @@ void CreateTextureImage()
 	std::string ImageDirectory;
 	GConfig->Get("ImageDirectory", ImageDirectory);
 
-	std::string TextureFilename = ImageDirectory + "texture.jpg";
+	std::string TextureFilename = ImageDirectory + "wood.jpg";
 
 	int TextureWidth, TextureHeight, TextureChannels;
 	stbi_uc* Pixels = stbi_load(TextureFilename.c_str(), &TextureWidth, &TextureHeight, &TextureChannels, STBI_rgb_alpha);
