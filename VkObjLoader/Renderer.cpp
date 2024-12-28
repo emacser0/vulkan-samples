@@ -44,9 +44,33 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugMessengerCallback(
 	return VK_FALSE;
 }
 
-FSingleObjectRenderer::FSingleObjectRenderer(GLFWwindow* InWindow)
-	: FRenderer(InWindow)
+FSingleObjectRenderer::FSingleObjectRenderer()
+	: Instance(VK_NULL_HANDLE)
+	, DebugMessenger(VK_NULL_HANDLE)
+	, Surface(VK_NULL_HANDLE)
+	, PhysicalDevice(VK_NULL_HANDLE)
+	, Device(VK_NULL_HANDLE)
+	, GraphicsQueue(VK_NULL_HANDLE)
+	, PresentQueue(VK_NULL_HANDLE)
+	, Swapchain(VK_NULL_HANDLE)
+	, RenderPass(VK_NULL_HANDLE)
+	, PipelineLayout(VK_NULL_HANDLE)
+	, Pipeline(VK_NULL_HANDLE)
+	, CommandPool(VK_NULL_HANDLE)
+	, DescriptorPool(VK_NULL_HANDLE)
+	, DescriptorSetLayout(VK_NULL_HANDLE)
+	, Texture({})
+	, TextureImage(VK_NULL_HANDLE)
+	, TextureImageMemory(VK_NULL_HANDLE)
+	, TextureImageView(VK_NULL_HANDLE)
+	, TextureSampler(VK_NULL_HANDLE)
+	, VertexBuffer(VK_NULL_HANDLE)
+	, VertexBufferMemory(VK_NULL_HANDLE)
+	, IndexBuffer(VK_NULL_HANDLE)
+	, IndexBufferMemory(VK_NULL_HANDLE)
+	, CurrentFrame(0)
 {
+	GLFWwindow* Window = GEngine->GetWindow();
 	assert(Window != nullptr);
 
 	glfwSetFramebufferSizeCallback(Window, FramebufferResizeCallback);
@@ -79,6 +103,12 @@ FSingleObjectRenderer::~FSingleObjectRenderer()
 
 	vkDestroyBuffer(Device, IndexBuffer, nullptr);
 	vkFreeMemory(Device, IndexBufferMemory, nullptr);
+
+	for (size_t Idx = 0; Idx < MAX_CONCURRENT_FRAME; ++Idx)
+	{
+		vkDestroyBuffer(Device, UniformBuffers[Idx].Buffer, nullptr);
+		vkFreeMemory(Device, UniformBuffers[Idx].Memory, nullptr);
+	}
 
 	for (size_t Idx = 0; Idx < MAX_CONCURRENT_FRAME; ++Idx)
 	{
@@ -170,7 +200,7 @@ void FSingleObjectRenderer::RecordCommandBuffer(VkCommandBuffer InCommandBuffer,
 
 	vkCmdBindIndexBuffer(InCommandBuffer, IndexBuffer, 0, VK_INDEX_TYPE_UINT32);
 
-	vkCmdBindDescriptorSets(InCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, PipelineLayout, 0, 1, &DescriptorSets[GCurrentFrame], 0, nullptr);
+	vkCmdBindDescriptorSets(InCommandBuffer, VK_PIPELINE_BIND_POINT_GRAPHICS, PipelineLayout, 0, 1, &DescriptorSets[CurrentFrame], 0, nullptr);
 
 	vkCmdDrawIndexed(InCommandBuffer, static_cast<uint32_t>(Indices.size()), 1, 0, 0, 0);
 
@@ -263,6 +293,9 @@ void FSingleObjectRenderer::SetupDebugMessenger()
 
 void FSingleObjectRenderer::CreateSurface()
 {
+	GLFWwindow* Window = GEngine->GetWindow();
+	assert(Window != nullptr);
+
 	if (glfwCreateWindowSurface(Instance, Window, nullptr, &Surface) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create window surface.");
@@ -388,6 +421,9 @@ void FSingleObjectRenderer::CreateSwapchain()
 	}
 	else
 	{
+		GLFWwindow* Window = GEngine->GetWindow();
+		assert(Window != nullptr);
+
 		int Width, Height;
 		glfwGetFramebufferSize(Window, &Width, &Height);
 
@@ -1069,6 +1105,9 @@ void FSingleObjectRenderer::WaitIdle()
 
 void FSingleObjectRenderer::RecreateSwapchain()
 {
+	GLFWwindow* Window = GEngine->GetWindow();
+	assert(Window != nullptr);
+
 	int Width = 0, Height = 0;
 	glfwGetFramebufferSize(Window, &Width, &Height);
 
@@ -1104,7 +1143,7 @@ void FSingleObjectRenderer::CleanupSwapchain()
 
 void FSingleObjectRenderer::UpdateUniformBuffer()
 {
-	FCamera* Camera = GEngine->GetCamera();
+	std::shared_ptr<FCamera> Camera = GEngine->GetCamera();
 	assert(Camera != nullptr);
 
 	float FOVRadians = glm::radians(Camera->GetFOV());
@@ -1115,19 +1154,19 @@ void FSingleObjectRenderer::UpdateUniformBuffer()
 	UBO.View = Camera->GetViewMatrix();
 	UBO.Projection = glm::perspectiveRH(FOVRadians, AspectRatio, 0.1f, 10.0f);
 
-	memcpy(UniformBuffers[GCurrentFrame].Mapped, &UBO, sizeof(FUniformBufferObject));
+	memcpy(UniformBuffers[CurrentFrame].Mapped, &UBO, sizeof(FUniformBufferObject));
 }
 
 void FSingleObjectRenderer::Render(float InDeltaTime)
 {
-	vkWaitForFences(Device, 1, &Fences[GCurrentFrame], VK_TRUE, UINT64_MAX);
+	vkWaitForFences(Device, 1, &Fences[CurrentFrame], VK_TRUE, UINT64_MAX);
 
 	uint32_t ImageIndex;
 	VkResult AcquireResult = vkAcquireNextImageKHR(
 		Device,
 		Swapchain,
 		UINT64_MAX,
-		ImageAvailableSemaphores[GCurrentFrame],
+		ImageAvailableSemaphores[CurrentFrame],
 		VK_NULL_HANDLE,
 		&ImageIndex);
 
@@ -1143,15 +1182,15 @@ void FSingleObjectRenderer::Render(float InDeltaTime)
 
 	UpdateUniformBuffer();
 
-	vkResetFences(Device, 1, &Fences[GCurrentFrame]);
+	vkResetFences(Device, 1, &Fences[CurrentFrame]);
 
-	vkResetCommandBuffer(CommandBuffers[GCurrentFrame], 0);
-	RecordCommandBuffer(CommandBuffers[GCurrentFrame], ImageIndex);
+	vkResetCommandBuffer(CommandBuffers[CurrentFrame], 0);
+	RecordCommandBuffer(CommandBuffers[CurrentFrame], ImageIndex);
 
-	VkSemaphore WaitSemaphores[] = { ImageAvailableSemaphores[GCurrentFrame] };
+	VkSemaphore WaitSemaphores[] = { ImageAvailableSemaphores[CurrentFrame] };
 	VkPipelineStageFlags WaitStages[] = { VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT };
 
-	VkSemaphore SignalSemaphores[] = { RenderFinishedSemaphores[GCurrentFrame] };
+	VkSemaphore SignalSemaphores[] = { RenderFinishedSemaphores[CurrentFrame] };
 
 	VkSubmitInfo SubmitInfo{};
 	SubmitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -1159,11 +1198,11 @@ void FSingleObjectRenderer::Render(float InDeltaTime)
 	SubmitInfo.pWaitSemaphores = WaitSemaphores;
 	SubmitInfo.pWaitDstStageMask = WaitStages;
 	SubmitInfo.commandBufferCount = 1;
-	SubmitInfo.pCommandBuffers = &CommandBuffers[GCurrentFrame];
+	SubmitInfo.pCommandBuffers = &CommandBuffers[CurrentFrame];
 	SubmitInfo.signalSemaphoreCount = 1;
 	SubmitInfo.pSignalSemaphores = SignalSemaphores;
 
-	if (vkQueueSubmit(GraphicsQueue, 1, &SubmitInfo, Fences[GCurrentFrame]) != VK_SUCCESS)
+	if (vkQueueSubmit(GraphicsQueue, 1, &SubmitInfo, Fences[CurrentFrame]) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to submit draw command buffer.");
 	}
@@ -1189,5 +1228,5 @@ void FSingleObjectRenderer::Render(float InDeltaTime)
 		throw std::runtime_error("Failed to present swap chain image.");
 	}
 
-	GCurrentFrame = (GCurrentFrame + 1) % MAX_CONCURRENT_FRAME;
+	CurrentFrame = (CurrentFrame + 1) % MAX_CONCURRENT_FRAME;
 }

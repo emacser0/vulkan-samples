@@ -1,6 +1,7 @@
 #include "Rendering.h"
 #include "Config.h"
 #include "Utils.h"
+#include "Engine.h"
 
 static const char* GValidationLayers[] =
 {
@@ -19,8 +20,6 @@ static const bool GEnableValidationLayers = false;
 #else
 static const bool GEnableValidationLayers = true;
 #endif
-
-GLFWwindow* GWindow;
 
 VkInstance GInstance;
 VkDebugUtilsMessengerEXT GDebugMessenger;
@@ -393,25 +392,12 @@ void RecordCommandBuffer(VkCommandBuffer InCommandBuffer, uint32_t InImageIndex)
 	}
 };
 
-void InitializeGLFW()
+void AddResizeCallback()
 {
-	if (glfwInit() == 0)
-	{
-		throw std::runtime_error("Failed to initialize glfw");
-	}
+	GLFWwindow* Window = GEngine->GetWindow();
+	assert(Window != nullptr);
 
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-}
-
-void CreateWindow()
-{
-	GWindow = glfwCreateWindow(WINDOW_WIDTH, WINDOW_HEIGHT, "VkFirstProgram", nullptr, nullptr);
-	if (GWindow == nullptr)
-	{
-		throw std::runtime_error("Failed to create window");
-	}
-
-	glfwSetFramebufferSizeCallback(GWindow, FramebufferResizeCallback);
+	glfwSetFramebufferSizeCallback(Window, FramebufferResizeCallback);
 }
 
 void CreateInstance()
@@ -490,7 +476,10 @@ void SetupDebugMessenger()
 
 void CreateSurface()
 {
-	if (glfwCreateWindowSurface(GInstance, GWindow, nullptr, &GSurface) != VK_SUCCESS)
+	GLFWwindow* Window = GEngine->GetWindow();
+	assert(Window != nullptr);
+
+	if (glfwCreateWindowSurface(GInstance, Window, nullptr, &GSurface) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create window surface.");
 	}
@@ -613,8 +602,11 @@ void CreateSwapchain()
 	}
 	else
 	{
+		GLFWwindow* Window = GEngine->GetWindow();
+		assert(Window != nullptr);
+
 		int Width, Height;
-		glfwGetFramebufferSize(GWindow, &Width, &Height);
+		glfwGetFramebufferSize(Window, &Width, &Height);
 
 		ChoosenSwapchainExtent =
 		{
@@ -1063,12 +1055,15 @@ void WaitIdle()
 
 void RecreateSwapchain()
 {
+	GLFWwindow* Window = GEngine->GetWindow();
+	assert(Window != nullptr);
+
 	int Width = 0, Height = 0;
-	glfwGetFramebufferSize(GWindow, &Width, &Height);
+	glfwGetFramebufferSize(Window, &Width, &Height);
 
 	while (Width == 0 || Height == 0)
 	{
-		glfwGetFramebufferSize(GWindow, &Width, &Height);
+		glfwGetFramebufferSize(Window, &Width, &Height);
 		glfwWaitEvents();
 	}
 
@@ -1205,7 +1200,4 @@ void Cleanup()
 
 	vkDestroySurfaceKHR(GInstance, GSurface, nullptr);
 	vkDestroyInstance(GInstance, nullptr);
-
-	glfwDestroyWindow(GWindow);
-	glfwTerminate();
 }

@@ -28,8 +28,6 @@ static const bool GEnableValidationLayers = false;
 static const bool GEnableValidationLayers = true;
 #endif
 
-GLFWwindow* GWindow;
-
 VkInstance GInstance;
 VkDebugUtilsMessengerEXT GDebugMessenger;
 VkSurfaceKHR GSurface;
@@ -189,30 +187,9 @@ void RecordCommandBuffer(VkCommandBuffer InCommandBuffer, uint32_t InImageIndex)
 	}
 }
 
-void InitializeGLFW()
+void AddResizeCallback()
 {
-	if (glfwInit() == 0)
-	{
-		throw std::runtime_error("Failed to initialize glfw");
-	}
-
-	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-}
-
-void CreateGLFWWindow()
-{
-	int32_t WindowWidth;
-	int32_t WindowHeight;
-	GConfig->Get("WindowWidth", WindowWidth);
-	GConfig->Get("WindowHeight", WindowHeight);
-	GWindow = glfwCreateWindow(WindowWidth, WindowHeight, "VkCube", nullptr, nullptr);
-	if (GWindow == nullptr)
-	{
-		throw std::runtime_error("Failed to create window");
-	}
-
-	glfwSetFramebufferSizeCallback(GWindow, FramebufferResizeCallback);
-	glfwSetInputMode(GWindow, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
+	glfwSetFramebufferSizeCallback(GEngine->GetWindow(), FramebufferResizeCallback);
 }
 
 void CreateInstance()
@@ -296,7 +273,10 @@ void SetupDebugMessenger()
 
 void CreateSurface()
 {
-	if (glfwCreateWindowSurface(GInstance, GWindow, nullptr, &GSurface) != VK_SUCCESS)
+	GLFWwindow* Window = GEngine->GetWindow();
+	assert(Window != nullptr);
+
+	if (glfwCreateWindowSurface(GInstance, Window, nullptr, &GSurface) != VK_SUCCESS)
 	{
 		throw std::runtime_error("Failed to create window surface.");
 	}
@@ -421,8 +401,11 @@ void CreateSwapchain()
 	}
 	else
 	{
+		GLFWwindow* Window = GEngine->GetWindow();
+		assert(Window != nullptr);
+
 		int Width, Height;
-		glfwGetFramebufferSize(GWindow, &Width, &Height);
+		glfwGetFramebufferSize(Window, &Width, &Height);
 
 		ChoosenSwapchainExtent =
 		{
@@ -1114,12 +1097,15 @@ void WaitIdle()
 
 void RecreateSwapchain()
 {
+	GLFWwindow* Window = GEngine->GetWindow();
+	assert(Window != nullptr);
+
 	int Width = 0, Height = 0;
-	glfwGetFramebufferSize(GWindow, &Width, &Height);
+	glfwGetFramebufferSize(Window, &Width, &Height);
 
 	while (Width == 0 || Height == 0)
 	{
-		glfwGetFramebufferSize(GWindow, &Width, &Height);
+		glfwGetFramebufferSize(Window, &Width, &Height);
 		glfwWaitEvents();
 	}
 
@@ -1149,7 +1135,7 @@ void CleanupSwapchain()
 
 void UpdateUniformBuffer()
 {
-	FCamera* Camera = GEngine->GetCamera();
+	std::shared_ptr<FCamera> Camera = GEngine->GetCamera();
 	assert(Camera != nullptr);
 
 	float FOVRadians = glm::radians(Camera->GetFOV());
@@ -1261,6 +1247,12 @@ void Cleanup()
 
 	for (size_t Idx = 0; Idx < MAX_CONCURRENT_FRAME; ++Idx)
 	{
+		vkDestroyBuffer(GDevice, GUniformBuffers[Idx].Buffer, nullptr);
+		vkFreeMemory(GDevice, GUniformBuffers[Idx].Memory, nullptr);
+	}
+
+	for (size_t Idx = 0; Idx < MAX_CONCURRENT_FRAME; ++Idx)
+	{
 		vkDestroySemaphore(GDevice, GImageAvailableSemaphores[Idx], nullptr);
 		vkDestroySemaphore(GDevice, GRenderFinishedSemaphores[Idx], nullptr);
 		vkDestroyFence(GDevice, GFences[Idx], nullptr);
@@ -1281,7 +1273,4 @@ void Cleanup()
 
 	vkDestroySurfaceKHR(GInstance, GSurface, nullptr);
 	vkDestroyInstance(GInstance, nullptr);
-
-	glfwDestroyWindow(GWindow);
-	glfwTerminate();
 }

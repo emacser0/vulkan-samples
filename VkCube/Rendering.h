@@ -18,8 +18,6 @@
 
 #define MAX_CONCURRENT_FRAME 2
 
-extern GLFWwindow* GWindow;
-
 extern VkInstance GInstance;
 extern VkDebugUtilsMessengerEXT GDebugMessenger;
 extern VkSurfaceKHR GSurface;
@@ -92,8 +90,7 @@ struct FUniformBufferObject
 extern const std::vector<FVertex> GVertices;
 extern const std::vector<uint32_t> GIndices;
 
-void InitializeGLFW();
-void CreateGLFWWindow();
+void AddResizeCallback();
 void CreateInstance();
 void SetupDebugMessenger();
 void CreateSurface();

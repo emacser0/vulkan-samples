@@ -1,16 +1,9 @@
 #include "Engine.h"
 #include "Config.h"
 #include "Application.h"
-#include "AssetManager.h"
-#include "VulkanContext.h"
-#include "VulkanScene.h"
-#include "VulkanUIRenderer.h"
 #include "Camera.h"
 
 #include "glfw/glfw3.h"
-#include "imgui/imgui.h"
-#include "imgui/imgui_impl_vulkan.h"
-#include "imgui/imgui_impl_glfw.h"
 
 #include <stdexcept>
 #include <filesystem>
@@ -36,17 +29,11 @@ FEngine::FEngine()
 	CreateGLFWWindow();
 	CompileShaders();
 
+	Camera = std::make_shared<FCamera>();
+
 	glfwSetMouseButtonCallback(Window, OnMouseButtonEvent);
 	glfwSetScrollCallback(Window, OnMouseWheelEvent);
 	glfwSetKeyCallback(Window, OnKeyEvent);
-
-	Camera = std::make_shared<FCamera>();
-
-	RenderContext = new FVulkanContext(Window);
-	Scene = RenderContext->CreateObject<FVulkanScene>();
-	UIRenderer = RenderContext->CreateObject<FVulkanUIRenderer>();
-
-	FAssetManager::Startup();
 }
 
 FEngine::~FEngine()
@@ -54,18 +41,10 @@ FEngine::~FEngine()
 	if (Application != nullptr)
 	{
 		Application->Terminate();
-		Application = nullptr;
 	}
-
-	RenderContext = nullptr;
-	Scene = nullptr;
-	UIRenderer = nullptr;
-	Camera = nullptr;
 
 	glfwDestroyWindow(Window);
 	glfwTerminate();
-
-	FAssetManager::Shutdown();
 }
 
 void FEngine::Run(std::shared_ptr<FApplication> InApplication)

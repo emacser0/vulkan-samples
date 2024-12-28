@@ -82,6 +82,12 @@
     <ClInclude Include="Core\AssetManager.h">
       <Filter>Core</Filter>
     </ClInclude>
+    <ClInclude Include="Engine\CameraController.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
+    <ClInclude Include="Engine\Application.h">
+      <Filter>Engine</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Engine\Engine.cpp">
@@ -143,6 +149,12 @@
     </ClCompile>
     <ClCompile Include="Core\Config.cpp">
       <Filter>Core</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\CameraController.cpp">
+      <Filter>Engine</Filter>
+    </ClCompile>
+    <ClCompile Include="Engine\Application.cpp">
+      <Filter>Engine</Filter>
     </ClCompile>
   </ItemGroup>
 </Project>

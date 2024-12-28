@@ -25,6 +25,10 @@
     <ClCompile Include="Core\Transform.cpp" />
     <ClCompile Include="Core\Utils.cpp" />
     <ClCompile Include="Core\Vertex.cpp" />
+    <ClCompile Include="Engine\Application.cpp" />
+    <ClCompile Include="Engine\Camera.cpp" />
+    <ClCompile Include="Engine\CameraController.cpp" />
+    <ClCompile Include="Engine\Engine.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Config.h" />
@@ -33,6 +37,10 @@
     <ClInclude Include="Core\Transform.h" />
     <ClInclude Include="Core\Utils.h" />
     <ClInclude Include="Core\Vertex.h" />
+    <ClInclude Include="Engine\Application.h" />
+    <ClInclude Include="Engine\Camera.h" />
+    <ClInclude Include="Engine\CameraController.h" />
+    <ClInclude Include="Engine\Engine.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

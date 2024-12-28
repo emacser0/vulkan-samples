@@ -15,33 +15,27 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Camera.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
     <ClCompile Include="main.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="Rendering.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="Engine.cpp">
+    <ClCompile Include="VulkanHelpers.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
-    <ClCompile Include="VulkanHelpers.cpp">
+    <ClCompile Include="VkCubeApplication.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Camera.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="Rendering.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="Engine.h">
+    <ClInclude Include="VulkanHelpers.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="VulkanHelpers.h">
+    <ClInclude Include="VkCubeApplication.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

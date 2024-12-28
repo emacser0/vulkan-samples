@@ -21,6 +21,9 @@
     <ClCompile Include="Rendering.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="VkTextureApplication.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\main.vert">
@@ -32,6 +35,9 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Rendering.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="VkTextureApplication.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

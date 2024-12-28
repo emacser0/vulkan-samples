@@ -12,11 +12,8 @@ public:
 	virtual ~FEngine();
 
 	struct GLFWwindow* GetWindow() const { return Window; }
-	std::shared_ptr<class FApplication> GetApplication() const { return Application; }
-	class FVulkanContext* GetRenderContext() const { return RenderContext; }
-	class FVulkanScene* GetScene() const { return Scene; }
-	class FVulkanUIRenderer* GetUIRenderer() const { return UIRenderer; }
 	std::shared_ptr<class FCamera> GetCamera() const { return Camera; }
+	std::shared_ptr<class FApplication> GetApplication() const { return Application; }
 
 	void Run(std::shared_ptr<class FApplication> InApplication);
 	void Tick(float InDeltaTime);
@@ -32,13 +29,9 @@ private:
 
 private:
 	struct GLFWwindow* Window;
-
 	std::shared_ptr<class FApplication> Application;
-	std::shared_ptr<class FCamera> Camera;
 
-	class FVulkanContext* RenderContext;
-	class FVulkanScene* Scene;
-	class FVulkanUIRenderer* UIRenderer;
+	std::shared_ptr<class FCamera> Camera;
 };
 
 extern FEngine* GEngine;

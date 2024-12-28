@@ -1,6 +1,6 @@
 #pragma once
 
-#include "vulkan/vulkan.h"
+#define GLFW_INCLUDE_VULKAN
 #include "glfw/glfw3.h"
 
 #include "glm/glm.hpp"
@@ -8,7 +8,6 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <array>
 #include <set>
 #include <stdexcept>
 #include <algorithm>
@@ -20,8 +19,6 @@
 #define WINDOW_HEIGHT 600
 
 #define MAX_CONCURRENT_FRAME 2
-
-extern GLFWwindow* GWindow;
 
 extern VkInstance GInstance;
 extern VkDebugUtilsMessengerEXT GDebugMessenger;
@@ -45,28 +42,10 @@ extern VkPipelineLayout GPipelineLayout;
 extern VkPipeline GPipeline;
 extern VkCommandPool GCommandPool;
 
-extern VkDescriptorPool GDescriptorPool;
-extern VkDescriptorSetLayout GDescriptorSetLayout;
-extern std::vector<VkDescriptorSet> GDescriptorSets;
-
-extern VkImage GTextureImage;
-extern VkDeviceMemory GTextureImageMemory;
-extern VkImageView GTextureImageView;
-extern VkSampler GTextureSampler;
-
 extern VkBuffer GVertexBuffer;
 extern VkDeviceMemory GVertexBufferMemory;
-
 extern VkBuffer GIndexBuffer;
 extern VkDeviceMemory GIndexBufferMemory;
-
-struct FUniformBuffer
-{
-	VkBuffer Buffer;
-	VkDeviceMemory Memory;
-	void* Mapped;
-};
-extern std::vector<FUniformBuffer> GUniformBuffers;
 
 extern std::vector<VkCommandBuffer> GCommandBuffers;
 
@@ -82,21 +61,12 @@ struct FVertex
 {
 	glm::vec3 Position;
 	glm::vec3 Color;
-	glm::vec2 TexCoords;
-};
-
-struct FUniformBufferObject
-{
-	alignas(16) glm::mat4 Model;
-	alignas(16) glm::mat4 View;
-	alignas(16) glm::mat4 Projection;
 };
 
 extern const std::vector<FVertex> GVertices;
 extern const std::vector<uint32_t> GIndices;
 
-void InitializeGLFW();
-void CreateGLFWWindow();
+void AddResizeCallback();
 void CreateInstance();
 void SetupDebugMessenger();
 void CreateSurface();
@@ -108,23 +78,15 @@ void CreateRenderPass();
 void CreateGraphicsPipeline();
 void CreateFramebuffers();
 void CreateCommandPool();
-void CreateTextureImage();
-void CreateTextureImageView();
-void CreateTextureSampler();
 void CreateVertexBuffer();
 void CreateIndexBuffer();
-void CreateUniformBuffers();
-void CreateDescriptorPool();
-void CreateDescriptorSetLayout();
-void CreateDescriptorSets();
 void CreateCommandBuffers();
 void CreateSyncObjects();
 
 void RecreateSwapchain();
 void CleanupSwapchain();
 void WaitIdle();
-void UpdateUniformBuffer();
 
-void Render(float InDeltaTime);
+void Render();
 
 void Cleanup();

@@ -35,30 +35,17 @@ struct FUniformBufferObject
 	alignas(16) glm::mat4 Projection;
 };
 
-class FRenderer
+class FSingleObjectRenderer
 {
 public:
-	FRenderer(GLFWwindow* InWindow)
-		: Window(InWindow) {  }
-	virtual ~FRenderer() { }
-
-	virtual void Render(float InDeltaTime) = 0;
-
-protected:
-	GLFWwindow* Window;
-};
-
-class FSingleObjectRenderer : public FRenderer
-{
-public:
-	FSingleObjectRenderer(GLFWwindow* InWindow);
+	FSingleObjectRenderer();
 	virtual ~FSingleObjectRenderer();
 
 	std::vector<FVertex>& GetVertices() { return Vertices; }
 	std::vector<uint32_t>& GetIndices() { return Indices;  }
 	FTexture& GetTexture() { return Texture; }
 
-	virtual void Render(float InDeltaTime) override;
+	void Render(float InDeltaTime);
 	void Ready();
 
 	void WaitIdle();
@@ -141,7 +128,7 @@ protected:
 	std::vector<VkSemaphore> RenderFinishedSemaphores;
 	std::vector<VkFence> Fences;
 
-	uint32_t GCurrentFrame;
+	uint32_t CurrentFrame;
 
 	std::vector<FVertex> Vertices;
 	std::vector<uint32_t> Indices;

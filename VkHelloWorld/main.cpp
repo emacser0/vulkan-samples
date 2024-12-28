@@ -1,6 +1,6 @@
 #include "Engine.h"
 #include "Config.h"
-#include "VkTextureApplication.h"
+#include "VkHelloWorldApplication.h"
 
 #include <ctime>
 #include <chrono>
@@ -10,9 +10,8 @@
 
 #include "glfw/glfw3.h"
 
-
 void Run(int argc, char** argv)
-{	
+{
 	FConfig::Startup();
 
 	std::string SolutionDirectory = SOLUTION_DIRECTORY;
@@ -30,7 +29,7 @@ void Run(int argc, char** argv)
 
 	FEngine::Init();
 
-	std::shared_ptr<FApplication> Application = std::make_shared<FVkTextureApplication>();
+	std::shared_ptr<FApplication> Application = std::make_shared<FVkHelloWorldApplication>();
 	GEngine->Run(Application);
 
 	float TargetFPS;
@@ -56,8 +55,7 @@ void Run(int argc, char** argv)
 	}
 
 	FEngine::Exit();
-
-}
+}	
 
 int main(int argc, char** argv)
 {
