@@ -8,7 +8,7 @@
 ![3  VkCamera](https://github.com/user-attachments/assets/e7c6d6cd-1185-4c44-a39f-8d22a18321c3)
 
 ## 4. VkCube
-![image](https://github.com/user-attachments/assets/bd2a8712-3b08-4ed0-9725-b619cbd2602e)
+![image](https://github.com/user-attachments/assets/efd3cbc7-2097-4dde-803a-ac472c504106)
 
 ## 5. VkObjLoader
 ![image](https://github.com/user-attachments/assets/e4f1c0ad-5af5-4ca9-95d3-788282217cd1)
