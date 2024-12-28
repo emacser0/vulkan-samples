@@ -29,6 +29,7 @@
     <ClCompile Include="Engine\Camera.cpp" />
     <ClCompile Include="Engine\CameraController.cpp" />
     <ClCompile Include="Engine\Engine.cpp" />
+    <ClCompile Include="Rendering\VulkanHelpers.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Core\Config.h" />
@@ -41,6 +42,7 @@
     <ClInclude Include="Engine\Camera.h" />
     <ClInclude Include="Engine\CameraController.h" />
     <ClInclude Include="Engine\Engine.h" />
+    <ClInclude Include="Rendering\VulkanHelpers.h" />
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>

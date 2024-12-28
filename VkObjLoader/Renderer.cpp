@@ -863,7 +863,7 @@ void FSingleObjectRenderer::CreateTextureImage()
 
 void FSingleObjectRenderer::CreateTextureImageView()
 {
-	TextureImageView = Vk::CreateImageView(Device, TextureImage, VK_FORMAT_R8G8B8A8_SRGB);
+	TextureImageView = Vk::CreateImageView(Device, TextureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 void FSingleObjectRenderer::CreateTextureSampler()

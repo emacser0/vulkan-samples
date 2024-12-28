@@ -108,7 +108,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);SOLUTION_DIRECTORY=R"($(SolutionDir))";PROJECT_NAME=R"($(ProjectName))"</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)engine_1.0\Core;$(SolutionDir)engine_1.0\Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)engine_1.0\Core;$(SolutionDir)engine_1.0\Rendering;$(SolutionDir)engine_1.0\Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -145,7 +145,6 @@
     <ClInclude Include="VulkanBuffer.h" />
     <ClInclude Include="VulkanMeshRenderer.h" />
     <ClInclude Include="VulkanContext.h" />
-    <ClInclude Include="VulkanHelpers.h" />
     <ClInclude Include="VulkanTexture.h" />
     <ClInclude Include="VulkanUIRenderer.h" />
   </ItemGroup>
@@ -155,7 +154,6 @@
     <ClCompile Include="main.cpp" />
     <ClCompile Include="VulkanMeshRenderer.cpp" />
     <ClCompile Include="VulkanContext.cpp" />
-    <ClCompile Include="VulkanHelpers.cpp" />
     <ClCompile Include="VulkanUIRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>

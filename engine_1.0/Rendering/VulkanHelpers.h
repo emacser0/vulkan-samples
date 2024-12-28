@@ -4,6 +4,19 @@
 #include "glfw/glfw3.h"
 
 #include <vector>
+#include <cassert>
+
+#ifdef NDEBUG
+#define VK_ASSERT(f) \
+{ \
+	f; \
+} 
+#else
+#define VK_ASSERT(f) \
+{ \
+	assert(f == VK_SUCCESS); \
+} 
+#endif
 
 namespace Vk
 {
@@ -22,9 +35,12 @@ namespace Vk
 
 	bool IsDeviceSuitable(VkPhysicalDevice InDevice, VkSurfaceKHR InSurface, const std::vector<const char*> InDeviceExtensions);
 
-	VkShaderModule CreateShaderModule(VkDevice InDevice, const std::vector<char>& InCode);
+	VkFormat FindDepthFormat(VkPhysicalDevice InPhysicalDevice);
+	VkFormat FindSupportedFormat(VkPhysicalDevice InPhysicalDevice, const std::vector<VkFormat>& InCandidates, VkImageTiling InTiling, VkFormatFeatureFlags InFeatures);
 
 	uint32_t FindMemoryType(VkPhysicalDevice InDevice, uint32_t InTypeFilter, VkMemoryPropertyFlags InProperties);
+
+	VkShaderModule CreateShaderModule(VkDevice InDevice, const std::vector<char>& InCode);
 
 	void CreateBuffer(
 		VkPhysicalDevice InPhysicalDevice,
@@ -58,7 +74,8 @@ namespace Vk
 	VkImageView CreateImageView(
 		VkDevice InDevice,
 		VkImage InImage,
-		VkFormat InFormat);
+		VkFormat InFormat,
+		VkImageAspectFlags InAspectFlags);
 
 	VkCommandBuffer BeginOneTimeCommandBuffer(VkDevice InDevice, VkCommandPool InCommandPool);
 

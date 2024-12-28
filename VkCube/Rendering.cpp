@@ -855,7 +855,7 @@ void CreateTextureImage()
 
 void CreateTextureImageView()
 {
-	GTextureImageView = Vk::CreateImageView(GDevice, GTextureImage, VK_FORMAT_R8G8B8A8_SRGB);
+	GTextureImageView = Vk::CreateImageView(GDevice, GTextureImage, VK_FORMAT_R8G8B8A8_SRGB, VK_IMAGE_ASPECT_COLOR_BIT);
 }
 
 void CreateTextureSampler()

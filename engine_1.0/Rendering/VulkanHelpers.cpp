@@ -159,20 +159,36 @@ namespace Vk
 		return GraphicsFamily != -1 && PresentFamily != -1 && bExtensionsSupported && bSwapchainAdequate;
 	}
 
-	VkShaderModule CreateShaderModule(VkDevice InDevice, const std::vector<char>& InCode)
+	VkFormat FindDepthFormat(VkPhysicalDevice InPhysicalDevice)
 	{
-		VkShaderModuleCreateInfo ShaderModuleCI{};
-		ShaderModuleCI.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
-		ShaderModuleCI.codeSize = InCode.size();
-		ShaderModuleCI.pCode = reinterpret_cast<const uint32_t*>(InCode.data());
+		return FindSupportedFormat(
+			InPhysicalDevice,
+			{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
+	}
 
-		VkShaderModule ShaderModule;
-		if (vkCreateShaderModule(InDevice, &ShaderModuleCI, nullptr, &ShaderModule) != VK_SUCCESS)
+	VkFormat FindSupportedFormat(VkPhysicalDevice InPhysicalDevice, const std::vector<VkFormat>& InCandidates, VkImageTiling InTiling, VkFormatFeatureFlags InFeatures)
+	{
+		for (VkFormat Format : InCandidates)
 		{
-			throw std::runtime_error("Failed to create shader module.");
+			VkFormatProperties Properties;
+			vkGetPhysicalDeviceFormatProperties(InPhysicalDevice, Format, &Properties);
+
+			if (InTiling == VK_IMAGE_TILING_LINEAR && (Properties.linearTilingFeatures & InFeatures) == InFeatures)
+			{
+				return Format;
+			}
+			else if (InTiling == VK_IMAGE_TILING_OPTIMAL && (Properties.optimalTilingFeatures & InFeatures) == InFeatures)
+			{
+				return Format;
+			}
+
 		}
 
-		return ShaderModule;
+		std::runtime_error("Failed to find supported format.");
+
+		return VK_FORMAT_UNDEFINED;
 	}
 
 	uint32_t FindMemoryType(VkPhysicalDevice InPhysicalDevice, uint32_t InTypeFilter, VkMemoryPropertyFlags InProperties)
@@ -190,6 +206,22 @@ namespace Vk
 
 		throw std::runtime_error("Failed to find suitable memory type");
 		return -1;
+	}
+
+	VkShaderModule CreateShaderModule(VkDevice InDevice, const std::vector<char>& InCode)
+	{
+		VkShaderModuleCreateInfo ShaderModuleCI{};
+		ShaderModuleCI.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO;
+		ShaderModuleCI.codeSize = InCode.size();
+		ShaderModuleCI.pCode = reinterpret_cast<const uint32_t*>(InCode.data());
+
+		VkShaderModule ShaderModule;
+		if (vkCreateShaderModule(InDevice, &ShaderModuleCI, nullptr, &ShaderModule) != VK_SUCCESS)
+		{
+			throw std::runtime_error("Failed to create shader module.");
+		}
+
+		return ShaderModule;
 	}
 
 	void CreateBuffer(
@@ -472,37 +504,5 @@ namespace Vk
 			1, &ImageMemoryBarrier);
 
 		EndOneTimeCommandBuffer(InDevice, InCommandPool, InCommandQueue, CommandBuffer);
-	}
-
-	VkFormat FindDepthFormat(VkPhysicalDevice InPhysicalDevice)
-	{
-		return FindSupportedFormat(
-			InPhysicalDevice,
-			{ VK_FORMAT_D32_SFLOAT, VK_FORMAT_D32_SFLOAT_S8_UINT, VK_FORMAT_D24_UNORM_S8_UINT },
-			VK_IMAGE_TILING_OPTIMAL,
-			VK_FORMAT_FEATURE_DEPTH_STENCIL_ATTACHMENT_BIT);
-	}
-
-	VkFormat FindSupportedFormat(VkPhysicalDevice InPhysicalDevice, const std::vector<VkFormat>& InCandidates, VkImageTiling InTiling, VkFormatFeatureFlags InFeatures)
-	{
-		for (VkFormat Format : InCandidates)
-		{
-			VkFormatProperties Properties;
-			vkGetPhysicalDeviceFormatProperties(InPhysicalDevice, Format, &Properties);
-
-			if (InTiling == VK_IMAGE_TILING_LINEAR && (Properties.linearTilingFeatures & InFeatures) == InFeatures)
-			{
-				return Format;
-			}
-			else if (InTiling == VK_IMAGE_TILING_OPTIMAL && (Properties.optimalTilingFeatures & InFeatures) == InFeatures)
-			{
-				return Format;
-			}
-
-		}
-
-		std::runtime_error("Failed to find supported format.");
-
-		return VK_FORMAT_UNDEFINED;
 	}
 }

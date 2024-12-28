@@ -109,7 +109,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);SOLUTION_DIRECTORY=R"($(SolutionDir))";PROJECT_NAME=R"($(ProjectName))"</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)engine_1.0\Core;$(SolutionDir)engine_1.0\Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)engine_1.0\Core;$(SolutionDir)engine_1.0\Rendering;$(SolutionDir)engine_1.0\Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -147,7 +147,6 @@
     <ClInclude Include="VulkanShader.h" />
     <ClInclude Include="VulkanBuffer.h" />
     <ClInclude Include="VulkanContext.h" />
-    <ClInclude Include="VulkanHelpers.h" />
     <ClInclude Include="VulkanMesh.h" />
     <ClInclude Include="VulkanMeshRenderer.h" />
     <ClInclude Include="VulkanTexture.h" />
@@ -158,7 +157,6 @@
     <ClCompile Include="Engine.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="VulkanContext.cpp" />
-    <ClCompile Include="VulkanHelpers.cpp" />
     <ClCompile Include="VulkanMesh.cpp" />
     <ClCompile Include="VulkanMeshRenderer.cpp" />
     <ClCompile Include="VulkanModel.cpp" />

@@ -27,9 +27,6 @@
     <ClInclude Include="VulkanMeshRenderer.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
-    <ClInclude Include="VulkanHelpers.h">
-      <Filter>헤더 파일</Filter>
-    </ClInclude>
     <ClInclude Include="VulkanContext.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
@@ -54,9 +51,6 @@
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="VulkanMeshRenderer.cpp">
-      <Filter>소스 파일</Filter>
-    </ClCompile>
-    <ClCompile Include="VulkanHelpers.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
     <ClCompile Include="VulkanContext.cpp">
