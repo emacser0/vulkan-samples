@@ -140,9 +140,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="VkDynamicUniformBufferApplication.cpp" />
     <ClCompile Include="VulkanMeshRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="VkDynamicUniformBufferApplication.h" />
     <ClInclude Include="VulkanMeshRenderer.h" />
   </ItemGroup>
   <ItemGroup>

@@ -119,10 +119,10 @@ void FEngine::CreateGLFWWindow()
 	GConfig->Get("WindowWidth", WindowWidth);
 	GConfig->Get("WindowHeight", WindowHeight);
 
-	std::string WindowTitle;
-	GConfig->Get("WindowTitle", WindowTitle);
+	std::string ApplicationName;
+	GConfig->Get("ApplicationName", ApplicationName);
 
-	Window = glfwCreateWindow(WindowWidth, WindowHeight, WindowTitle.c_str(), nullptr, nullptr);
+	Window = glfwCreateWindow(WindowWidth, WindowHeight, ApplicationName.c_str(), nullptr, nullptr);
 	if (Window == nullptr)
 	{
 		throw std::runtime_error("Failed to create window");

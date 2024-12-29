@@ -33,10 +33,13 @@ public:
 	FVulkanMeshRenderer(FVulkanContext* InContext);
 	virtual ~FVulkanMeshRenderer();
 
-	void Ready();
 	void Render();
 
 	void WaitIdle();
+
+	void SetViewMatrix(const glm::mat4& InViewMatrix) { ViewMatrix = InViewMatrix; }
+	void SetProjectionMatrix(const glm::mat4& InProjectionMatrix) { ProjectionMatrix = InProjectionMatrix; }
+	void SetCameraPosition(const glm::vec3& InCameraPosition) { CameraPosition = InCameraPosition; }
 
 	void SetPipelineIndex(int32_t Idx);
 
@@ -68,6 +71,10 @@ protected:
 
 	std::unordered_map<FVulkanMesh*, FDrawingInfo> DrawingInfos;
 	std::vector<FVulkanBuffer> UniformBuffers;
+
+	glm::mat4 ViewMatrix;
+	glm::mat4 ProjectionMatrix;
+	glm::vec3 CameraPosition;
 
 	VkSampler TextureSampler;
 };

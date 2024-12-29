@@ -45,7 +45,17 @@ FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	: FVulkanObject(InContext)
 	, DescriptorSetLayout(VK_NULL_HANDLE)
 	, TextureSampler(VK_NULL_HANDLE)
+	, ViewMatrix(0.0f)
+	, ProjectionMatrix(0.0f)
+	, CameraPosition(0.0f)
 {
+	GatherDrawingInfo();
+
+	CreateDescriptorSetLayout();
+	CreateGraphicsPipelines();
+	CreateTextureSampler();
+	CreateUniformBuffers();
+	CreateDescriptorSets();
 }
 
 FVulkanMeshRenderer::~FVulkanMeshRenderer()
@@ -81,17 +91,6 @@ FVulkanMeshRenderer::~FVulkanMeshRenderer()
 		Context->DestroyObject(Pipeline.VertexShader);
 		Context->DestroyObject(Pipeline.FragmentShader);
 	}
-}
-
-void FVulkanMeshRenderer::Ready()
-{	
-	GatherDrawingInfo();
-
-	CreateDescriptorSetLayout();
-	CreateGraphicsPipelines();
-	CreateTextureSampler();
-	CreateUniformBuffers();
-	CreateDescriptorSets();
 }
 
 void FVulkanMeshRenderer::CreateDescriptorSetLayout()
@@ -475,22 +474,14 @@ void FVulkanMeshRenderer::SetPipelineIndex(int32_t Idx)
 
 void FVulkanMeshRenderer::UpdateUniformBuffer()
 {
-	FCamera* Camera = GEngine->GetCamera();
-	assert(Camera != nullptr);
-
-	VkExtent2D SwapchainExtent = Context->GetSwapchainExtent();
-
-	float FOVRadians = glm::radians(Camera->GetFOV());
-	float AspectRatio = SwapchainExtent.width / (float)SwapchainExtent.height;
-
 	FVulkanScene* Scene = GEngine->GetScene();
 	FVulkanLight Light = Scene->GetLight();
 
 	FUniformBufferObject UBO{};
 
-	UBO.View = Camera->GetViewMatrix();
-	UBO.Projection = glm::perspective(FOVRadians, AspectRatio, 0.1f, 100.0f);
-	UBO.CameraPosition = Camera->GetTransform().GetTranslation();
+	UBO.View = ViewMatrix;
+	UBO.Projection = ProjectionMatrix;
+	UBO.CameraPosition = CameraPosition;
 
 	UBO.LightPosition = UBO.View * glm::vec4(Light.Position, 1.0f);
 	UBO.Ambient = Light.Ambient;

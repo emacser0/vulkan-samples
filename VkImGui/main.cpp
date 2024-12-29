@@ -16,7 +16,6 @@ void Run(int argc, char** argv)
 	GConfig->Set("EngineName", "No Engine");
 	GConfig->Set("WindowWidth", 800);
 	GConfig->Set("WindowHeight", 600);
-	GConfig->Set("WindowTitle", PROJECT_NAME);
 	GConfig->Set("TargetFPS", 60.0f);
 	GConfig->Set("MaxConcurrentFrames", 2);
 	GConfig->Set("MouseSensitivity", 0.5f);

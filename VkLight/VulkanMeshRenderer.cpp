@@ -396,8 +396,6 @@ void FVulkanMeshRenderer::UpdateUniformBuffer(FVulkanModel* InModel)
 		return;
 	}
 
-	VkExtent2D SwapchainExtent = Context->GetSwapchainExtent();
-
 	static const glm::mat4 IdentityMatrix(1.0f);
 
 	FTransform ModelTransform = InModel->GetTransform();
