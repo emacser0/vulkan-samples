@@ -2,7 +2,6 @@
 #include "Config.h"
 #include "VkObjLoaderApplication.h"
 
-#include <ctime>
 #include <iostream>
 #include <stdexcept>
 

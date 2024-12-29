@@ -2,6 +2,7 @@
 
 #include <iostream>
 #include <fstream>
+#include <cstdlib>
 
 bool ReadFile(const std::string& InFilename, std::vector<char>& OutBytes)
 {
@@ -22,3 +23,7 @@ bool ReadFile(const std::string& InFilename, std::vector<char>& OutBytes)
 	return true;
 }
 
+int RandRange(int Min, int Max)
+{
+	return rand() % (Max - Min + 1) + Min;
+}

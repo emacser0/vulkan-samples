@@ -1,6 +1,7 @@
 #pragma once
 
 #include <memory>
+#include <vector>
 
 class FEngine
 {
@@ -16,10 +17,13 @@ public:
 	class FVulkanContext* GetRenderContext() const { return RenderContext; }
 	class FVulkanScene* GetScene() const { return Scene; }
 	class FVulkanUIRenderer* GetUIRenderer() const { return UIRenderer; }
-	std::shared_ptr<class FCamera> GetCamera() const { return Camera; }
 
 	void Run(std::shared_ptr<class FApplication> InApplication);
 	void Tick(float InDeltaTime);
+
+	const std::vector<std::shared_ptr<class FWidget>>& GetWidgets() const { return Widgets; }
+	void AddWidget(const std::shared_ptr<class FWidget>& InWidget);
+	void RemoveWidget(const std::shared_ptr<class FWidget>& InWidget);
 
 private:
 	void InitializeGLFW();
@@ -34,11 +38,12 @@ private:
 	struct GLFWwindow* Window;
 
 	std::shared_ptr<class FApplication> Application;
-	std::shared_ptr<class FCamera> Camera;
 
 	class FVulkanContext* RenderContext;
 	class FVulkanScene* Scene;
 	class FVulkanUIRenderer* UIRenderer;
+
+	std::vector<std::shared_ptr<class FWidget>> Widgets;
 };
 
 extern FEngine* GEngine;

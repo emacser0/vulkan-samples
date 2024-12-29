@@ -1,10 +1,11 @@
 #include "Camera.h"
+#include "Engine.h"
+
+#include "glfw/glfw3.h"
 
 #include "glm/gtc/matrix_transform.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/quaternion.hpp"
-
-FCamera GCamera;
 
 FCamera::FCamera()
 	: FOV(90.0f)
@@ -17,7 +18,6 @@ FCamera::~FCamera()
 {
 
 }
-
 
 void FCamera::SetLocation(const glm::vec3& InLocation)
 {
@@ -55,4 +55,19 @@ glm::mat4 FCamera::GetViewMatrix() const
 	glm::mat4 TranslationMatrix = glm::translate(glm::mat4(1.0f), Transform.GetTranslation());
 
 	return glm::inverse(TranslationMatrix * RotationMatrix);
+}
+
+glm::mat4 FCamera::GetProjectionMatrix() const
+{
+	float FOVRadians = glm::radians(FOV);
+
+	GLFWwindow* Window = GEngine->GetWindow();
+	assert(Window != nullptr);
+
+	int Width, Height;
+	glfwGetWindowSize(Window, &Width, &Height);
+
+	float AspectRatio = Width / (float)Height;
+
+	return glm::perspective(FOVRadians, AspectRatio, 0.01f, 100.0f);
 }

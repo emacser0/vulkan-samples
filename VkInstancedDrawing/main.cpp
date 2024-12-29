@@ -1,7 +1,7 @@
 #include "Config.h"
 #include "AssetManager.h"
 #include "Mesh.h"
-#include "TextureSource.h"
+#include "Texture.h"
 #include "Widget.h"
 
 #include "VulkanContext.h"
@@ -264,24 +264,24 @@ void Run(int argc, char** argv)
 	FMesh* MonkeyMeshAsset = FAssetManager::CreateAsset<FMesh>();
 	MonkeyMeshAsset->Load(MeshDirectory + "monkey.obj");
 
-	std::vector<FTextureSource*> TextureSources;
+	std::vector<FTexture*> TextureSources;
 	{
-		FTextureSource* NewTextureSource = FAssetManager::CreateAsset<FTextureSource>();
+		FTexture* NewTextureSource = FAssetManager::CreateAsset<FTexture>();
 		NewTextureSource->Load(ImageDirectory + "purple.png");
 		TextureSources.push_back(NewTextureSource);
 	}
 	{
-		FTextureSource* NewTextureSource = FAssetManager::CreateAsset<FTextureSource>();
+		FTexture* NewTextureSource = FAssetManager::CreateAsset<FTexture>();
 		NewTextureSource->Load(ImageDirectory + "orange.png");
 		TextureSources.push_back(NewTextureSource);
 	}
 	{
-		FTextureSource* NewTextureSource = FAssetManager::CreateAsset<FTextureSource>();
+		FTexture* NewTextureSource = FAssetManager::CreateAsset<FTexture>();
 		NewTextureSource->Load(ImageDirectory + "green.png");
 		TextureSources.push_back(NewTextureSource);
 	}
 
-	FTextureSource* WhiteTextureSource = FAssetManager::CreateAsset<FTextureSource>();
+	FTexture* WhiteTextureSource = FAssetManager::CreateAsset<FTexture>();
 	WhiteTextureSource->Load(ImageDirectory + "white.png");
 
 	std::vector<FVulkanTexture*> Textures;

@@ -43,18 +43,7 @@ FVulkanUIRenderer::FVulkanUIRenderer(FVulkanContext* InContext)
 
 	IO.FontGlobalScale = 1.0f;
 	Style.ScaleAllSizes(1.0f);
-}
 
-FVulkanUIRenderer::~FVulkanUIRenderer()
-{
-	ImGui_ImplVulkan_Shutdown();
-	ImGui_ImplGlfw_Shutdown();
-
-	ImGui::DestroyContext();
-}
-
-void FVulkanUIRenderer::Ready()
-{
 	ImGui_ImplGlfw_InitForVulkan(Context->GetWindow(), true);
 
 	VkPhysicalDevice PhysicalDevice = Context->GetPhysicalDevice();
@@ -80,8 +69,15 @@ void FVulkanUIRenderer::Ready()
 	ImGui_ImplVulkan_DestroyFontsTexture();
 }
 
+FVulkanUIRenderer::~FVulkanUIRenderer()
+{
+	ImGui_ImplVulkan_Shutdown();
+	ImGui_ImplGlfw_Shutdown();
 
-void FVulkanUIRenderer::Render()
+	ImGui::DestroyContext();
+}
+
+void FVulkanUIRenderer::Render(const std::vector<std::shared_ptr<class FWidget>>& InWidgets)
 {
 	ImGuiIO& IO = ImGui::GetIO();
 
@@ -90,7 +86,7 @@ void FVulkanUIRenderer::Render()
 
 	ImGui::NewFrame();
 
-	for (const std::shared_ptr<FWidget> Widget : Widgets)
+	for (const std::shared_ptr<FWidget> Widget : InWidgets)
 	{
 		Widget->Draw();
 	}
@@ -100,15 +96,3 @@ void FVulkanUIRenderer::Render()
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), Context->GetCommandBuffers()[Context->GetCurrentFrame()]);
 }
 
-void FVulkanUIRenderer::AddWidget(const std::shared_ptr<FWidget>& InWidget)
-{
-	Widgets.push_back(InWidget);
-}
-
-void FVulkanUIRenderer::RemoveWidget(const std::shared_ptr<FWidget>& InWidget)
-{
-	std::remove_if(Widgets.begin(), Widgets.end(), [InWidget](std::shared_ptr<FWidget> Widget)
-	{
-	   return Widget == InWidget;
-	});
-}

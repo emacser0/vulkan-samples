@@ -140,6 +140,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="VkMultipleObjectsApplication.cpp" />
     <ClCompile Include="VulkanMeshRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -147,6 +148,7 @@
     <None Include="Shaders\main.vert" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="VkMultipleObjectsApplication.h" />
     <ClInclude Include="VulkanMeshRenderer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

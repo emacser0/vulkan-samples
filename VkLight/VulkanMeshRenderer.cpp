@@ -18,7 +18,6 @@
 #include <vector>
 #include <array>
 #include <iostream>
-#include <stdexcept>
 #include <algorithm>
 
 struct FUniformBufferObject
@@ -39,9 +38,18 @@ struct FUniformBufferObject
 
 FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	: FVulkanObject(InContext)
+	, CurrentPipelineIndex(0)
 	, DescriptorSetLayout(VK_NULL_HANDLE)
 	, TextureSampler(VK_NULL_HANDLE)
+	, ViewMatrix(0.0f)
+	, ProjectionMatrix(0.0f)
+	, CameraPosition(0.0f)
 {
+	CreateDescriptorSetLayout();
+	CreateGraphicsPipelines();
+	CreateTextureSampler();
+	CreateUniformBuffers();
+	CreateDescriptorSets();
 }
 
 FVulkanMeshRenderer::~FVulkanMeshRenderer()
@@ -51,11 +59,6 @@ FVulkanMeshRenderer::~FVulkanMeshRenderer()
 	vkDestroyDescriptorSetLayout(Device, DescriptorSetLayout, nullptr);
 
 	vkDestroySampler(Device, TextureSampler, nullptr);
-
-	for (const auto& Pair : DescriptorSetMap)
-	{
-
-	}
 
 	for (const auto& Pair : UniformBufferMap)
 	{
@@ -74,15 +77,6 @@ FVulkanMeshRenderer::~FVulkanMeshRenderer()
 		Context->DestroyObject(Pipeline.VertexShader);
 		Context->DestroyObject(Pipeline.FragmentShader);
 	}
-}
-
-void FVulkanMeshRenderer::Ready()
-{	
-	CreateDescriptorSetLayout();
-	CreateGraphicsPipelines();
-	CreateTextureSampler();
-	CreateUniformBuffers();
-	CreateDescriptorSets();
 }
 
 void FVulkanMeshRenderer::CreateDescriptorSetLayout()
@@ -114,10 +108,7 @@ void FVulkanMeshRenderer::CreateDescriptorSetLayout()
 	DescriptorSetLayoutCI.bindingCount = static_cast<uint32_t>(Bindings.size());
 	DescriptorSetLayoutCI.pBindings = Bindings.data();
 
-	if (vkCreateDescriptorSetLayout(Device, &DescriptorSetLayoutCI, nullptr, &DescriptorSetLayout) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create descriptor set layout.");
-	}
+	VK_ASSERT(vkCreateDescriptorSetLayout(Device, &DescriptorSetLayoutCI, nullptr, &DescriptorSetLayout));
 }
 
 void FVulkanMeshRenderer::CreateGraphicsPipelines()
@@ -262,10 +253,7 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 		PipelineLayoutCI.setLayoutCount = 1;
 		PipelineLayoutCI.pSetLayouts = &DescriptorSetLayout;
 
-		if (vkCreatePipelineLayout(Device, &PipelineLayoutCI, nullptr, &Pipelines[Idx].Layout) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create pipeline layout.");
-		}
+		VK_ASSERT(vkCreatePipelineLayout(Device, &PipelineLayoutCI, nullptr, &Pipelines[Idx].Layout));
 
 		VkGraphicsPipelineCreateInfo PipelineCI{};
 		PipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -311,10 +299,7 @@ void FVulkanMeshRenderer::CreateTextureSampler()
 	SamplerCI.compareOp = VK_COMPARE_OP_ALWAYS;
 	SamplerCI.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-	if (vkCreateSampler(Device, &SamplerCI, nullptr, &TextureSampler) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create texture sampler!");
-	}
+	VK_ASSERT(vkCreateSampler(Device, &SamplerCI, nullptr, &TextureSampler));
 }
 
 void FVulkanMeshRenderer::CreateUniformBuffers()
@@ -411,13 +396,7 @@ void FVulkanMeshRenderer::UpdateUniformBuffer(FVulkanModel* InModel)
 		return;
 	}
 
-	FCamera* Camera = GEngine->GetCamera();
-	assert(Camera != nullptr);
-
 	VkExtent2D SwapchainExtent = Context->GetSwapchainExtent();
-
-	float FOVRadians = glm::radians(Camera->GetFOV());
-	float AspectRatio = SwapchainExtent.width / (float)SwapchainExtent.height;
 
 	static const glm::mat4 IdentityMatrix(1.0f);
 
@@ -425,9 +404,9 @@ void FVulkanMeshRenderer::UpdateUniformBuffer(FVulkanModel* InModel)
 
 	FUniformBufferObject UBO{};
 	UBO.Model = glm::translate(IdentityMatrix, ModelTransform.GetTranslation()) * glm::toMat4(ModelTransform.GetRotation()) * glm::scale(IdentityMatrix, ModelTransform.GetScale());
-	UBO.View = Camera->GetViewMatrix();
-	UBO.Projection = glm::perspective(FOVRadians, AspectRatio, 0.1f, 100.0f);
-	UBO.CameraPosition = Camera->GetTransform().GetTranslation();
+	UBO.View = ViewMatrix;
+	UBO.Projection = ProjectionMatrix;
+	UBO.CameraPosition = CameraPosition;
 
 	FVulkanScene* Scene = GEngine->GetScene();
 	if (Scene != nullptr)

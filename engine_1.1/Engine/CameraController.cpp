@@ -3,11 +3,13 @@
 #include "Engine.h"
 #include "Camera.h"
 
-FCameraController::FCameraController()
-	: PrevMouseX(0.0f)
+FCameraController::FCameraController(std::shared_ptr<FCamera> InCamera)
+	: Camera(InCamera)
+	, PrevMouseX(0.0f)
 	, PrevMouseY(0.0f)
 	, RelativeMoveDelta(0.0f)
 	, AbsoluteMoveDelta(0.0f)
+	, bRightButtonPressed(false)
 {
 }
 
@@ -16,7 +18,7 @@ void FCameraController::Tick(float InDeltaTime)
 	GLFWwindow* Window = GEngine->GetWindow();
 	assert(Window != nullptr);
 
-	if (glfwGetMouseButton(Window, GLFW_MOUSE_BUTTON_RIGHT) != GLFW_PRESS)
+	if (bRightButtonPressed == false)
 	{
 		return;
 	}
@@ -34,9 +36,6 @@ void FCameraController::Tick(float InDeltaTime)
 
 	float PitchAmount = MouseDeltaY * MouseSensitivity * InDeltaTime;
 	float YawAmount = -MouseDeltaX * MouseSensitivity * InDeltaTime;
-
-	std::shared_ptr<FCamera> Camera = GEngine->GetCamera();
-	assert(Camera != nullptr);
 
 	if (abs(PitchAmount) > FLT_EPSILON || abs(YawAmount) > FLT_EPSILON)
 	{
@@ -80,6 +79,8 @@ void FCameraController::OnMouseButtonDown(int InButton, int InMods)
 	{
 		glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_DISABLED);
 		glfwGetCursorPos(Window, &PrevMouseX, &PrevMouseY);
+
+		bRightButtonPressed = true;
 	}
 }
 
@@ -91,14 +92,13 @@ void FCameraController::OnMouseButtonUp(int InButton, int InMods)
 	if (InButton == GLFW_MOUSE_BUTTON_RIGHT)
 	{
 		glfwSetInputMode(Window, GLFW_CURSOR, GLFW_CURSOR_NORMAL);
+
+		bRightButtonPressed = false;
 	}
 }
 
 void FCameraController::OnMouseWheel(double InXOffset, double InYOffset)
 {
-	std::shared_ptr<FCamera> Camera = GEngine->GetCamera();
-	assert(Camera != nullptr);
-
 	if (abs(InYOffset) >= DBL_EPSILON)
 	{
 		glm::mat4 RotationMatrix = glm::toMat4(Camera->GetRotation());

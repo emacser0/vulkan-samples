@@ -61,7 +61,7 @@
     <ClInclude Include="Core\Mesh.h">
       <Filter>Core</Filter>
     </ClInclude>
-    <ClInclude Include="Core\TextureSource.h">
+    <ClInclude Include="Core\Texture.h">
       <Filter>Core</Filter>
     </ClInclude>
     <ClInclude Include="Core\Transform.h">
@@ -126,7 +126,7 @@
     <ClCompile Include="Core\Mesh.cpp">
       <Filter>Core</Filter>
     </ClCompile>
-    <ClCompile Include="Core\TextureSource.cpp">
+    <ClCompile Include="Core\Texture.cpp">
       <Filter>Core</Filter>
     </ClCompile>
     <ClCompile Include="Core\Transform.cpp">

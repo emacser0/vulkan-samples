@@ -70,5 +70,5 @@ glm::mat4 FCamera::GetProjectionMatrix() const
 
 	float AspectRatio = Width / (float)Height;
 
-	return glm::perspective(FOVRadians, AspectRatio, 0.1f, 10.0f);
+	return glm::perspective(FOVRadians, AspectRatio, 0.01f, 100.0f);
 }

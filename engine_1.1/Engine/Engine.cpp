@@ -2,16 +2,19 @@
 #include "Config.h"
 #include "Application.h"
 #include "AssetManager.h"
+#include "Widget.h"
+
 #include "VulkanContext.h"
 #include "VulkanScene.h"
 #include "VulkanUIRenderer.h"
-#include "Camera.h"
 
 #include "glfw/glfw3.h"
 #include "imgui/imgui.h"
 #include "imgui/imgui_impl_vulkan.h"
 #include "imgui/imgui_impl_glfw.h"
 
+#include <chrono>
+#include <thread>
 #include <stdexcept>
 #include <filesystem>
 
@@ -40,8 +43,6 @@ FEngine::FEngine()
 	glfwSetScrollCallback(Window, OnMouseWheelEvent);
 	glfwSetKeyCallback(Window, OnKeyEvent);
 
-	Camera = std::make_shared<FCamera>();
-
 	RenderContext = new FVulkanContext(Window);
 	Scene = RenderContext->CreateObject<FVulkanScene>();
 	UIRenderer = RenderContext->CreateObject<FVulkanUIRenderer>();
@@ -60,7 +61,6 @@ FEngine::~FEngine()
 	RenderContext = nullptr;
 	Scene = nullptr;
 	UIRenderer = nullptr;
-	Camera = nullptr;
 
 	glfwDestroyWindow(Window);
 	glfwTerminate();
@@ -72,6 +72,29 @@ void FEngine::Run(std::shared_ptr<FApplication> InApplication)
 {
 	Application = InApplication;
 	Application->Run();
+
+	float TargetFPS;
+	GConfig->Get("TargetFPS", TargetFPS);
+
+	clock_t PreviousFrameTime = clock();
+	float MaxFrameTime = 1000.0f / TargetFPS;
+
+	GLFWwindow* Window = GEngine->GetWindow();
+	assert(Window != nullptr);
+
+	while (!glfwWindowShouldClose(Window))
+	{
+		clock_t CurrentFrameTime = clock();
+		float DeltaTime = static_cast<float>(CurrentFrameTime - PreviousFrameTime) / CLOCKS_PER_SEC;
+
+		glfwPollEvents();
+
+		Tick(DeltaTime);
+
+		PreviousFrameTime = CurrentFrameTime;
+
+		std::this_thread::sleep_for(std::chrono::milliseconds((int)(MaxFrameTime)));
+	}
 }
 
 void FEngine::Tick(float InDeltaTime)
@@ -80,6 +103,19 @@ void FEngine::Tick(float InDeltaTime)
 	{
 		Application->Tick(InDeltaTime);
 	}
+}
+
+void FEngine::AddWidget(const std::shared_ptr<FWidget>& InWidget)
+{
+	Widgets.push_back(InWidget);
+}
+
+void FEngine::RemoveWidget(const std::shared_ptr<FWidget>& InWidget)
+{
+	std::remove_if(Widgets.begin(), Widgets.end(), [InWidget](std::shared_ptr<FWidget> Widget)
+	{
+	   return Widget == InWidget;
+	});
 }
 
 void FEngine::InitializeGLFW()

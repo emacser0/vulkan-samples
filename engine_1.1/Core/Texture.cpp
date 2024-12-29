@@ -1,11 +1,11 @@
-#include "TextureSource.h"
+#include "Texture.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
 #include <cassert>
 
-FTextureSource::FTextureSource()
+FTexture::FTexture()
 	: FAsset()
 	, Width(0)
 	, Height(0)
@@ -15,7 +15,7 @@ FTextureSource::FTextureSource()
 
 }
 
-FTextureSource::~FTextureSource()
+FTexture::~FTexture()
 {
 	if (Pixels != nullptr)
 	{
@@ -23,7 +23,7 @@ FTextureSource::~FTextureSource()
 	}
 }
 
-bool FTextureSource::Load(const std::string& InFilename)
+bool FTexture::Load(const std::string& InFilename)
 {
 	int OutWidth, OutHeight, OutNumChannels;
 

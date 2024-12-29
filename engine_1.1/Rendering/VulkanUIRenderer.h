@@ -17,12 +17,5 @@ public:
 	FVulkanUIRenderer(class FVulkanContext* InContext);
 	virtual ~FVulkanUIRenderer();
 
-	void Ready();
-	void Render();
-
-	void AddWidget(const std::shared_ptr<class FWidget>& InWidget);
-	void RemoveWidget(const std::shared_ptr<class FWidget>& InWidget);
-
-private:
-	std::vector<std::shared_ptr<class FWidget>> Widgets;
+	void Render(const std::vector<std::shared_ptr<class FWidget>>& InWidgets);
 };
