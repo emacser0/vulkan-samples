@@ -6,6 +6,7 @@
 #include "glm/glm.hpp"
 
 #include "VulkanObject.h"
+#include "VulkanContext.h"
 #include "VulkanBuffer.h"
 #include "VulkanMesh.h"
 #include "VulkanShader.h"
@@ -18,6 +19,14 @@
 
 #define MAX_CONCURRENT_FRAME 2
 
+struct FVulkanPipeline
+{
+	VkPipeline Pipeline;
+	VkPipelineLayout Layout;
+	FVulkanShader* VertexShader;
+	FVulkanShader* FragmentShader;
+};
+
 class FVulkanMeshRenderer : public FVulkanObject
 {
 public:
@@ -29,8 +38,10 @@ public:
 
 	void WaitIdle();
 
+	void SetPipelineIndex(int32_t Idx);
+
 protected:
-	void CreateGraphicsPipeline();
+	void CreateGraphicsPipelines();
 	void CreateTextureSampler();
 	void CreateUniformBuffers();
 	void CreateDescriptorSetLayout();
@@ -40,8 +51,8 @@ protected:
 	void UpdateDescriptorSets();
 
 protected:
-	VkPipelineLayout PipelineLayout;
-	VkPipeline Pipeline;
+	std::vector<FVulkanPipeline> Pipelines;
+	int32_t CurrentPipelineIndex = 0;
 
 	VkDescriptorSetLayout DescriptorSetLayout;
 
@@ -49,8 +60,5 @@ protected:
 	std::unordered_map<FVulkanModel*, std::vector<FVulkanBuffer>> UniformBufferMap;
 
 	VkSampler TextureSampler;
-
-	FVulkanShader* VertexShader;
-	FVulkanShader* FragmentShader;
 };
 

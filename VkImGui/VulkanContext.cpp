@@ -7,6 +7,7 @@
 #include <array>
 #include <vector>
 #include <set>
+#include <unordered_map>
 #include <iostream>
 #include <stdexcept>
 #include <algorithm>
@@ -29,9 +30,23 @@ static const bool GEnableValidationLayers = false;
 static const bool GEnableValidationLayers = true;
 #endif
 
+static std::unordered_map<GLFWwindow*, FVulkanContext*> RenderContextMap;
+
 void FramebufferResizeCallback(GLFWwindow* InWindow, int InWidth, int InHeight)
 {
-	GEngine->GetRenderContext()->SetFramebufferResized(true);
+	const auto Iter = RenderContextMap.find(InWindow);
+	if (Iter == RenderContextMap.end())
+	{
+		return;
+	}
+
+	FVulkanContext* Context = Iter->second;
+	if (Context == nullptr)
+	{
+		return;
+	}
+
+	Context->SetFramebufferResized(true);
 }
 
 VKAPI_ATTR VkBool32 VKAPI_CALL DebugMessengerCallback(
@@ -48,6 +63,8 @@ VKAPI_ATTR VkBool32 VKAPI_CALL DebugMessengerCallback(
 FVulkanContext::FVulkanContext(GLFWwindow* InWindow)
 	: Window(InWindow)
 {
+	RenderContextMap[InWindow] = this;
+
 	glfwSetFramebufferSizeCallback(Window, FramebufferResizeCallback);
 
 	CreateInstance();
@@ -68,6 +85,8 @@ FVulkanContext::FVulkanContext(GLFWwindow* InWindow)
 
 FVulkanContext::~FVulkanContext()
 {
+	RenderContextMap.erase(Window);
+
 	CleanupSwapchain();
 
 	vkDestroyDescriptorPool(Device, DescriptorPool, nullptr);

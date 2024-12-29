@@ -140,12 +140,12 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Renderer.cpp" />
+    <ClCompile Include="SingleObjectRenderer.cpp" />
     <ClCompile Include="VkObjLoaderApplication.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Math.h" />
-    <ClInclude Include="Renderer.h" />
+    <ClInclude Include="SingleObjectRenderer.h" />
     <ClInclude Include="VkObjLoaderApplication.h" />
   </ItemGroup>
   <ItemGroup>

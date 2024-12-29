@@ -1,4 +1,7 @@
 #include "Camera.h"
+#include "Engine.h"
+
+#include "glfw/glfw3.h"
 
 #include "glm/gtc/matrix_transform.hpp"
 #define GLM_ENABLE_EXPERIMENTAL
@@ -55,3 +58,17 @@ glm::mat4 FCamera::GetViewMatrix() const
 	return glm::inverse(TranslationMatrix * RotationMatrix);
 }
 
+glm::mat4 FCamera::GetProjectionMatrix() const
+{
+	float FOVRadians = glm::radians(FOV);
+
+	GLFWwindow* Window = GEngine->GetWindow();
+	assert(Window != nullptr);
+
+	int Width, Height;
+	glfwGetWindowSize(Window, &Width, &Height);
+
+	float AspectRatio = Width / (float)Height;
+
+	return glm::perspective(FOVRadians, AspectRatio, 0.1f, 10.0f);
+}

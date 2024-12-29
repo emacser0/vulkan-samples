@@ -1,28 +1,18 @@
 #include "VkObjLoaderApplication.h"
 #include "Engine.h"
 #include "Config.h"
-#include "Utils.h"
 #include "MeshUtils.h"
-#include "Renderer.h"
+#include "SingleObjectRenderer.h"
 #include "Camera.h"
 #include "CameraController.h"
-
-#include <ctime>
-#include <chrono>
-#include <thread>
-#include <filesystem>
-
-#include "glm/glm.hpp"
-#include "glm/gtc/matrix_transform.hpp"
-#define GLM_ENABLE_EXPERIMENTAL
-#include "glm/gtx/quaternion.hpp"
 
 void FVkObjLoaderApplication::Run()
 {
 	GConfig->Set("CameraMoveSpeed", 1.0f);
 	GConfig->Set("MouseSensitivity", 1.0f);
 
-	CameraController = std::make_shared<FCameraController>();
+	Camera = std::make_shared<FCamera>();
+	CameraController = std::make_shared<FCameraController>(Camera);
 	Renderer = std::make_shared<FSingleObjectRenderer>();
 
 	std::string MeshDirectory;
@@ -46,6 +36,9 @@ void FVkObjLoaderApplication::Terminate()
 void FVkObjLoaderApplication::Tick(float InDeltaTime)
 {
 	CameraController->Tick(InDeltaTime);
+
+	Renderer->SetViewMatrix(Camera->GetViewMatrix());
+	Renderer->SetProjectionMatrix(Camera->GetProjectionMatrix());
 	Renderer->Render(InDeltaTime);
 }
 

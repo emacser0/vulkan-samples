@@ -140,11 +140,9 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Rendering.cpp" />
     <ClCompile Include="VkCubeApplication.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Rendering.h" />
     <ClInclude Include="VkCubeApplication.h" />
   </ItemGroup>
   <ItemGroup>

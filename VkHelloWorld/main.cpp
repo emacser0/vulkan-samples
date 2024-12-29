@@ -2,13 +2,8 @@
 #include "Config.h"
 #include "VkHelloWorldApplication.h"
 
-#include <ctime>
-#include <chrono>
-#include <thread>
 #include <iostream>
 #include <stdexcept>
-
-#include "glfw/glfw3.h"
 
 void Run(int argc, char** argv)
 {
@@ -31,28 +26,6 @@ void Run(int argc, char** argv)
 
 	std::shared_ptr<FApplication> Application = std::make_shared<FVkHelloWorldApplication>();
 	GEngine->Run(Application);
-
-	float TargetFPS;
-	GConfig->Get("TargetFPS", TargetFPS);
-
-	clock_t PreviousFrameTime = clock();
-	float MaxFrameTime = 1000.0f / TargetFPS;
-
-	GLFWwindow* Window = GEngine->GetWindow();
-	assert(Window != nullptr);
-
-	while (!glfwWindowShouldClose(Window))
-	{
-		clock_t CurrentFrameTime = clock();
-		float DeltaTime = static_cast<float>(CurrentFrameTime - PreviousFrameTime) / CLOCKS_PER_SEC;
-
-		glfwPollEvents();
-		GEngine->Tick(DeltaTime);
-
-		PreviousFrameTime = CurrentFrameTime;
-
-		std::this_thread::sleep_for(std::chrono::milliseconds((int)(MaxFrameTime)));
-	}
 
 	FEngine::Exit();
 }	

@@ -28,6 +28,7 @@ public:
 	void AddScale(const glm::vec3& InScale);
 
 	glm::mat4 GetViewMatrix() const;
+	glm::mat4 GetProjectionMatrix() const;
 
 private:
 	float FOV;

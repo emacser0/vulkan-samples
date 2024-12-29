@@ -140,7 +140,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="Rendering.cpp" />
     <ClCompile Include="VkHelloWorldApplication.cpp" />
   </ItemGroup>
   <ItemGroup>
@@ -148,7 +147,6 @@
     <None Include="Shaders\main.vert" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Rendering.h" />
     <ClInclude Include="VkHelloWorldApplication.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

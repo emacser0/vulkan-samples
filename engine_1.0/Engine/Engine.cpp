@@ -1,10 +1,11 @@
 #include "Engine.h"
 #include "Config.h"
 #include "Application.h"
-#include "Camera.h"
 
 #include "glfw/glfw3.h"
 
+#include <chrono>
+#include <thread>
 #include <stdexcept>
 #include <filesystem>
 
@@ -29,8 +30,6 @@ FEngine::FEngine()
 	CreateGLFWWindow();
 	CompileShaders();
 
-	Camera = std::make_shared<FCamera>();
-
 	glfwSetMouseButtonCallback(Window, OnMouseButtonEvent);
 	glfwSetScrollCallback(Window, OnMouseWheelEvent);
 	glfwSetKeyCallback(Window, OnKeyEvent);
@@ -51,6 +50,29 @@ void FEngine::Run(std::shared_ptr<FApplication> InApplication)
 {
 	Application = InApplication;
 	Application->Run();
+
+	float TargetFPS;
+	GConfig->Get("TargetFPS", TargetFPS);
+
+	clock_t PreviousFrameTime = clock();
+	float MaxFrameTime = 1000.0f / TargetFPS;
+
+	GLFWwindow* Window = GEngine->GetWindow();
+	assert(Window != nullptr);
+
+	while (!glfwWindowShouldClose(Window))
+	{
+		clock_t CurrentFrameTime = clock();
+		float DeltaTime = static_cast<float>(CurrentFrameTime - PreviousFrameTime) / CLOCKS_PER_SEC;
+
+		glfwPollEvents();
+
+		Tick(DeltaTime);
+
+		PreviousFrameTime = CurrentFrameTime;
+
+		std::this_thread::sleep_for(std::chrono::milliseconds((int)(MaxFrameTime)));
+	}
 }
 
 void FEngine::Tick(float InDeltaTime)

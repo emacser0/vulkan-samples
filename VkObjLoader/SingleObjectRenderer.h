@@ -50,6 +50,9 @@ public:
 
 	void WaitIdle();
 
+	void SetViewMatrix(const glm::mat4& InViewMatrix) { ViewMatrix = InViewMatrix; }
+	void SetProjectionMatrix(const glm::mat4& InProjectionMatrix) { ProjectionMatrix = InProjectionMatrix; }
+
 protected:
 	void RecordCommandBuffer(VkCommandBuffer InCommandBuffer, uint32_t InImageIndex);
 
@@ -121,6 +124,8 @@ protected:
 	VkDeviceMemory IndexBufferMemory;
 
 	std::vector<FUniformBuffer> UniformBuffers;
+	glm::mat4 ViewMatrix;
+	glm::mat4 ProjectionMatrix;
 
 	std::vector<VkCommandBuffer> CommandBuffers;
 

@@ -1,13 +1,17 @@
 #include "Engine.h"
 #include "Config.h"
 #include "Utils.h"
+#include "Camera.h"
+#include "AssetManager.h"
+#include "TextureSource.h"
+#include "Mesh.h"
+
 #include "VulkanContext.h"
 #include "VulkanModel.h"
 #include "VulkanScene.h"
 #include "VulkanMeshRenderer.h"
 #include "VulkanUIRenderer.h"
-#include "Camera.h"
-#include "Texture.h"
+#include "VulkanTexture.h"
 
 #include <ctime>
 #include <chrono>
@@ -109,6 +113,8 @@ void OnKeyEvent(GLFWwindow* Window, int Key, int ScanCode, int Action, int Mods)
 	}
 }
 
+FVulkanMeshRenderer* MeshRenderer;
+
 void Update(float InDeltaTime); 
 
 int RandRange(int Min, int Max)
@@ -143,8 +149,6 @@ void Run(int argc, char** argv)
 	std::string ShaderDirectory;
 	GConfig->Get("ShaderDirectory", ShaderDirectory);
 
-	CompileShaders(ShaderDirectory);
-
 	GLFWwindow* Window = GEngine->GetWindow();
 
 	glfwSetMouseButtonCallback(Window, OnMouseButtonEvent);
@@ -162,14 +166,17 @@ void Run(int argc, char** argv)
 
 	FVulkanContext* RenderContext = GEngine->GetRenderContext();
 
-	FTexture TextureSource;
-	TextureSource.Load(ImageDirectory + "wood.jpg");
+	FTextureSource* TextureSource = FAssetManager::CreateAsset<FTextureSource>();
+	TextureSource->Load(ImageDirectory + "wood.jpg");
 
 	FVulkanTexture* Texture = new FVulkanTexture(RenderContext);
-	Texture->LoadSource(TextureSource);
+	Texture->LoadSource(*TextureSource);
 
-	FVulkanMesh* Mesh = new FVulkanMesh(RenderContext);
-	Mesh->Load(MeshDirectory + "cube.obj");
+	FMesh* CubeMeshAsset = FAssetManager::CreateAsset<FMesh>();
+	CubeMeshAsset->Load(MeshDirectory + "cube.obj");
+
+	FVulkanMesh* Mesh = RenderContext->CreateObject<FVulkanMesh>();
+	Mesh->Load(CubeMeshAsset);
 	Mesh->SetTexture(Texture);
 
 	for (int32_t Idx = 0; Idx < 100; ++Idx)
@@ -187,7 +194,7 @@ void Run(int argc, char** argv)
 		GEngine->GetScene()->AddModel(Model);
 	}
 
-	FVulkanMeshRenderer* MeshRenderer = GEngine->GetMeshRenderer();
+	MeshRenderer = RenderContext->CreateObject<FVulkanMeshRenderer>();
 	MeshRenderer->Ready();
 
 	float TargetFPS;

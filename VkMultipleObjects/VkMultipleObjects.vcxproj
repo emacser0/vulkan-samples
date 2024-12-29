@@ -109,13 +109,13 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions);SOLUTION_DIRECTORY=R"($(SolutionDir))";PROJECT_NAME=R"($(ProjectName))"</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)engine_1.0\Core;$(SolutionDir)engine_1.0\Rendering;$(SolutionDir)engine_1.0\Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)engine_1.1\Core;$(SolutionDir)engine_1.1\Rendering;$(SolutionDir)engine_1.1\Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\$(Platform)\$(Configuration);$(SolutionDir)external\lib\$(Platform);C:\VulkanSDK\$(VulkanVersion)\Lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>engine_1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>engine_1.1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -139,36 +139,15 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="Camera.h" />
-    <ClInclude Include="Engine.h" />
-    <ClInclude Include="VulkanModel.h" />
-    <ClInclude Include="VulkanObject.h" />
-    <ClInclude Include="VulkanScene.h" />
-    <ClInclude Include="VulkanShader.h" />
-    <ClInclude Include="VulkanBuffer.h" />
-    <ClInclude Include="VulkanContext.h" />
-    <ClInclude Include="VulkanMesh.h" />
-    <ClInclude Include="VulkanMeshRenderer.h" />
-    <ClInclude Include="VulkanTexture.h" />
-    <ClInclude Include="VulkanUIRenderer.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Camera.cpp" />
-    <ClCompile Include="Engine.cpp" />
     <ClCompile Include="main.cpp" />
-    <ClCompile Include="VulkanContext.cpp" />
-    <ClCompile Include="VulkanMesh.cpp" />
     <ClCompile Include="VulkanMeshRenderer.cpp" />
-    <ClCompile Include="VulkanModel.cpp" />
-    <ClCompile Include="VulkanObject.cpp" />
-    <ClCompile Include="VulkanScene.cpp" />
-    <ClCompile Include="VulkanShader.cpp" />
-    <ClCompile Include="VulkanTexture.cpp" />
-    <ClCompile Include="VulkanUIRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Shaders\main.frag" />
     <None Include="Shaders\main.vert" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="VulkanMeshRenderer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

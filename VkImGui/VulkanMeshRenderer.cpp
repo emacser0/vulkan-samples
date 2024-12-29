@@ -579,18 +579,10 @@ void FVulkanMeshRenderer::WaitIdle()
 
 void FVulkanMeshRenderer::UpdateUniformBuffer()
 {
-	FCamera* Camera = GEngine->GetCamera();
-	assert(Camera != nullptr);
-
-	VkExtent2D SwapchainExtent = Context->GetSwapchainExtent();
-
-	float FOVRadians = glm::radians(Camera->GetFOV());
-	float AspectRatio = SwapchainExtent.width / (float)SwapchainExtent.height;
-
 	FUniformBufferObject UBO{};
 	UBO.Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.0f));
-	UBO.View = Camera->GetViewMatrix();
-	UBO.Projection = glm::perspective(FOVRadians, AspectRatio, 0.1f, 10.0f);
+	UBO.View = ViewMatrix;
+	UBO.Projection = ProjectionMatrix;
 
 	memcpy(UniformBuffers[Context->GetCurrentFrame()].Mapped, &UBO, sizeof(FUniformBufferObject));
 }

@@ -4,7 +4,7 @@
 
 #include <memory>
 
-class FVkObjLoaderApplication : public FApplication
+class FVkImGuiApplication : public FApplication
 {
 public:
 	virtual void Run() override;
@@ -21,5 +21,8 @@ public:
 private:
 	std::shared_ptr<class FCamera> Camera;
 	std::shared_ptr<class FCameraController> CameraController;
-	std::shared_ptr<class FSingleObjectRenderer> Renderer;
+
+	class FVulkanContext* RenderContext;
+	class FVulkanUIRenderer* UIRenderer;
+	class FVulkanMeshRenderer* MeshRenderer;
 };

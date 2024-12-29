@@ -37,6 +37,9 @@ public:
 
 	void WaitIdle();
 
+	void SetViewMatrix(const glm::mat4& InViewMatrix) { ViewMatrix = InViewMatrix; }
+	void SetProjectionMatrix(const glm::mat4& InProjectionMatrix) { ProjectionMatrix = InProjectionMatrix; }
+
 protected:
 	void RecordCommandBuffer(VkCommandBuffer InCommandBuffer, uint32_t InCurrentFrame, uint32_t InImageIndex);
 
@@ -68,6 +71,8 @@ protected:
 	FVulkanBuffer IndexBuffer;
 
 	std::vector<FVulkanBuffer> UniformBuffers;
+	glm::mat4 ViewMatrix;
+	glm::mat4 ProjectionMatrix;
 
 	std::vector<FVertex> Vertices;
 	std::vector<uint32_t> Indices;

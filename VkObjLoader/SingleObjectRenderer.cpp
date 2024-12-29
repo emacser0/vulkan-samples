@@ -1,4 +1,4 @@
-#include "Renderer.h"
+#include "SingleObjectRenderer.h"
 #include "VulkanHelpers.h"
 #include "Utils.h"
 #include "MeshUtils.h"
@@ -160,10 +160,7 @@ void FSingleObjectRenderer::RecordCommandBuffer(VkCommandBuffer InCommandBuffer,
 	VkCommandBufferBeginInfo CommandBufferBeginInfo{};
 	CommandBufferBeginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 
-	if (vkBeginCommandBuffer(InCommandBuffer, &CommandBufferBeginInfo) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to begin recording command buffer.");
-	}
+	VK_ASSERT(vkBeginCommandBuffer(InCommandBuffer, &CommandBufferBeginInfo));
 
 	VkRenderPassBeginInfo RenderPassBeginInfo{};
 	RenderPassBeginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
@@ -206,10 +203,7 @@ void FSingleObjectRenderer::RecordCommandBuffer(VkCommandBuffer InCommandBuffer,
 
 	vkCmdEndRenderPass(InCommandBuffer);
 
-	if (vkEndCommandBuffer(InCommandBuffer) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to record command buffer.");
-	}
+	VK_ASSERT(vkEndCommandBuffer(InCommandBuffer));
 }
 
 void FSingleObjectRenderer::CreateInstance()
@@ -263,10 +257,7 @@ void FSingleObjectRenderer::CreateInstance()
 		InstanceCI.pNext = nullptr;
 	}
 
-	if (vkCreateInstance(&InstanceCI, nullptr, &Instance) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create instance.");
-	}
+	VK_ASSERT(vkCreateInstance(&InstanceCI, nullptr, &Instance));
 }
 
 void FSingleObjectRenderer::SetupDebugMessenger()
@@ -375,10 +366,7 @@ void FSingleObjectRenderer::CreateLogicalDevice()
 		DeviceCI.enabledLayerCount = 0;
 	}
 
-	if (vkCreateDevice(PhysicalDevice, &DeviceCI, nullptr, &Device) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create logical device.");
-	}
+	VK_ASSERT(vkCreateDevice(PhysicalDevice, &DeviceCI, nullptr, &Device));
 
 	vkGetDeviceQueue(Device, GraphicsFamily, 0, &GraphicsQueue);
 	vkGetDeviceQueue(Device, PresentFamily, 0, &PresentQueue);
@@ -481,10 +469,7 @@ void FSingleObjectRenderer::CreateSwapchain()
 	SwapchainCI.presentMode = ChoosenPresentMode;
 	SwapchainCI.clipped = VK_TRUE;
 
-	if (vkCreateSwapchainKHR(Device, &SwapchainCI, nullptr, &Swapchain) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create swap chain.");
-	}
+	VK_ASSERT(vkCreateSwapchainKHR(Device, &SwapchainCI, nullptr, &Swapchain));
 
 	uint32_t SwapchainImageCount;
 	vkGetSwapchainImagesKHR(Device, Swapchain, &SwapchainImageCount, nullptr);
@@ -517,10 +502,7 @@ void FSingleObjectRenderer::CreateImageViews()
 		ImageViewCI.subresourceRange.baseArrayLayer = 0;
 		ImageViewCI.subresourceRange.layerCount = 1;
 
-		if (vkCreateImageView(Device, &ImageViewCI, nullptr, &SwapchainImageViews[Idx]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create image views.");
-		}
+		VK_ASSERT(vkCreateImageView(Device, &ImageViewCI, nullptr, &SwapchainImageViews[Idx]));
 	}
 }
 
@@ -562,10 +544,7 @@ void FSingleObjectRenderer::CreateRenderPass()
 	RenderPassCI.dependencyCount = 1;
 	RenderPassCI.pDependencies = &SubpassDependency;
 
-	if (vkCreateRenderPass(Device, &RenderPassCI, nullptr, &RenderPass) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create render pass.");
-	}
+	VK_ASSERT(vkCreateRenderPass(Device, &RenderPassCI, nullptr, &RenderPass));
 }
 
 void FSingleObjectRenderer::CreateDescriptorSetLayout()
@@ -595,10 +574,7 @@ void FSingleObjectRenderer::CreateDescriptorSetLayout()
 	DescriptorSetLayoutCI.bindingCount = static_cast<uint32_t>(Bindings.size());
 	DescriptorSetLayoutCI.pBindings = Bindings.data();
 
-	if (vkCreateDescriptorSetLayout(Device, &DescriptorSetLayoutCI, nullptr, &DescriptorSetLayout) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create descriptor set layout.");
-	}
+	VK_ASSERT(vkCreateDescriptorSetLayout(Device, &DescriptorSetLayoutCI, nullptr, &DescriptorSetLayout));
 }
 
 void FSingleObjectRenderer::CreateGraphicsPipeline()
@@ -723,10 +699,7 @@ void FSingleObjectRenderer::CreateGraphicsPipeline()
 	PipelineLayoutCI.setLayoutCount = 1;
 	PipelineLayoutCI.pSetLayouts = &DescriptorSetLayout;
 
-	if (vkCreatePipelineLayout(Device, &PipelineLayoutCI, nullptr, &PipelineLayout) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create pipeline layout.");
-	}
+	VK_ASSERT(vkCreatePipelineLayout(Device, &PipelineLayoutCI, nullptr, &PipelineLayout));
 
 	VkGraphicsPipelineCreateInfo PipelineCI{};
 	PipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -744,10 +717,7 @@ void FSingleObjectRenderer::CreateGraphicsPipeline()
 	PipelineCI.subpass = 0;
 	PipelineCI.basePipelineHandle = VK_NULL_HANDLE;
 
-	if (vkCreateGraphicsPipelines(Device, VK_NULL_HANDLE, 1, &PipelineCI, nullptr, &Pipeline) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create graphics pipeline.");
-	}
+	VK_ASSERT(vkCreateGraphicsPipelines(Device, VK_NULL_HANDLE, 1, &PipelineCI, nullptr, &Pipeline));
 
 	vkDestroyShaderModule(Device, VertexShaderModule, nullptr);
 	vkDestroyShaderModule(Device, FragmentShaderModule, nullptr);
@@ -773,10 +743,7 @@ void FSingleObjectRenderer::CreateFramebuffers()
 		FramebufferCI.height = SwapchainExtent.height;
 		FramebufferCI.layers = 1;
 
-		if (vkCreateFramebuffer(Device, &FramebufferCI, nullptr, &SwapchainFramebuffers[Idx]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create framebuffer.");
-		}
+		VK_ASSERT(vkCreateFramebuffer(Device, &FramebufferCI, nullptr, &SwapchainFramebuffers[Idx]));
 	}
 }
 
@@ -791,10 +758,7 @@ void FSingleObjectRenderer::CreateCommandPool()
 	CommandPoolCI.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
 	CommandPoolCI.queueFamilyIndex = GraphicsFamily;
 
-	if (vkCreateCommandPool(Device, &CommandPoolCI, nullptr, &CommandPool) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create graphics command pool.");
-	}
+	VK_ASSERT(vkCreateCommandPool(Device, &CommandPoolCI, nullptr, &CommandPool));
 }
 
 void FSingleObjectRenderer::CreateTextureImage()
@@ -813,10 +777,7 @@ void FSingleObjectRenderer::CreateTextureImage()
 		StagingBufferMemory);
 
 	void* Data;
-	if (vkMapMemory(Device, StagingBufferMemory, 0, ImageSize, 0, &Data) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to map buffer memory.");
-	}
+	VK_ASSERT(vkMapMemory(Device, StagingBufferMemory, 0, ImageSize, 0, &Data));
 	memcpy(Data, Texture.GetPixels(), static_cast<size_t>(ImageSize));
 	vkUnmapMemory(Device, StagingBufferMemory);
 
@@ -886,10 +847,7 @@ void FSingleObjectRenderer::CreateTextureSampler()
 	SamplerCI.compareOp = VK_COMPARE_OP_ALWAYS;
 	SamplerCI.mipmapMode = VK_SAMPLER_MIPMAP_MODE_LINEAR;
 
-	if (vkCreateSampler(Device, &SamplerCI, nullptr, &TextureSampler) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to create texture sampler!");
-	}
+	VK_ASSERT(vkCreateSampler(Device, &SamplerCI, nullptr, &TextureSampler));
 }
 
 void FSingleObjectRenderer::CreateVertexBuffer()
@@ -908,10 +866,7 @@ void FSingleObjectRenderer::CreateVertexBuffer()
 		StagingBufferMemory);
 
 	void* Data;
-	if (vkMapMemory(Device, StagingBufferMemory, 0, BufferSize, 0, &Data) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to map buffer memory.");
-	}
+	VK_ASSERT(vkMapMemory(Device, StagingBufferMemory, 0, BufferSize, 0, &Data));
 	memcpy(Data, Vertices.data(), static_cast<size_t>(BufferSize));
 	vkUnmapMemory(Device, StagingBufferMemory);
 
@@ -946,10 +901,7 @@ void FSingleObjectRenderer::CreateIndexBuffer()
 		StagingBufferMemory);
 
 	void* Data;
-	if (vkMapMemory(Device, StagingBufferMemory, 0, BufferSize, 0, &Data) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to map buffer memory.");
-	}
+	VK_ASSERT(vkMapMemory(Device, StagingBufferMemory, 0, BufferSize, 0, &Data));
 	memcpy(Data, Indices.data(), static_cast<size_t>(BufferSize));
 	vkUnmapMemory(Device, StagingBufferMemory);
 
@@ -1003,10 +955,7 @@ void FSingleObjectRenderer::CreateDescriptorPool()
 	DescriptorPoolCI.pPoolSizes = PoolSizes;
 	DescriptorPoolCI.maxSets = static_cast<uint32_t>(MAX_CONCURRENT_FRAME);
 
-	if (vkCreateDescriptorPool(Device, &DescriptorPoolCI, nullptr, &DescriptorPool) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to create descriptor pool.");
-	}
+	VK_ASSERT(vkCreateDescriptorPool(Device, &DescriptorPoolCI, nullptr, &DescriptorPool));
 }
 
 void FSingleObjectRenderer::CreateDescriptorSets()
@@ -1019,10 +968,7 @@ void FSingleObjectRenderer::CreateDescriptorSets()
 	DescriptorSetAllocInfo.pSetLayouts = Layouts.data();
 
 	DescriptorSets.resize(MAX_CONCURRENT_FRAME);
-	if (vkAllocateDescriptorSets(Device, &DescriptorSetAllocInfo, DescriptorSets.data()) != VK_SUCCESS)
-	{
-		throw std::runtime_error("failed to allocate Descriptor sets!");
-	}
+	VK_ASSERT(vkAllocateDescriptorSets(Device, &DescriptorSetAllocInfo, DescriptorSets.data()));
 
 	for (size_t Idx = 0; Idx < MAX_CONCURRENT_FRAME; Idx++)
 	{
@@ -1068,10 +1014,7 @@ void FSingleObjectRenderer::CreateCommandBuffers()
 	CommandBufferAllocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
 	CommandBufferAllocInfo.commandBufferCount = static_cast<uint32_t>(CommandBuffers.size());
 
-	if (vkAllocateCommandBuffers(Device, &CommandBufferAllocInfo, CommandBuffers.data()) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to allocate command buffers.");
-	}
+	VK_ASSERT(vkAllocateCommandBuffers(Device, &CommandBufferAllocInfo, CommandBuffers.data()));
 }
 
 void FSingleObjectRenderer::CreateSyncObjects()
@@ -1089,12 +1032,9 @@ void FSingleObjectRenderer::CreateSyncObjects()
 
 	for (size_t Idx = 0; Idx < MAX_CONCURRENT_FRAME; ++Idx)
 	{
-		if (vkCreateSemaphore(Device, &SemaphoreCI, nullptr, &ImageAvailableSemaphores[Idx]) != VK_SUCCESS ||
-			vkCreateSemaphore(Device, &SemaphoreCI, nullptr, &RenderFinishedSemaphores[Idx]) != VK_SUCCESS ||
-			vkCreateFence(Device, &FenceCI, nullptr, &Fences[Idx]) != VK_SUCCESS)
-		{
-			throw std::runtime_error("Failed to create synchronization objects for a frame.");
-		}
+		VK_ASSERT(vkCreateSemaphore(Device, &SemaphoreCI, nullptr, &ImageAvailableSemaphores[Idx]));
+		VK_ASSERT(vkCreateSemaphore(Device, &SemaphoreCI, nullptr, &RenderFinishedSemaphores[Idx]));
+		VK_ASSERT(vkCreateFence(Device, &FenceCI, nullptr, &Fences[Idx]));
 	}
 }
 
@@ -1143,16 +1083,10 @@ void FSingleObjectRenderer::CleanupSwapchain()
 
 void FSingleObjectRenderer::UpdateUniformBuffer()
 {
-	std::shared_ptr<FCamera> Camera = GEngine->GetCamera();
-	assert(Camera != nullptr);
-
-	float FOVRadians = glm::radians(Camera->GetFOV());
-	float AspectRatio = SwapchainExtent.width / (float)SwapchainExtent.height;
-
 	FUniformBufferObject UBO{};
 	UBO.Model = glm::translate(glm::mat4(1.0f), glm::vec3(0.0f, 0.0f, -2.0f));
-	UBO.View = Camera->GetViewMatrix();
-	UBO.Projection = glm::perspectiveRH(FOVRadians, AspectRatio, 0.1f, 10.0f);
+	UBO.View = ViewMatrix;
+	UBO.Projection = ProjectionMatrix;
 
 	memcpy(UniformBuffers[CurrentFrame].Mapped, &UBO, sizeof(FUniformBufferObject));
 }
@@ -1202,10 +1136,7 @@ void FSingleObjectRenderer::Render(float InDeltaTime)
 	SubmitInfo.signalSemaphoreCount = 1;
 	SubmitInfo.pSignalSemaphores = SignalSemaphores;
 
-	if (vkQueueSubmit(GraphicsQueue, 1, &SubmitInfo, Fences[CurrentFrame]) != VK_SUCCESS)
-	{
-		throw std::runtime_error("Failed to submit draw command buffer.");
-	}
+	VK_ASSERT(vkQueueSubmit(GraphicsQueue, 1, &SubmitInfo, Fences[CurrentFrame]));
 
 	VkSwapchainKHR Swapchains[] = { Swapchain };
 
