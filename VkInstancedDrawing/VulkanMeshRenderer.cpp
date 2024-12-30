@@ -9,7 +9,6 @@
 #include "Config.h"
 #include "Mesh.h"
 
-#include "Camera.h"
 #include "Engine.h"
 
 #include "glm/gtc/matrix_transform.hpp"
@@ -503,20 +502,12 @@ void FVulkanMeshRenderer::SetPipelineIndex(int32_t Idx)
 
 void FVulkanMeshRenderer::UpdateUniformBuffer()
 {
-	FCamera* Camera = GEngine->GetCamera();
-	assert(Camera != nullptr);
-
-	VkExtent2D SwapchainExtent = Context->GetSwapchainExtent();
-
-	float FOVRadians = glm::radians(Camera->GetFOV());
-	float AspectRatio = SwapchainExtent.width / (float)SwapchainExtent.height;
-
 	static const glm::mat4 IdentityMatrix(1.0f);
 
 	FUniformBufferObject UBO{};
-	UBO.View = Camera->GetViewMatrix();
-	UBO.Projection = glm::perspective(FOVRadians, AspectRatio, 0.1f, 100.0f);
-	UBO.CameraPosition = Camera->GetTransform().GetTranslation();
+	UBO.View = ViewMatrix;
+	UBO.Projection = ProjectionMatrix;
+	UBO.CameraPosition = CameraPosition;
 
 	FVulkanScene* Scene = GEngine->GetScene();
 	if (Scene != nullptr)

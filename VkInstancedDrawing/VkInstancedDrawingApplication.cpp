@@ -1,39 +1,39 @@
+#include "VkInstancedDrawingApplication.h"
+#include "Engine.h"
 #include "Config.h"
+#include "Utils.h"
 #include "AssetManager.h"
-#include "Mesh.h"
 #include "Texture.h"
+#include "Mesh.h"
 #include "Widget.h"
+#include "Camera.h"
+#include "CameraController.h"
 
 #include "VulkanContext.h"
-#include "VulkanModel.h"
-#include "VulkanScene.h"
 #include "VulkanMeshRenderer.h"
 #include "VulkanUIRenderer.h"
-
-#include "Camera.h"
-#include "Engine.h"
-
-#include <ctime>
-#include <chrono>
-#include <thread>
-#include <iostream>
-#include <stdexcept>
-#include <cstdlib>
-
-#include "glm/glm.hpp"
+#include "VulkanContext.h"
+#include "VulkanMesh.h"
+#include "VulkanTexture.h"
+#include "VulkanScene.h"
+#include "VulkanModel.h"
 
 #include "imgui/imgui.h"
+
+#include <ctime>
 
 class FMainWidget : public FWidget
 {
 public:
-	FMainWidget();
+	FMainWidget(FVulkanMeshRenderer* InMeshRenderer);
 	virtual ~FMainWidget() { }
 
 	virtual void Draw();
 	void OnShaderItemSelected(const std::string& NewSelectedItem);
 
 private:
+	FVulkanMeshRenderer* MeshRenderer;
+
 	bool bInitialized;
 	std::vector<std::string> ShaderItems;
 	std::string CurrentShaderItem = nullptr;
@@ -41,16 +41,17 @@ private:
 	FVulkanLight Light;
 };
 
-FMainWidget::FMainWidget()
-	: bInitialized(false)
+FMainWidget::FMainWidget(FVulkanMeshRenderer* InMeshRenderer)
+	: MeshRenderer(InMeshRenderer)
+	, bInitialized(false)
 	, ShaderItems({ "vert_phong", "frag_phong", "blinn_phong" })
-	, CurrentShaderItem(ShaderItems[2])
+	, CurrentShaderItem(ShaderItems[0])
 {
-	Light.Position = glm::vec3(1.0f);
-	Light.Ambient = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
-	Light.Diffuse = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
+	Light.Position = glm::vec3(0.0f);
+	Light.Ambient = glm::vec4(0.2f, 0.2f, 0.2f, 1.0f);
+	Light.Diffuse = glm::vec4(0.5f, 0.5f, 0.5f, 0.5f);
 	Light.Specular = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
-	Light.Attenuation = glm::vec4(1.0f, 0.1f, 0.1f, 1.0f);
+	Light.Attenuation = glm::vec4(1.0f, 0.2f, 0.2f, 1.0f);
 	Light.Shininess = 32;
 }
 
@@ -100,8 +101,6 @@ void FMainWidget::Draw()
 	ImGui::End();
 }
 
-FVulkanMeshRenderer* MeshRenderer;
-
 void FMainWidget::OnShaderItemSelected(const std::string& NewSelectedItem)
 {
 	if (NewSelectedItem == "vert_phong")
@@ -118,32 +117,32 @@ void FMainWidget::OnShaderItemSelected(const std::string& NewSelectedItem)
 	}
 }
 
-void Run(int argc, char** argv)
+FVkInstancedDrawingApplication::FVkInstancedDrawingApplication()
+	: Camera(nullptr)
+	, CameraController(nullptr)
+	, MeshRenderer(nullptr)
+	, Mesh(nullptr)
+	, Texture(nullptr)
 {
 	srand(static_cast<unsigned int>(time(NULL)));
 
-	FConfig::Startup();
+}
 
-	std::string SolutionDirectory = SOLUTION_DIRECTORY;
-	std::string ProjectDirectory = SolutionDirectory + PROJECT_NAME "/";
-
-	GConfig->Set("ApplicationName", PROJECT_NAME);
-	GConfig->Set("EngineName", "No Engine");
-	GConfig->Set("WindowWidth", 800);
-	GConfig->Set("WindowHeight", 600);
-	GConfig->Set("TargetFPS", 60.0f);
-	GConfig->Set("MaxConcurrentFrames", 2);
-	GConfig->Set("MouseSensitivity", 0.5f);
+void FVkInstancedDrawingApplication::Run()
+{
 	GConfig->Set("CameraMoveSpeed", 1.0f);
-	GConfig->Set("ShaderDirectory", ProjectDirectory + "shaders/");
-	GConfig->Set("ImageDirectory", SolutionDirectory + "resources/images/");
-	GConfig->Set("MeshDirectory", SolutionDirectory + "resources/meshes/");
+	GConfig->Set("MouseSensitivity", 1.0f);
 
-	FEngine::Init();
+	Camera = std::make_shared<FCamera>();
+	CameraController = std::make_shared<FCameraController>(Camera);
 
-	GLFWwindow* Window = GEngine->GetWindow();
+	std::string MeshDirectory;
+	GConfig->Get("MeshDirectory", MeshDirectory);
 
-	FVulkanUIRenderer* UIRenderer = GEngine->GetUIRenderer();
+	std::string ImageDirectory;
+	GConfig->Get("ImageDirectory", ImageDirectory);
+
+	FVulkanContext* RenderContext = GEngine->GetRenderContext();
 
 	std::shared_ptr<FWidget> MainWidget = std::make_shared<FMainWidget>();
 	GEngine->AddWidget(MainWidget);
@@ -162,31 +161,31 @@ void Run(int argc, char** argv)
 	FMesh* MonkeyMeshAsset = FAssetManager::CreateAsset<FMesh>();
 	MonkeyMeshAsset->Load(MeshDirectory + "monkey.obj");
 
-	std::vector<FTexture*> TextureSources;
+	std::vector<FTexture*> TextureAssets;
 	{
 		FTexture* NewTextureSource = FAssetManager::CreateAsset<FTexture>();
 		NewTextureSource->Load(ImageDirectory + "purple.png");
-		TextureSources.push_back(NewTextureSource);
+		TextureAssets.push_back(NewTextureSource);
 	}
 	{
 		FTexture* NewTextureSource = FAssetManager::CreateAsset<FTexture>();
 		NewTextureSource->Load(ImageDirectory + "orange.png");
-		TextureSources.push_back(NewTextureSource);
+		TextureAssets.push_back(NewTextureSource);
 	}
 	{
 		FTexture* NewTextureSource = FAssetManager::CreateAsset<FTexture>();
 		NewTextureSource->Load(ImageDirectory + "green.png");
-		TextureSources.push_back(NewTextureSource);
+		TextureAssets.push_back(NewTextureSource);
 	}
 
 	FTexture* WhiteTextureSource = FAssetManager::CreateAsset<FTexture>();
 	WhiteTextureSource->Load(ImageDirectory + "white.png");
 
 	std::vector<FVulkanTexture*> Textures;
-	for (const auto& TextureSource : TextureSources)
+	for (FTexture* TextureAsset : TextureAssets)
 	{
 		FVulkanTexture* Texture = RenderContext->CreateObject<FVulkanTexture>();
-		Texture->LoadSource(*TextureSource);
+		Texture->LoadSource(*TextureAsset);
 		Textures.push_back(Texture);
 	}
 
@@ -194,7 +193,7 @@ void Run(int argc, char** argv)
 	WhiteTexture->LoadSource(*WhiteTextureSource);
 
 	std::vector<FVulkanMesh*> Meshes;
-	for (const auto& Texture : Textures)
+	for (FVulkanTexture* Texture : Textures)
 	{
 		FVulkanMesh* Mesh = RenderContext->CreateObject<FVulkanMesh>();
 		Mesh->Load(MonkeyMeshAsset);
@@ -233,61 +232,59 @@ void Run(int argc, char** argv)
 	MeshRenderer->Ready();
 	MeshRenderer->SetPipelineIndex(2);
 
-	float TargetFPS;
-	GConfig->Get("TargetFPS", TargetFPS);
+	MeshRenderer = RenderContext->CreateObject<FVulkanMeshRenderer>();
+	MeshRenderer->SetPipelineIndex(0);
 
-	clock_t PreviousFrameTime = clock();
-	float MaxFrameTime = 1000.0f / TargetFPS;
+	std::shared_ptr<FWidget> MainWidget = std::make_shared<FMainWidget>(MeshRenderer);
+	GEngine->AddWidget(MainWidget);
+}
 
-	float TotalFrameTime = 0.0f;
-	int TotalFrameCount = 0;
-
-	while (!glfwWindowShouldClose(Window))
-	{
-		clock_t CurrentFrameTime = clock();
-		float DeltaTime = static_cast<float>(CurrentFrameTime - PreviousFrameTime) / CLOCKS_PER_SEC;
-
-		glfwPollEvents();
-		Update(DeltaTime);
-
-		RenderContext->BeginRender();
-		MeshRenderer->Render();
-		UIRenderer->Render();
-		RenderContext->EndRender();
-
-		PreviousFrameTime = CurrentFrameTime;
-
-		TotalFrameTime += DeltaTime;
-		++TotalFrameCount;
-
-		if (TotalFrameTime >= 5.0f)
-		{
-			std::cout << "Average Frame: " << TotalFrameCount / TotalFrameTime << std::endl;
-			TotalFrameTime = 0.0f;
-			TotalFrameCount = 0;
-		}
-
-		std::this_thread::sleep_for(std::chrono::milliseconds((int)(MaxFrameTime)));
-	}
-
+void FVkInstancedDrawingApplication::Terminate()
+{
 	MeshRenderer->WaitIdle();
 
-	FEngine::Exit();
-	FConfig::Shutdown();
+	FVulkanContext* RenderContext = GEngine->GetRenderContext();
+	RenderContext->DestroyObject(MeshRenderer);
 }
 
-int main(int argc, char** argv)
+void FVkInstancedDrawingApplication::Tick(float InDeltaTime)
 {
-	try
-	{
-		Run(argc, argv);
-	}
-	catch (const std::exception& e)
-	{
-		std::cerr << e.what() << std::endl;
-		return EXIT_FAILURE;
-	}
+	CameraController->Tick(InDeltaTime);
 
-	return EXIT_SUCCESS;
+	MeshRenderer->SetViewMatrix(Camera->GetViewMatrix());
+	MeshRenderer->SetProjectionMatrix(Camera->GetProjectionMatrix());
+	MeshRenderer->SetCameraPosition(Camera->GetLocation());
+
+	FVulkanContext* RenderContext = GEngine->GetRenderContext();
+	FVulkanUIRenderer* UIRenderer = GEngine->GetUIRenderer();
+
+	RenderContext->BeginRender();
+	MeshRenderer->Render();
+	UIRenderer->Render(GEngine->GetWidgets());
+	RenderContext->EndRender();
 }
 
+void FVkInstancedDrawingApplication::OnMouseButtonDown(int InButton, int InMods)
+{
+	CameraController->OnMouseButtonDown(InButton, InMods);
+}
+
+void FVkInstancedDrawingApplication::OnMouseButtonUp(int InButton, int InMods)
+{
+	CameraController->OnMouseButtonUp(InButton, InMods);
+}
+
+void FVkInstancedDrawingApplication::OnMouseWheel(double InXOffset, double InYOffset)
+{
+	CameraController->OnMouseWheel(InXOffset, InYOffset);
+}
+
+void FVkInstancedDrawingApplication::OnKeyDown(int InKey, int InScanCode, int InMods)
+{
+	CameraController->OnKeyDown(InKey, InScanCode, InMods);
+}
+
+void FVkInstancedDrawingApplication::OnKeyUp(int InKey, int InScanCode, int InMods)
+{
+	CameraController->OnKeyUp(InKey, InScanCode, InMods);
+}
