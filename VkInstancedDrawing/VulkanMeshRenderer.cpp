@@ -44,6 +44,14 @@ FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	, DescriptorSetLayout(VK_NULL_HANDLE)
 	, TextureSampler(VK_NULL_HANDLE)
 {
+	GatherInstancedDrawingInfo();
+
+	CreateDescriptorSetLayout();
+	CreateGraphicsPipelines();
+	CreateTextureSampler();
+	CreateUniformBuffers();
+	CreateInstanceBuffers();
+	CreateDescriptorSets();
 }
 
 FVulkanMeshRenderer::~FVulkanMeshRenderer()
@@ -81,18 +89,6 @@ FVulkanMeshRenderer::~FVulkanMeshRenderer()
 		Context->DestroyObject(Pipeline.VertexShader);
 		Context->DestroyObject(Pipeline.FragmentShader);
 	}
-}
-
-void FVulkanMeshRenderer::Ready()
-{	
-	GatherInstancedDrawingInfo();
-
-	CreateDescriptorSetLayout();
-	CreateGraphicsPipelines();
-	CreateTextureSampler();
-	CreateUniformBuffers();
-	CreateInstanceBuffers();
-	CreateDescriptorSets();
 }
 
 void FVulkanMeshRenderer::CreateDescriptorSetLayout()
@@ -483,13 +479,6 @@ void FVulkanMeshRenderer::CreateDescriptorSets()
 	UpdateDescriptorSets();
 }
 
-void FVulkanMeshRenderer::WaitIdle()
-{
-	VkDevice Device = Context->GetDevice();
-
-	vkDeviceWaitIdle(Device);
-}
-
 void FVulkanMeshRenderer::SetPipelineIndex(int32_t Idx)
 {
 	if (Idx >= Pipelines.size())
@@ -534,11 +523,6 @@ void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMesh* InMesh)
 
 	static const glm::mat4 IdentityMatrix(1.0f);
 
-	FCamera* Camera = GEngine->GetCamera();
-	assert(Camera != nullptr);
-
-	glm::mat4 View = Camera->GetViewMatrix();
-
 	FVulkanBuffer& InstanceBuffer = Iter->second.InstanceBuffers[Context->GetCurrentFrame()];
 
 	const std::vector<FVulkanModel*> Models = Iter->second.Models;
@@ -550,7 +534,7 @@ void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMesh* InMesh)
 			ModelIndices[Idx] = Idx;
 		}
 
-		std::for_each(std::execution::par, std::begin(ModelIndices), std::end(ModelIndices), [&View, &Models, &InstanceBuffer](int Idx)
+		std::for_each(std::execution::par, std::begin(ModelIndices), std::end(ModelIndices), [this, &Models, &InstanceBuffer](int Idx)
 		{
 			FVulkanModel* Model = Models[Idx];
 			if (Model == nullptr)
@@ -560,7 +544,7 @@ void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMesh* InMesh)
 
 			FInstanceBuffer* InstanceBufferData = (FInstanceBuffer*)InstanceBuffer.Mapped + Idx;
 			InstanceBufferData->Model = Model->GetCachedModelMatrix();
-			InstanceBufferData->ModelView = View * InstanceBufferData->Model;
+			InstanceBufferData->ModelView = ViewMatrix * InstanceBufferData->Model;
 			InstanceBufferData->NormalMatrix = glm::transpose(glm::inverse(glm::mat3(InstanceBufferData->ModelView)));
 		});
 	}

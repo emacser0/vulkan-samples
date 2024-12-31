@@ -22,8 +22,6 @@ public:
 
 	void Render();
 
-	void WaitIdle();
-
 	void SetViewMatrix(const glm::mat4& InViewMatrix) { ViewMatrix = InViewMatrix; }
 	void SetProjectionMatrix(const glm::mat4& InProjectionMatrix) { ProjectionMatrix = InProjectionMatrix; }
 

@@ -80,8 +80,8 @@ void FVkMultipleObjectsApplication::Run()
 
 void FVkMultipleObjectsApplication::Terminate()
 {
-	MeshRenderer->WaitIdle();
-
+	FVulkanContext* RenderContext = GEngine->GetRenderContext();
+	RenderContext->WaitIdle();
 	delete MeshRenderer;
 }
 

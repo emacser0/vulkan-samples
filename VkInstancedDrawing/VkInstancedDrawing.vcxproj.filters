@@ -21,9 +21,15 @@
     <ClCompile Include="VulkanMeshRenderer.cpp">
       <Filter>소스 파일</Filter>
     </ClCompile>
+    <ClCompile Include="VkInstancedDrawingApplication.cpp">
+      <Filter>소스 파일</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="VulkanMeshRenderer.h">
+      <Filter>헤더 파일</Filter>
+    </ClInclude>
+    <ClInclude Include="VkInstancedDrawingApplication.h">
       <Filter>헤더 파일</Filter>
     </ClInclude>
   </ItemGroup>

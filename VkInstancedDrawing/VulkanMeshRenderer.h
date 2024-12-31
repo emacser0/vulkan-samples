@@ -33,10 +33,7 @@ public:
 	FVulkanMeshRenderer(FVulkanContext* InContext);
 	virtual ~FVulkanMeshRenderer();
 
-	void Ready();
 	void Render();
-
-	void WaitIdle();
 
 	void SetViewMatrix(const glm::mat4& InViewMatrix) { ViewMatrix = InViewMatrix; }
 	void SetProjectionMatrix(const glm::mat4& InProjectionMatrix) { ProjectionMatrix = InProjectionMatrix; }

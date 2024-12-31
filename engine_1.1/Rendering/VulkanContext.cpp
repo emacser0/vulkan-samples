@@ -140,6 +140,11 @@ void FVulkanContext::DestroyObject(FVulkanObject* InObject)
 	}
 }
 
+void FVulkanContext::WaitIdle()
+{
+	vkDeviceWaitIdle(Device);
+}
+
 void FVulkanContext::CreateInstance()
 {
 	if (GEnableValidationLayers && !Vk::SupportsValidationLayer(GValidationLayers))

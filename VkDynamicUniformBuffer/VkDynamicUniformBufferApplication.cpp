@@ -142,8 +142,6 @@ void FVkDynamicUniformBufferApplication::Run()
 	std::string ImageDirectory;
 	GConfig->Get("ImageDirectory", ImageDirectory);
 
-	FVulkanContext* RenderContext = GEngine->GetRenderContext();
-
 	FMesh* SphereMeshAsset = FAssetManager::CreateAsset<FMesh>();
 	SphereMeshAsset->Load(MeshDirectory + "sphere.obj");
 
@@ -169,6 +167,8 @@ void FVkDynamicUniformBufferApplication::Run()
 
 	FTexture* WhiteTextureSource = FAssetManager::CreateAsset<FTexture>();
 	WhiteTextureSource->Load(ImageDirectory + "white.png");
+
+	FVulkanContext* RenderContext = GEngine->GetRenderContext();
 
 	std::vector<FVulkanTexture*> Textures;
 	for (const auto& TextureSource : TextureSources)
@@ -225,9 +225,8 @@ void FVkDynamicUniformBufferApplication::Run()
 
 void FVkDynamicUniformBufferApplication::Terminate()
 {
-	MeshRenderer->WaitIdle();
-
 	FVulkanContext* RenderContext = GEngine->GetRenderContext();
+	RenderContext->WaitIdle();
 	RenderContext->DestroyObject(MeshRenderer);
 }
 

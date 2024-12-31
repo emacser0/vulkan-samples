@@ -141,9 +141,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="VkInstancedDrawingApplication.cpp" />
     <ClCompile Include="VulkanMeshRenderer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="VkInstancedDrawingApplication.h" />
     <ClInclude Include="VulkanMeshRenderer.h" />
   </ItemGroup>
   <ItemGroup>

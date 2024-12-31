@@ -142,50 +142,39 @@ void FVkInstancedDrawingApplication::Run()
 	std::string ImageDirectory;
 	GConfig->Get("ImageDirectory", ImageDirectory);
 
-	FVulkanContext* RenderContext = GEngine->GetRenderContext();
-
-	std::shared_ptr<FWidget> MainWidget = std::make_shared<FMainWidget>();
-	GEngine->AddWidget(MainWidget);
-
-	std::string MeshDirectory;
-	GConfig->Get("MeshDirectory", MeshDirectory);
-
-	std::string ImageDirectory;
-	GConfig->Get("ImageDirectory", ImageDirectory);
-
-	FVulkanContext* RenderContext = GEngine->GetRenderContext();
-
 	FMesh* SphereMeshAsset = FAssetManager::CreateAsset<FMesh>();
 	SphereMeshAsset->Load(MeshDirectory + "sphere.obj");
 
 	FMesh* MonkeyMeshAsset = FAssetManager::CreateAsset<FMesh>();
 	MonkeyMeshAsset->Load(MeshDirectory + "monkey.obj");
 
-	std::vector<FTexture*> TextureAssets;
+	std::vector<FTexture*> TextureSources;
 	{
 		FTexture* NewTextureSource = FAssetManager::CreateAsset<FTexture>();
 		NewTextureSource->Load(ImageDirectory + "purple.png");
-		TextureAssets.push_back(NewTextureSource);
+		TextureSources.push_back(NewTextureSource);
 	}
 	{
 		FTexture* NewTextureSource = FAssetManager::CreateAsset<FTexture>();
 		NewTextureSource->Load(ImageDirectory + "orange.png");
-		TextureAssets.push_back(NewTextureSource);
+		TextureSources.push_back(NewTextureSource);
 	}
 	{
 		FTexture* NewTextureSource = FAssetManager::CreateAsset<FTexture>();
 		NewTextureSource->Load(ImageDirectory + "green.png");
-		TextureAssets.push_back(NewTextureSource);
+		TextureSources.push_back(NewTextureSource);
 	}
 
 	FTexture* WhiteTextureSource = FAssetManager::CreateAsset<FTexture>();
 	WhiteTextureSource->Load(ImageDirectory + "white.png");
 
+	FVulkanContext* RenderContext = GEngine->GetRenderContext();
+
 	std::vector<FVulkanTexture*> Textures;
-	for (FTexture* TextureAsset : TextureAssets)
+	for (const auto& TextureSource : TextureSources)
 	{
 		FVulkanTexture* Texture = RenderContext->CreateObject<FVulkanTexture>();
-		Texture->LoadSource(*TextureAsset);
+		Texture->LoadSource(*TextureSource);
 		Textures.push_back(Texture);
 	}
 
@@ -193,7 +182,7 @@ void FVkInstancedDrawingApplication::Run()
 	WhiteTexture->LoadSource(*WhiteTextureSource);
 
 	std::vector<FVulkanMesh*> Meshes;
-	for (FVulkanTexture* Texture : Textures)
+	for (const auto& Texture : Textures)
 	{
 		FVulkanMesh* Mesh = RenderContext->CreateObject<FVulkanMesh>();
 		Mesh->Load(MonkeyMeshAsset);
@@ -229,11 +218,7 @@ void FVkInstancedDrawingApplication::Run()
 	}
 
 	MeshRenderer = RenderContext->CreateObject<FVulkanMeshRenderer>();
-	MeshRenderer->Ready();
 	MeshRenderer->SetPipelineIndex(2);
-
-	MeshRenderer = RenderContext->CreateObject<FVulkanMeshRenderer>();
-	MeshRenderer->SetPipelineIndex(0);
 
 	std::shared_ptr<FWidget> MainWidget = std::make_shared<FMainWidget>(MeshRenderer);
 	GEngine->AddWidget(MainWidget);
@@ -241,9 +226,8 @@ void FVkInstancedDrawingApplication::Run()
 
 void FVkInstancedDrawingApplication::Terminate()
 {
-	MeshRenderer->WaitIdle();
-
 	FVulkanContext* RenderContext = GEngine->GetRenderContext();
+	RenderContext->WaitIdle();
 	RenderContext->DestroyObject(MeshRenderer);
 }
 

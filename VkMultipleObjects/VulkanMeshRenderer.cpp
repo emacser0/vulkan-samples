@@ -349,13 +349,6 @@ void FVulkanMeshRenderer::CreateDescriptorSets()
 	UpdateDescriptorSets();
 }
 
-void FVulkanMeshRenderer::WaitIdle()
-{
-	VkDevice Device = Context->GetDevice();
-
-	vkDeviceWaitIdle(Device);
-}
-
 void FVulkanMeshRenderer::UpdateUniformBuffer(FVulkanModel* InModel)
 {
 	if (InModel == nullptr)

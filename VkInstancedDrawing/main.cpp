@@ -1,127 +1,13 @@
-#include "Config.h"
-#include "AssetManager.h"
-#include "Mesh.h"
-#include "Texture.h"
-#include "Widget.h"
-
-#include "VulkanContext.h"
-#include "VulkanModel.h"
-#include "VulkanScene.h"
-#include "VulkanMeshRenderer.h"
-#include "VulkanUIRenderer.h"
-
-#include "Camera.h"
 #include "Engine.h"
+#include "Config.h"
+#include "VkInstancedDrawingApplication.h"
 
 #include <ctime>
-#include <chrono>
-#include <thread>
-#include <iostream>
-#include <stdexcept>
 #include <cstdlib>
-
-#include "glm/glm.hpp"
-
-#include "imgui/imgui.h"
-
-class FMainWidget : public FWidget
-{
-public:
-	FMainWidget();
-	virtual ~FMainWidget() { }
-
-	virtual void Draw();
-	void OnShaderItemSelected(const std::string& NewSelectedItem);
-
-private:
-	bool bInitialized;
-	std::vector<std::string> ShaderItems;
-	std::string CurrentShaderItem = nullptr;
-
-	FVulkanLight Light;
-};
-
-FMainWidget::FMainWidget()
-	: bInitialized(false)
-	, ShaderItems({ "vert_phong", "frag_phong", "blinn_phong" })
-	, CurrentShaderItem(ShaderItems[2])
-{
-	Light.Position = glm::vec3(1.0f);
-	Light.Ambient = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
-	Light.Diffuse = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
-	Light.Specular = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
-	Light.Attenuation = glm::vec4(1.0f, 0.1f, 0.1f, 1.0f);
-	Light.Shininess = 32;
-}
-
-void FMainWidget::Draw()
-{
-	ImGui::Begin("Properties");
-
-	if (bInitialized == false)
-	{
-		ImGui::SetWindowPos(ImVec2(20, 20));
-		ImGui::SetWindowSize(ImVec2(300, 300));
-		bInitialized = true;
-	}
-
-	if (ImGui::BeginCombo("Shader", CurrentShaderItem.c_str()))
-	{
-		for (const std::string& Item : ShaderItems)
-		{
-			bool bIsSelected = CurrentShaderItem == Item;
-			if (ImGui::Selectable(Item.c_str(), bIsSelected))
-			{
-				CurrentShaderItem = Item;
-				OnShaderItemSelected(CurrentShaderItem.c_str());
-			}
-
-			if (bIsSelected)
-			{
-				ImGui::SetItemDefaultFocus();
-			}
-		}
-		ImGui::EndCombo();
-	}
-
-	ImGui::InputFloat3("LightPosition", &Light.Position[0]);
-	ImGui::SliderFloat4("Ambient", &Light.Ambient[0], 0.0f, 1.0f);
-	ImGui::SliderFloat4("Diffuse", &Light.Diffuse[0], 0.0f, 1.0f);
-	ImGui::SliderFloat4("Specular", &Light.Specular[0], 0.0f, 1.0f);
-	ImGui::SliderFloat4("Attenuation", &Light.Attenuation[0], 0.0f, 1.0f);
-	ImGui::SliderFloat("Shininess", &Light.Shininess, 1.0f, 128.0f);
-
-	FVulkanScene* Scene = GEngine->GetScene();
-	if (Scene)
-	{
-		Scene->SetLight(Light);
-	}
-
-	ImGui::End();
-}
-
-FVulkanMeshRenderer* MeshRenderer;
-
-void FMainWidget::OnShaderItemSelected(const std::string& NewSelectedItem)
-{
-	if (NewSelectedItem == "vert_phong")
-	{
-		MeshRenderer->SetPipelineIndex(0);
-	}
-	else if (NewSelectedItem == "frag_phong")
-	{
-		MeshRenderer->SetPipelineIndex(1);
-	}
-	else if (NewSelectedItem == "blinn_phong")
-	{
-		MeshRenderer->SetPipelineIndex(2);
-	}
-}
+#include <iostream>
 
 void Run(int argc, char** argv)
 {
-	srand(static_cast<unsigned int>(time(NULL)));
-
 	FConfig::Startup();
 
 	std::string SolutionDirectory = SOLUTION_DIRECTORY;
@@ -133,144 +19,14 @@ void Run(int argc, char** argv)
 	GConfig->Set("WindowHeight", 600);
 	GConfig->Set("TargetFPS", 60.0f);
 	GConfig->Set("MaxConcurrentFrames", 2);
-	GConfig->Set("MouseSensitivity", 0.5f);
-	GConfig->Set("CameraMoveSpeed", 1.0f);
 	GConfig->Set("ShaderDirectory", ProjectDirectory + "shaders/");
 	GConfig->Set("ImageDirectory", SolutionDirectory + "resources/images/");
 	GConfig->Set("MeshDirectory", SolutionDirectory + "resources/meshes/");
 
 	FEngine::Init();
 
-	GLFWwindow* Window = GEngine->GetWindow();
-
-	FVulkanUIRenderer* UIRenderer = GEngine->GetUIRenderer();
-
-	std::shared_ptr<FWidget> MainWidget = std::make_shared<FMainWidget>();
-	GEngine->AddWidget(MainWidget);
-
-	std::string MeshDirectory;
-	GConfig->Get("MeshDirectory", MeshDirectory);
-
-	std::string ImageDirectory;
-	GConfig->Get("ImageDirectory", ImageDirectory);
-
-	FVulkanContext* RenderContext = GEngine->GetRenderContext();
-
-	FMesh* SphereMeshAsset = FAssetManager::CreateAsset<FMesh>();
-	SphereMeshAsset->Load(MeshDirectory + "sphere.obj");
-
-	FMesh* MonkeyMeshAsset = FAssetManager::CreateAsset<FMesh>();
-	MonkeyMeshAsset->Load(MeshDirectory + "monkey.obj");
-
-	std::vector<FTexture*> TextureSources;
-	{
-		FTexture* NewTextureSource = FAssetManager::CreateAsset<FTexture>();
-		NewTextureSource->Load(ImageDirectory + "purple.png");
-		TextureSources.push_back(NewTextureSource);
-	}
-	{
-		FTexture* NewTextureSource = FAssetManager::CreateAsset<FTexture>();
-		NewTextureSource->Load(ImageDirectory + "orange.png");
-		TextureSources.push_back(NewTextureSource);
-	}
-	{
-		FTexture* NewTextureSource = FAssetManager::CreateAsset<FTexture>();
-		NewTextureSource->Load(ImageDirectory + "green.png");
-		TextureSources.push_back(NewTextureSource);
-	}
-
-	FTexture* WhiteTextureSource = FAssetManager::CreateAsset<FTexture>();
-	WhiteTextureSource->Load(ImageDirectory + "white.png");
-
-	std::vector<FVulkanTexture*> Textures;
-	for (const auto& TextureSource : TextureSources)
-	{
-		FVulkanTexture* Texture = RenderContext->CreateObject<FVulkanTexture>();
-		Texture->LoadSource(*TextureSource);
-		Textures.push_back(Texture);
-	}
-
-	FVulkanTexture* WhiteTexture = new FVulkanTexture(RenderContext);
-	WhiteTexture->LoadSource(*WhiteTextureSource);
-
-	std::vector<FVulkanMesh*> Meshes;
-	for (const auto& Texture : Textures)
-	{
-		FVulkanMesh* Mesh = RenderContext->CreateObject<FVulkanMesh>();
-		Mesh->Load(MonkeyMeshAsset);
-		Mesh->SetTexture(Texture);
-		Meshes.push_back(Mesh);
-	}
-
-	FVulkanMesh* LightSourceMesh = RenderContext->CreateObject<FVulkanMesh>();
-	LightSourceMesh->Load(SphereMeshAsset);
-	LightSourceMesh->SetTexture(WhiteTexture);
-
-	FVulkanModel* LightSourceModel = RenderContext->CreateObject<FVulkanModel>();
-	LightSourceModel->SetMesh(LightSourceMesh);
-
-	FTransform LightSourceTransform = LightSourceModel->GetTransform();
-	LightSourceTransform.SetTranslation(glm::vec3(1.0f, 1.0f, 1.0f));
-	LightSourceModel->SetTransform(LightSourceTransform);
-	GEngine->GetScene()->AddModel(LightSourceModel);
-
-	for (int32_t Idx = 0; Idx < 100000; ++Idx)
-	{
-		FVulkanModel* Model = RenderContext->CreateObject<FVulkanModel>();
-		Model->SetMesh(Meshes[RandRange(0, Meshes.size() - 1)]);
-
-		FTransform ModelTransform = Model->GetTransform();
-		ModelTransform.SetTranslation(glm::vec3(RandRange(-200, 200), RandRange(-200, 200), RandRange(-200, 200)));
-		ModelTransform.SetRotation(glm::angleAxis((float)RandRange(-10, 10), glm::vec3(0.0f, -1.0f, 0.0f)));
-		ModelTransform.SetScale(glm::vec3(1.0f, 1.0f, 1.0f));
-
-		Model->SetTransform(ModelTransform);
-
-		GEngine->GetScene()->AddModel(Model);
-	}
-
-	MeshRenderer = RenderContext->CreateObject<FVulkanMeshRenderer>();
-	MeshRenderer->Ready();
-	MeshRenderer->SetPipelineIndex(2);
-
-	float TargetFPS;
-	GConfig->Get("TargetFPS", TargetFPS);
-
-	clock_t PreviousFrameTime = clock();
-	float MaxFrameTime = 1000.0f / TargetFPS;
-
-	float TotalFrameTime = 0.0f;
-	int TotalFrameCount = 0;
-
-	while (!glfwWindowShouldClose(Window))
-	{
-		clock_t CurrentFrameTime = clock();
-		float DeltaTime = static_cast<float>(CurrentFrameTime - PreviousFrameTime) / CLOCKS_PER_SEC;
-
-		glfwPollEvents();
-		Update(DeltaTime);
-
-		RenderContext->BeginRender();
-		MeshRenderer->Render();
-		UIRenderer->Render();
-		RenderContext->EndRender();
-
-		PreviousFrameTime = CurrentFrameTime;
-
-		TotalFrameTime += DeltaTime;
-		++TotalFrameCount;
-
-		if (TotalFrameTime >= 5.0f)
-		{
-			std::cout << "Average Frame: " << TotalFrameCount / TotalFrameTime << std::endl;
-			TotalFrameTime = 0.0f;
-			TotalFrameCount = 0;
-		}
-
-		std::this_thread::sleep_for(std::chrono::milliseconds((int)(MaxFrameTime)));
-	}
-
-	MeshRenderer->WaitIdle();
+	std::shared_ptr<FApplication> Application = std::make_shared<FVkInstancedDrawingApplication>();
+	GEngine->Run(Application);
 
 	FEngine::Exit();
 	FConfig::Shutdown();

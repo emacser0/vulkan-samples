@@ -43,6 +43,8 @@ public:
 
 	void DestroyObject(FVulkanObject* InObject);
 
+	void WaitIdle();
+
 public:
 
 	void BeginRender();

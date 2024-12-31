@@ -455,13 +455,6 @@ void FVulkanMeshRenderer::CreateDescriptorSets()
 	UpdateDescriptorSets();
 }
 
-void FVulkanMeshRenderer::WaitIdle()
-{
-	VkDevice Device = Context->GetDevice();
-
-	vkDeviceWaitIdle(Device);
-}
-
 void FVulkanMeshRenderer::SetPipelineIndex(int32_t Idx)
 {
 	if (Idx >= Pipelines.size())

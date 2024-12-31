@@ -127,7 +127,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions);SOLUTION_DIRECTORY=R"($(SolutionDir))";PROJECT_NAME=R"($(ProjectName))"</PreprocessorDefinitions>
       <ConformanceMode>false</ConformanceMode>
       <LanguageStandard>stdcpp17</LanguageStandard>
-      <AdditionalIncludeDirectories>$(SolutionDir)engine_1.0\Core;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(SolutionDir)engine_1.1\Core;$(SolutionDir)engine_1.1\Rendering;$(SolutionDir)engine_1.1\Engine;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -135,7 +135,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <AdditionalLibraryDirectories>$(SolutionDir)lib\$(Platform)\$(Configuration);$(SolutionDir)external\lib\$(Platform);C:\VulkanSDK\1.3.290.0\Lib</AdditionalLibraryDirectories>
-      <AdditionalDependencies>engine_1.0.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>engine_1.1.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>

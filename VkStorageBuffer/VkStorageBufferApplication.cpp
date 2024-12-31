@@ -1,4 +1,4 @@
-#include "VkLightApplication.h"
+#include "VkStorageBufferApplication.h"
 #include "Engine.h"
 #include "Config.h"
 #include "Utils.h"
@@ -117,7 +117,7 @@ void FMainWidget::OnShaderItemSelected(const std::string& NewSelectedItem)
 	}
 }
 
-FVkLightApplication::FVkLightApplication()
+FVkStorageBufferApplication::FVkStorageBufferApplication()
 	: Camera(nullptr)
 	, CameraController(nullptr)
 	, MeshRenderer(nullptr)
@@ -128,7 +128,7 @@ FVkLightApplication::FVkLightApplication()
 
 }
 
-void FVkLightApplication::Run()
+void FVkStorageBufferApplication::Run()
 {
 	GConfig->Set("CameraMoveSpeed", 1.0f);
 	GConfig->Set("MouseSensitivity", 1.0f);
@@ -185,30 +185,31 @@ void FVkLightApplication::Run()
 	for (const auto& Texture : Textures)
 	{
 		FVulkanMesh* Mesh = RenderContext->CreateObject<FVulkanMesh>();
-		Mesh->Load(SphereMeshAsset);
+		Mesh->Load(MonkeyMeshAsset);
 		Mesh->SetTexture(Texture);
 		Meshes.push_back(Mesh);
 	}
 
-	FVulkanMesh* MonkeyMesh = RenderContext->CreateObject<FVulkanMesh>();
-	MonkeyMesh->Load(MonkeyMeshAsset);
-	MonkeyMesh->SetTexture(WhiteTexture);
+	FVulkanMesh* LightSourceMesh = RenderContext->CreateObject<FVulkanMesh>();
+	LightSourceMesh->Load(SphereMeshAsset);
+	LightSourceMesh->SetTexture(WhiteTexture);
 
-	FVulkanModel* MonkeyModel = RenderContext->CreateObject<FVulkanModel>();
-	MonkeyModel->SetMesh(MonkeyMesh);
+	FVulkanModel* LightSourceModel = RenderContext->CreateObject<FVulkanModel>();
+	LightSourceModel->SetMesh(LightSourceMesh);
 
-	FTransform MonkeyTransform = MonkeyModel->GetTransform();
-	MonkeyTransform.SetTranslation(glm::vec3(0.0f, 0.0f, 0.0f));
-	MonkeyModel->SetTransform(MonkeyTransform);
-	GEngine->GetScene()->AddModel(MonkeyModel);
+	FTransform LightSourceTransform = LightSourceModel->GetTransform();
+	LightSourceTransform.SetTranslation(glm::vec3(1.0f, 1.0f, 1.0f));
+	LightSourceModel->SetTransform(LightSourceTransform);
+	GEngine->GetScene()->AddModel(LightSourceModel);
 
-	for (int32_t Idx = 0; Idx < 10; ++Idx)
+	for (int32_t Idx = 0; Idx < 10000; ++Idx)
 	{
 		FVulkanModel* Model = RenderContext->CreateObject<FVulkanModel>();
 		Model->SetMesh(Meshes[RandRange(0, Meshes.size() - 1)]);
 
 		FTransform ModelTransform = Model->GetTransform();
-		ModelTransform.SetTranslation(glm::vec3(RandRange(-10, 10), RandRange(-10, 10), RandRange(-10, 10)));
+		ModelTransform.SetTranslation(glm::vec3(RandRange(-200, 200), RandRange(-200, 200), RandRange(-200, 200)));
+		ModelTransform.SetRotation(glm::angleAxis((float)RandRange(-10, 10), glm::vec3(0.0f, -1.0f, 0.0f)));
 		ModelTransform.SetScale(glm::vec3(1.0f, 1.0f, 1.0f));
 
 		Model->SetTransform(ModelTransform);
@@ -217,21 +218,18 @@ void FVkLightApplication::Run()
 	}
 
 	MeshRenderer = RenderContext->CreateObject<FVulkanMeshRenderer>();
-	MeshRenderer->SetPipelineIndex(0);
-
-	std::shared_ptr<FWidget> MainWidget = std::make_shared<FMainWidget>(MeshRenderer);
-	GEngine->AddWidget(MainWidget);
+	MeshRenderer->SetPipelineIndex(2);
 }
 
-void FVkLightApplication::Terminate()
+
+void FVkStorageBufferApplication::Terminate()
 {
 	FVulkanContext* RenderContext = GEngine->GetRenderContext();
-
 	RenderContext->WaitIdle();
 	RenderContext->DestroyObject(MeshRenderer);
 }
 
-void FVkLightApplication::Tick(float InDeltaTime)
+void FVkStorageBufferApplication::Tick(float InDeltaTime)
 {
 	CameraController->Tick(InDeltaTime);
 
@@ -248,27 +246,27 @@ void FVkLightApplication::Tick(float InDeltaTime)
 	RenderContext->EndRender();
 }
 
-void FVkLightApplication::OnMouseButtonDown(int InButton, int InMods)
+void FVkStorageBufferApplication::OnMouseButtonDown(int InButton, int InMods)
 {
 	CameraController->OnMouseButtonDown(InButton, InMods);
 }
 
-void FVkLightApplication::OnMouseButtonUp(int InButton, int InMods)
+void FVkStorageBufferApplication::OnMouseButtonUp(int InButton, int InMods)
 {
 	CameraController->OnMouseButtonUp(InButton, InMods);
 }
 
-void FVkLightApplication::OnMouseWheel(double InXOffset, double InYOffset)
+void FVkStorageBufferApplication::OnMouseWheel(double InXOffset, double InYOffset)
 {
 	CameraController->OnMouseWheel(InXOffset, InYOffset);
 }
 
-void FVkLightApplication::OnKeyDown(int InKey, int InScanCode, int InMods)
+void FVkStorageBufferApplication::OnKeyDown(int InKey, int InScanCode, int InMods)
 {
 	CameraController->OnKeyDown(InKey, InScanCode, InMods);
 }
 
-void FVkLightApplication::OnKeyUp(int InKey, int InScanCode, int InMods)
+void FVkStorageBufferApplication::OnKeyUp(int InKey, int InScanCode, int InMods)
 {
 	CameraController->OnKeyUp(InKey, InScanCode, InMods);
 }
