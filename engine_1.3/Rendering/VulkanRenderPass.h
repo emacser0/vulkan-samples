@@ -14,6 +14,7 @@ public:
 
 	static FVulkanRenderPass* Create(class FVulkanContext* InContext, const VkRenderPassCreateInfo& RenderPassCI);
 	static FVulkanRenderPass* CreateSkyPass(class FVulkanContext* InContext);
+	static FVulkanRenderPass* CreateShadowPass(class FVulkanContext* InContext);
 	static FVulkanRenderPass* CreateBasePass(class FVulkanContext* InContext);
 	static FVulkanRenderPass* CreateUIPass(class FVulkanContext* InContext);
 

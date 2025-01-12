@@ -70,7 +70,7 @@ struct FInstanceBuffer
 
 FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	: FVulkanRenderer(InContext)
-	, RenderPass(nullptr)
+	, BasePass(nullptr)
 	, TBNPipeline(nullptr)
 	, DescriptorSetLayout(VK_NULL_HANDLE)
 	, Sampler(nullptr)
@@ -80,7 +80,7 @@ FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	, bEnableGammaCorrection(false)
 	, bEnableToneMapping(false)
 {
-	CreateRenderPass();
+	CreateRenderPasses();
 	CreateFramebuffers();
 	CreateTextureSampler();
 	CreateDescriptorSetLayout();
@@ -96,9 +96,14 @@ void FVulkanMeshRenderer::Destroy()
 {
 	VkDevice Device = Context->GetDevice();
 
-	if (Context->IsValidObject(RenderPass))
+	if (Context->IsValidObject(ShadowPass))
 	{
-		Context->DestroyObject(RenderPass);
+		Context->DestroyObject(ShadowPass);
+	}
+
+	if (Context->IsValidObject(BasePass))
+	{
+		Context->DestroyObject(BasePass);
 	}
 
 	for (FVulkanFramebuffer* Framebuffer : Framebuffers)
@@ -213,14 +218,10 @@ void FVulkanMeshRenderer::GenerateInstancedDrawingInfo()
 	}
 }
 
-void FVulkanMeshRenderer::CreateRenderPass()
+void FVulkanMeshRenderer::CreateRenderPasses()
 {
-	FVulkanViewport* Viewport = Context->GetViewport();
-	assert(Viewport != nullptr);
-
-	FVulkanSwapchain* Swapchain = Viewport->GetSwapchain();
-
-	RenderPass = FVulkanRenderPass::CreateBasePass(Context);
+	ShadowPass = FVulkanRenderPass::CreateShadowPass(Context);
+	BasePass = FVulkanRenderPass::CreateBasePass(Context);
 }
 
 void FVulkanMeshRenderer::CreateFramebuffers()
@@ -245,7 +246,7 @@ void FVulkanMeshRenderer::CreateFramebuffers()
 		};
 
 		Framebuffers[Idx] = FVulkanFramebuffer::Create(
-			Context, RenderPass->GetHandle(), Attachments, Swapchain->GetExtent());
+			Context, BasePass->GetHandle(), Attachments, Swapchain->GetExtent());
 	}
 }
 
@@ -398,7 +399,7 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 		PipelineCI.pColorBlendState = &ColorBlendStateCI;
 		PipelineCI.pDynamicState = &DynamicStateCI;
 		PipelineCI.layout = Pipeline->GetLayout();
-		PipelineCI.renderPass = RenderPass->GetHandle();
+		PipelineCI.renderPass = BasePass->GetHandle();
 		PipelineCI.subpass = 0;
 		PipelineCI.basePipelineHandle = VK_NULL_HANDLE;
 
@@ -406,6 +407,78 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 
 		DrawingInfo.Pipeline = Pipeline;
 	}
+}
+
+void FVulkanMeshRenderer::CreateShadowPipeline()
+{
+	VkDevice Device = Context->GetDevice();
+
+	std::string ShaderDirectory;
+	GConfig->Get("ShaderDirectory", ShaderDirectory);
+
+	FVulkanShader* VS = Context->CreateObject<FVulkanShader>();
+	VS->LoadFile(ShaderDirectory + "visualizeTBN.vert.spv");
+
+	ShadowPipeline = Context->CreateObject<FVulkanPipeline>();
+	ShadowPipeline->SetVertexShader(VS);
+	ShadowPipeline->SetFragmentShader(nullptr);
+
+	VkPipelineShaderStageCreateInfo VertexShaderStageCI{};
+	VertexShaderStageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+	VertexShaderStageCI.stage = VK_SHADER_STAGE_VERTEX_BIT;
+	VertexShaderStageCI.module = VS->GetModule();
+	VertexShaderStageCI.pName = "main";
+
+	std::array<VkPipelineShaderStageCreateInfo, 1> ShaderStageCIs = { VertexShaderStageCI };
+
+	std::vector<VkVertexInputBindingDescription> VertexInputBindingDescs;
+	std::vector<VkVertexInputAttributeDescription> VertexInputAttributeDescs;
+	GetVertexInputBindings(VertexInputBindingDescs);
+	GetVertexInputAttributes(VertexInputAttributeDescs);
+
+	VkPipelineVertexInputStateCreateInfo VertexInputStateCI = Vk::GetVertexInputStateCI(VertexInputBindingDescs, VertexInputAttributeDescs);
+	VkPipelineInputAssemblyStateCreateInfo InputAssemblyStateCI = Vk::GetInputAssemblyStateCI();
+	VkPipelineViewportStateCreateInfo ViewportStateCI = Vk::GetViewportStateCI();
+	VkPipelineRasterizationStateCreateInfo RasterizerCI = Vk::GetRasterizationStateCI();
+	VkPipelineMultisampleStateCreateInfo MultisampleStateCI = Vk::GetMultisampleStateCI();
+	VkPipelineDepthStencilStateCreateInfo DepthStencilStateCI = Vk::GetDepthStencilStateCI();
+
+	VkPipelineColorBlendAttachmentState ColorBlendAttachmentState = Vk::GetColorBlendAttachment();
+	VkPipelineColorBlendStateCreateInfo ColorBlendStateCI = Vk::GetColorBlendStateCI();
+	ColorBlendStateCI.pAttachments = &ColorBlendAttachmentState;
+
+	std::vector<VkDynamicState> DynamicStates = { VK_DYNAMIC_STATE_VIEWPORT, VK_DYNAMIC_STATE_SCISSOR };
+
+	VkPipelineDynamicStateCreateInfo DynamicStateCI{};
+	DynamicStateCI.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+	DynamicStateCI.dynamicStateCount = static_cast<uint32_t>(DynamicStates.size());
+	DynamicStateCI.pDynamicStates = DynamicStates.data();
+
+	VkPipelineLayoutCreateInfo PipelineLayoutCI{};
+	PipelineLayoutCI.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
+	PipelineLayoutCI.setLayoutCount = 1;
+	PipelineLayoutCI.pSetLayouts = &DescriptorSetLayout;
+
+	TBNPipeline->CreateLayout(PipelineLayoutCI);
+
+	VkGraphicsPipelineCreateInfo PipelineCI{};
+	PipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+	PipelineCI.stageCount = static_cast<uint32_t>(ShaderStageCIs.size());
+	PipelineCI.pStages = ShaderStageCIs.data();
+	PipelineCI.pVertexInputState = &VertexInputStateCI;
+	PipelineCI.pInputAssemblyState = &InputAssemblyStateCI;
+	PipelineCI.pViewportState = &ViewportStateCI;
+	PipelineCI.pRasterizationState = &RasterizerCI;
+	PipelineCI.pDepthStencilState = &DepthStencilStateCI;
+	PipelineCI.pMultisampleState = &MultisampleStateCI;
+	PipelineCI.pColorBlendState = &ColorBlendStateCI;
+	PipelineCI.pDynamicState = &DynamicStateCI;
+	PipelineCI.layout = TBNPipeline->GetLayout();
+	PipelineCI.renderPass = BasePass->GetHandle();
+	PipelineCI.subpass = 0;
+	PipelineCI.basePipelineHandle = VK_NULL_HANDLE;
+
+	ShadowPipeline->CreatePipeline(PipelineCI);
 }
 
 void FVulkanMeshRenderer::CreateTBNPipeline()
@@ -430,19 +503,19 @@ void FVulkanMeshRenderer::CreateTBNPipeline()
 	VkPipelineShaderStageCreateInfo VertexShaderStageCI{};
 	VertexShaderStageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	VertexShaderStageCI.stage = VK_SHADER_STAGE_VERTEX_BIT;
-	VertexShaderStageCI.module = TBNPipeline->GetVertexShader()->GetModule();
+	VertexShaderStageCI.module = VS->GetModule();
 	VertexShaderStageCI.pName = "main";
 
 	VkPipelineShaderStageCreateInfo GeometryShaderStageCI{};
 	GeometryShaderStageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	GeometryShaderStageCI.stage = VK_SHADER_STAGE_GEOMETRY_BIT;
-	GeometryShaderStageCI.module = TBNPipeline->GetGeometryShader()->GetModule();
+	GeometryShaderStageCI.module = GS->GetModule();
 	GeometryShaderStageCI.pName = "main";
 
 	VkPipelineShaderStageCreateInfo FragmentShaderStageCI{};
 	FragmentShaderStageCI.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
 	FragmentShaderStageCI.stage = VK_SHADER_STAGE_FRAGMENT_BIT;
-	FragmentShaderStageCI.module = TBNPipeline->GetFragmentShader()->GetModule();
+	FragmentShaderStageCI.module = FS->GetModule();
 	FragmentShaderStageCI.pName = "main";
 
 	std::array<VkPipelineShaderStageCreateInfo, 3> ShaderStageCIs = { VertexShaderStageCI, GeometryShaderStageCI, FragmentShaderStageCI };
@@ -490,7 +563,7 @@ void FVulkanMeshRenderer::CreateTBNPipeline()
 	PipelineCI.pColorBlendState = &ColorBlendStateCI;
 	PipelineCI.pDynamicState = &DynamicStateCI;
 	PipelineCI.layout = TBNPipeline->GetLayout();
-	PipelineCI.renderPass = RenderPass->GetHandle();
+	PipelineCI.renderPass = BasePass->GetHandle();
 	PipelineCI.subpass = 0;
 	PipelineCI.basePipelineHandle = VK_NULL_HANDLE;
 
@@ -949,8 +1022,6 @@ void FVulkanMeshRenderer::Render()
 
 	uint32_t CurrentImageIndex = Swapchain->GetCurrentImageIndex();
 
-	RenderPass->Begin(CommandBuffer, Framebuffers[CurrentImageIndex], RenderArea, ClearValues);
-
 	VkExtent2D SwapchainExtent = Swapchain->GetExtent();
 
 	VkViewport ViewportState{};
@@ -967,21 +1038,27 @@ void FVulkanMeshRenderer::Render()
 
 	UpdateUniformBuffer();
 
-	for (const auto& Pair : InstancedDrawingMap)
+	std::vector<FVulkanRenderPass*> Passes = { ShadowPass, BasePass };
+	for (FVulkanRenderPass* Pass : Passes)
 	{
-		FVulkanMesh* Mesh = Pair.first;
-		const FInstancedDrawingInfo& DrawingInfo = Pair.second;
+		Pass->Begin(CommandBuffer, Framebuffers[CurrentImageIndex], RenderArea, ClearValues);
 
-		if (Mesh == nullptr)
+		for (const auto& Pair : InstancedDrawingMap)
 		{
-			continue;
+			FVulkanMesh* Mesh = Pair.first;
+			const FInstancedDrawingInfo& DrawingInfo = Pair.second;
+
+			if (Mesh == nullptr)
+			{
+				continue;
+			}
+
+			UpdateMaterialBuffer(Mesh);
+			Draw(Mesh, DrawingInfo, ViewportState, Scissor);
 		}
 
-		UpdateMaterialBuffer(Mesh);
-		Draw(Mesh, DrawingInfo, ViewportState, Scissor);
+		Pass->End(CommandBuffer);
 	}
-
-	RenderPass->End(CommandBuffer);
 }
 
 void FVulkanMeshRenderer::Draw(

@@ -31,6 +31,55 @@ FVulkanRenderPass* FVulkanRenderPass::CreateSkyPass(FVulkanContext* InContext)
 	return CreateBasePass_Internal(InContext, true);
 }
 
+FVulkanRenderPass* FVulkanRenderPass::CreateShadowPass(FVulkanContext* InContext)
+{
+	VkPhysicalDevice PhysicalDevice = InContext->GetPhysicalDevice();
+
+	VkAttachmentDescription DepthAttachmentDesc{};
+	DepthAttachmentDesc.format = Vk::FindDepthFormat(PhysicalDevice);
+	DepthAttachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
+	DepthAttachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
+	DepthAttachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	DepthAttachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
+	DepthAttachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	DepthAttachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	DepthAttachmentDesc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	VkAttachmentReference DepthAttachmentRef{};
+	DepthAttachmentRef.attachment = 1;
+	DepthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+	VkSubpassDescription SubpassDesc{};
+	SubpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+	SubpassDesc.colorAttachmentCount = 1;
+	SubpassDesc.pColorAttachments = nullptr;
+	SubpassDesc.pDepthStencilAttachment = &DepthAttachmentRef;
+
+	VkSubpassDependency SubpassDependency{};
+	SubpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
+	SubpassDependency.dstSubpass = 0;
+	SubpassDependency.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+	SubpassDependency.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+	SubpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
+	SubpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+
+	std::vector<VkAttachmentDescription> Attachments =
+	{
+		DepthAttachmentDesc
+	};
+
+	VkRenderPassCreateInfo RenderPassCI{};
+	RenderPassCI.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
+	RenderPassCI.attachmentCount = static_cast<uint32_t>(Attachments.size());
+	RenderPassCI.pAttachments = Attachments.data();
+	RenderPassCI.subpassCount = 1;
+	RenderPassCI.pSubpasses = &SubpassDesc;
+	RenderPassCI.dependencyCount = 1;
+	RenderPassCI.pDependencies = &SubpassDependency;
+
+	return FVulkanRenderPass::Create(InContext, RenderPassCI);
+}
+
 FVulkanRenderPass* FVulkanRenderPass::CreateBasePass(FVulkanContext* InContext)
 {
 	return CreateBasePass_Internal(InContext, false);

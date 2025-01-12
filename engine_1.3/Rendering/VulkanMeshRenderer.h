@@ -31,10 +31,11 @@ public:
 protected:
 	void GenerateInstancedDrawingInfo();
 
-	void CreateRenderPass();
+	void CreateRenderPasses();
 	void CreateFramebuffers();
 	void CreateDescriptorSetLayout();
 	void CreateGraphicsPipelines();
+	void CreateShadowPipeline();
 	void CreateTBNPipeline();
 	void CreateTextureSampler();
 	void CreateUniformBuffers();
@@ -59,9 +60,12 @@ protected:
 	void Draw(class FVulkanMesh* InMesh, const FInstancedDrawingInfo& InDrawingInfo, VkViewport& InViewport, VkRect2D& InScissor);
 
 protected:
-	class FVulkanRenderPass* RenderPass;
+	class FVulkanRenderPass* ShadowPass;
+	class FVulkanRenderPass* BasePass;
+
 	std::vector<class FVulkanFramebuffer*> Framebuffers;
 
+	class FVulkanPipeline* ShadowPipeline;
 	class FVulkanPipeline* TBNPipeline;
 
 	VkDescriptorSetLayout DescriptorSetLayout;
