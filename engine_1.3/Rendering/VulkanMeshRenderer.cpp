@@ -81,6 +81,7 @@ FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	, bEnableToneMapping(false)
 {
 	CreateRenderPasses();
+	CreateShadowDepthImage();
 	CreateFramebuffers();
 	CreateTextureSampler();
 	CreateDescriptorSetLayout();
@@ -224,6 +225,42 @@ void FVulkanMeshRenderer::CreateRenderPasses()
 	BasePass = FVulkanRenderPass::CreateBasePass(Context);
 }
 
+void FVulkanMeshRenderer::CreateShadowDepthImage()
+{
+	VkPhysicalDevice PhysicalDevice = Context->GetPhysicalDevice();
+
+	VkFormat DepthFormat = Vk::FindDepthFormat(PhysicalDevice);
+
+	if (Context->IsValidObject(ShadowDepthImage))
+	{
+		Context->DestroyObject(ShadowDepthImage);
+		ShadowDepthImage = nullptr;
+	}
+
+	FVulkanViewport* Viewport = Context->GetViewport();
+	assert(Viewport != nullptr);
+
+	FVulkanSwapchain* Swapchain = Viewport->GetSwapchain();
+	assert(Swapchain != nullptr);
+
+	VkExtent2D SwapchainExtent = Swapchain->GetExtent();
+
+	ShadowDepthImage = Context->CreateObject<FVulkanImage>();
+	ShadowDepthImage->CreateImage(
+		{ SwapchainExtent.width, SwapchainExtent.height, 1 },
+		1,
+		1,
+		DepthFormat,
+		VK_IMAGE_TYPE_2D,
+		VK_IMAGE_TILING_OPTIMAL,
+		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+	ShadowDepthImage->CreateView(
+		VK_IMAGE_VIEW_TYPE_2D,
+		VK_IMAGE_ASPECT_DEPTH_BIT);
+}
+
 void FVulkanMeshRenderer::CreateFramebuffers()
 {
 	FVulkanViewport* Viewport = Context->GetViewport();
@@ -235,9 +272,24 @@ void FVulkanMeshRenderer::CreateFramebuffers()
 	FVulkanImage* DepthImage = Viewport->GetDepthImage();
 	assert(DepthImage != nullptr);
 
-	Framebuffers.resize(Swapchain->GetImageCount());
+	uint32_t ImageCount = Swapchain->GetImageCount();
 
-	for (size_t Idx = 0; Idx < Swapchain->GetImageCount(); ++Idx)
+	ShadowFramebuffers.resize(Swapchain->GetImageCount());
+
+	for (size_t Idx = 0; Idx < ImageCount; ++Idx)
+	{
+		std::vector<VkImageView> Attachments =
+		{
+			ShadowDepthImage->GetView()
+		};
+
+		ShadowFramebuffers[Idx] = FVulkanFramebuffer::Create(
+			Context, ShadowPass->GetHandle(), Attachments, Swapchain->GetExtent());
+	}
+
+	Framebuffers.resize(ImageCount);
+
+	for (size_t Idx = 0; Idx < ImageCount; ++Idx)
 	{
 		std::vector<VkImageView> Attachments =
 		{
@@ -727,7 +779,7 @@ void FVulkanMeshRenderer::GetVertexInputAttributes(std::vector<VkVertexInputAttr
 	}
 }
 
-void FVulkanMeshRenderer::UpdateUniformBuffer()
+void FVulkanMeshRenderer::UpdateUniformBuffer(bool bIsShadowPass)
 {
 	if (Scene == nullptr)
 	{
@@ -772,6 +824,11 @@ void FVulkanMeshRenderer::UpdateUniformBuffer()
 		{
 			LBO.DirectionalLights[Idx] = DirectionalLights[Idx];
 			LBO.DirectionalLights[Idx].Direction = TBO.View * glm::vec4(LBO.DirectionalLights[Idx].Direction, 0.0f);
+
+			if (bIsShadowPass && Idx == 0)
+			{
+
+			}
 		}
 	}
 
@@ -1015,11 +1072,6 @@ void FVulkanMeshRenderer::Render()
 	RenderArea.offset = { 0, 0 };
 	RenderArea.extent = Swapchain->GetExtent();
 
-	std::vector<VkClearValue> ClearValues{};
-	ClearValues.resize(2);
-	ClearValues[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
-	ClearValues[1].depthStencil = { 1.0f, 0 };
-
 	uint32_t CurrentImageIndex = Swapchain->GetCurrentImageIndex();
 
 	VkExtent2D SwapchainExtent = Swapchain->GetExtent();
@@ -1036,29 +1088,54 @@ void FVulkanMeshRenderer::Render()
 	Scissor.offset = { 0, 0 };
 	Scissor.extent = SwapchainExtent;
 
-	UpdateUniformBuffer();
+	std::vector<VkClearValue> ClearValuesShadowPass{};
+	ClearValuesShadowPass.resize(1);
+	ClearValuesShadowPass[0].depthStencil = { 1.0f, 0 };
 
-	std::vector<FVulkanRenderPass*> Passes = { ShadowPass, BasePass };
-	for (FVulkanRenderPass* Pass : Passes)
+	ShadowPass->Begin(CommandBuffer, ShadowFramebuffers[CurrentImageIndex], RenderArea, ClearValuesShadowPass);
+
+	UpdateUniformBuffer(true);
+
+	for (const auto& Pair : InstancedDrawingMap)
 	{
-		Pass->Begin(CommandBuffer, Framebuffers[CurrentImageIndex], RenderArea, ClearValues);
+		FVulkanMesh* Mesh = Pair.first;
+		const FInstancedDrawingInfo& DrawingInfo = Pair.second;
 
-		for (const auto& Pair : InstancedDrawingMap)
+		if (Mesh == nullptr)
 		{
-			FVulkanMesh* Mesh = Pair.first;
-			const FInstancedDrawingInfo& DrawingInfo = Pair.second;
-
-			if (Mesh == nullptr)
-			{
-				continue;
-			}
-
-			UpdateMaterialBuffer(Mesh);
-			Draw(Mesh, DrawingInfo, ViewportState, Scissor);
+			continue;
 		}
 
-		Pass->End(CommandBuffer);
+		UpdateMaterialBuffer(Mesh);
+		Draw(Mesh, DrawingInfo, ViewportState, Scissor);
 	}
+
+	ShadowPass->End(CommandBuffer);
+
+	std::vector<VkClearValue> ClearValuesBasePass{};
+	ClearValuesBasePass.resize(2);
+	ClearValuesBasePass[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
+	ClearValuesBasePass[1].depthStencil = { 1.0f, 0 };
+
+	BasePass->Begin(CommandBuffer, Framebuffers[CurrentImageIndex], RenderArea, ClearValuesBasePass);
+
+	UpdateUniformBuffer(false);
+
+	for (const auto& Pair : InstancedDrawingMap)
+	{
+		FVulkanMesh* Mesh = Pair.first;
+		const FInstancedDrawingInfo& DrawingInfo = Pair.second;
+
+		if (Mesh == nullptr)
+		{
+			continue;
+		}
+
+		UpdateMaterialBuffer(Mesh);
+		Draw(Mesh, DrawingInfo, ViewportState, Scissor);
+	}
+
+	BasePass->End(CommandBuffer);
 }
 
 void FVulkanMeshRenderer::Draw(

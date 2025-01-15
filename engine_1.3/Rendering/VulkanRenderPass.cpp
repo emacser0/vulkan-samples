@@ -43,16 +43,15 @@ FVulkanRenderPass* FVulkanRenderPass::CreateShadowPass(FVulkanContext* InContext
 	DepthAttachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	DepthAttachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	DepthAttachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-	DepthAttachmentDesc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+	DepthAttachmentDesc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
 	VkAttachmentReference DepthAttachmentRef{};
-	DepthAttachmentRef.attachment = 1;
+	DepthAttachmentRef.attachment = 0;
 	DepthAttachmentRef.layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 	VkSubpassDescription SubpassDesc{};
 	SubpassDesc.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-	SubpassDesc.colorAttachmentCount = 1;
-	SubpassDesc.pColorAttachments = nullptr;
+	SubpassDesc.colorAttachmentCount = 0;
 	SubpassDesc.pDepthStencilAttachment = &DepthAttachmentRef;
 
 	VkSubpassDependency SubpassDependency{};

@@ -32,6 +32,7 @@ protected:
 	void GenerateInstancedDrawingInfo();
 
 	void CreateRenderPasses();
+	void CreateShadowDepthImage();
 	void CreateFramebuffers();
 	void CreateDescriptorSetLayout();
 	void CreateGraphicsPipelines();
@@ -45,7 +46,7 @@ protected:
 	void GetVertexInputBindings(std::vector<VkVertexInputBindingDescription>& OutDescs);
 	void GetVertexInputAttributes(std::vector<VkVertexInputAttributeDescription>& OutDescs);
 
-	void UpdateUniformBuffer();
+	void UpdateUniformBuffer(bool bIsShadowPass);
 	void UpdateMaterialBuffer(class FVulkanMesh* InMesh);
 	void UpdateInstanceBuffer(class FVulkanMesh* InMesh);
 	void UpdateDescriptorSets();
@@ -63,6 +64,9 @@ protected:
 	class FVulkanRenderPass* ShadowPass;
 	class FVulkanRenderPass* BasePass;
 
+	class FVulkanImage* ShadowDepthImage;
+
+	std::vector<class FVulkanFramebuffer*> ShadowFramebuffers;
 	std::vector<class FVulkanFramebuffer*> Framebuffers;
 
 	class FVulkanPipeline* ShadowPipeline;
