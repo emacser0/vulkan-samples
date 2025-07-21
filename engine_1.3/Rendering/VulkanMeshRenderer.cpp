@@ -511,7 +511,7 @@ void FVulkanMeshRenderer::CreateShadowPipeline()
 	PipelineLayoutCI.setLayoutCount = 1;
 	PipelineLayoutCI.pSetLayouts = &DescriptorSetLayout;
 
-	TBNPipeline->CreateLayout(PipelineLayoutCI);
+	ShadowPipeline->CreateLayout(PipelineLayoutCI);
 
 	VkGraphicsPipelineCreateInfo PipelineCI{};
 	PipelineCI.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -525,8 +525,8 @@ void FVulkanMeshRenderer::CreateShadowPipeline()
 	PipelineCI.pMultisampleState = &MultisampleStateCI;
 	PipelineCI.pColorBlendState = &ColorBlendStateCI;
 	PipelineCI.pDynamicState = &DynamicStateCI;
-	PipelineCI.layout = TBNPipeline->GetLayout();
-	PipelineCI.renderPass = BasePass->GetHandle();
+	PipelineCI.layout = ShadowPipeline->GetLayout();
+	PipelineCI.renderPass = ShadowPass->GetHandle();
 	PipelineCI.subpass = 0;
 	PipelineCI.basePipelineHandle = VK_NULL_HANDLE;
 
@@ -1099,7 +1099,8 @@ void FVulkanMeshRenderer::Render()
 	for (const auto& Pair : InstancedDrawingMap)
 	{
 		FVulkanMesh* Mesh = Pair.first;
-		const FInstancedDrawingInfo& DrawingInfo = Pair.second;
+		FInstancedDrawingInfo DrawingInfo = Pair.second;
+		DrawingInfo.Pipeline = ShadowPipeline;
 
 		if (Mesh == nullptr)
 		{
