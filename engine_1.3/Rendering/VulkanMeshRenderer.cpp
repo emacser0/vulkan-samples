@@ -253,7 +253,7 @@ void FVulkanMeshRenderer::CreateShadowDepthImage()
 		DepthFormat,
 		VK_IMAGE_TYPE_2D,
 		VK_IMAGE_TILING_OPTIMAL,
-		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
+		VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT,
 		VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
 
 	ShadowDepthImage->CreateView(
@@ -342,6 +342,12 @@ void FVulkanMeshRenderer::CreateDescriptorSetLayout()
 	NormalSamplerBinding.pImmutableSamplers = nullptr;
 	NormalSamplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
 
+	VkDescriptorSetLayoutBinding ShadowSamplerBinding{};
+	ShadowSamplerBinding.descriptorCount = 1;
+	ShadowSamplerBinding.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+	ShadowSamplerBinding.pImmutableSamplers = nullptr;
+	ShadowSamplerBinding.stageFlags = VK_SHADER_STAGE_FRAGMENT_BIT;
+
 	std::vector<VkDescriptorSetLayoutBinding> Bindings =
 	{
 		TransformBufferBinding,
@@ -349,7 +355,8 @@ void FVulkanMeshRenderer::CreateDescriptorSetLayout()
 		MaterialBufferBinding,
 		DebugBufferBinding,
 		BaseColorSamplerBinding,
-		NormalSamplerBinding
+		NormalSamplerBinding,
+		ShadowSamplerBinding
 	};
 
 	for (int Idx = 0; Idx < Bindings.size(); ++Idx)
@@ -1024,6 +1031,16 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 			NormalDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
 			NormalDescriptor.pImageInfo = &NormalImageInfo;
 
+			VkDescriptorImageInfo ShadowImageInfo{};
+			ShadowImageInfo.imageLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+			ShadowImageInfo.imageView = ShadowDepthImage->GetView();
+			ShadowImageInfo.sampler = Sampler->GetSampler();
+
+			VkWriteDescriptorSet ShadowDescriptor{};
+			ShadowDescriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			ShadowDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			ShadowDescriptor.pImageInfo = &ShadowImageInfo;
+
 			std::vector<VkWriteDescriptorSet> DescriptorWrites
 			{
 				TransformBufferDescriptor,
@@ -1031,7 +1048,8 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 				MaterialBufferDescriptor,
 				DebugBufferDescriptor,
 				BaseColorDescriptor,
-				NormalDescriptor
+				NormalDescriptor,
+				ShadowDescriptor
 			};
 
 			for (int j = 0; j < DescriptorWrites.size(); ++j)

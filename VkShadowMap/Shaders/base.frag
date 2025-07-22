@@ -45,6 +45,7 @@ layout(std140, binding = 3) uniform DebugBuffer
 
 layout(binding = 4) uniform sampler2D baseColorSampler;
 layout(binding = 5) uniform sampler2D normalSampler;
+layout(binding = 6) uniform sampler2D shadowSampler;
 
 layout(location = 0) in vec4 inPosition;
 layout(location = 1) in vec3 inNormal;
