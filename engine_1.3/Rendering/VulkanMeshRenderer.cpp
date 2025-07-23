@@ -185,6 +185,7 @@ void FVulkanMeshRenderer::OnRecreateSwapchain()
 	}
 	Framebuffers.clear();
 
+	CreateShadowDepthImage();
 	CreateFramebuffers();
 }
 

@@ -18,7 +18,8 @@ public:
 
 	void CreateFramebuffers();
 
-	void Render();
+	virtual void Render() override;
+	virtual void OnRecreateSwapchain() override;
 
 	void AddWidget(const std::shared_ptr<class FWidget>& InWidget);
 	void RemoveWidget(const std::shared_ptr<class FWidget>& InWidget);

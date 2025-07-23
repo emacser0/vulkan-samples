@@ -129,7 +129,7 @@ void FVulkanUIRenderer::CreateFramebuffers()
 }
 
 void FVulkanUIRenderer::Render()
-{	
+{
 	uint32_t CurrentFrame = Context->GetCurrentFrame();
 	VkCommandBuffer CommandBuffer = Context->GetCommandBuffer();
 
@@ -169,6 +169,20 @@ void FVulkanUIRenderer::Render()
 	ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), Context->GetCommandBuffers()[Context->GetCurrentFrame()]);
 
 	RenderPass->End(CommandBuffer);
+}
+
+void FVulkanUIRenderer::OnRecreateSwapchain()
+{
+	for (FVulkanFramebuffer* Framebuffer : Framebuffers)
+	{
+		if (Context->IsValidObject(Framebuffer))
+		{
+			Context->DestroyObject(Framebuffer);
+		}
+	}
+	Framebuffers.clear();
+
+	CreateFramebuffers();
 }
 
 void FVulkanUIRenderer::AddWidget(const std::shared_ptr<FWidget>& InWidget)
