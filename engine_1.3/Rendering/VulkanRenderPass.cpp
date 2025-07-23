@@ -54,6 +54,7 @@ FVulkanRenderPass* FVulkanRenderPass::CreateShadowPass(FVulkanContext* InContext
 	SubpassDesc.colorAttachmentCount = 0;
 	SubpassDesc.pDepthStencilAttachment = &DepthAttachmentRef;
 
+#if 0
 	VkSubpassDependency SubpassDependency{};
 	SubpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 	SubpassDependency.dstSubpass = 0;
@@ -61,6 +62,7 @@ FVulkanRenderPass* FVulkanRenderPass::CreateShadowPass(FVulkanContext* InContext
 	SubpassDependency.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 	SubpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 	SubpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+#endif
 
 	std::vector<VkAttachmentDescription> Attachments =
 	{
@@ -73,8 +75,10 @@ FVulkanRenderPass* FVulkanRenderPass::CreateShadowPass(FVulkanContext* InContext
 	RenderPassCI.pAttachments = Attachments.data();
 	RenderPassCI.subpassCount = 1;
 	RenderPassCI.pSubpasses = &SubpassDesc;
+#if 0
 	RenderPassCI.dependencyCount = 1;
 	RenderPassCI.pDependencies = &SubpassDependency;
+#endif
 
 	return FVulkanRenderPass::Create(InContext, RenderPassCI);
 }
@@ -133,6 +137,7 @@ FVulkanRenderPass* FVulkanRenderPass::CreateBasePass_Internal(FVulkanContext* In
 	SubpassDesc.pColorAttachments = &ColorAttachmentRef;
 	SubpassDesc.pDepthStencilAttachment = &DepthAttachmentRef;
 
+#if 0
 	VkSubpassDependency SubpassDependency{};
 	SubpassDependency.srcSubpass = VK_SUBPASS_EXTERNAL;
 	SubpassDependency.dstSubpass = 0;
@@ -140,6 +145,7 @@ FVulkanRenderPass* FVulkanRenderPass::CreateBasePass_Internal(FVulkanContext* In
 	SubpassDependency.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
 	SubpassDependency.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT | VK_PIPELINE_STAGE_EARLY_FRAGMENT_TESTS_BIT;
 	SubpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT | VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+#endif
 
 	std::vector<VkAttachmentDescription> Attachments =
 	{
@@ -153,8 +159,10 @@ FVulkanRenderPass* FVulkanRenderPass::CreateBasePass_Internal(FVulkanContext* In
 	RenderPassCI.pAttachments = Attachments.data();
 	RenderPassCI.subpassCount = 1;
 	RenderPassCI.pSubpasses = &SubpassDesc;
+#if 0
 	RenderPassCI.dependencyCount = 1;
 	RenderPassCI.pDependencies = &SubpassDependency;
+#endif
 
 	return FVulkanRenderPass::Create(InContext, RenderPassCI);
 }
