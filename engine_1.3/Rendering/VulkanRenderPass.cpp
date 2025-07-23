@@ -42,7 +42,7 @@ FVulkanRenderPass* FVulkanRenderPass::CreateShadowPass(FVulkanContext* InContext
 	DepthAttachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	DepthAttachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	DepthAttachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-	DepthAttachmentDesc.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
+	DepthAttachmentDesc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 	DepthAttachmentDesc.finalLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL;
 
 	VkAttachmentReference DepthAttachmentRef{};
@@ -106,7 +106,7 @@ FVulkanRenderPass* FVulkanRenderPass::CreateBasePass_Internal(FVulkanContext* In
 	VkAttachmentDescription ColorAttachmentDesc{};
 	ColorAttachmentDesc.format = Swapchain->GetFormat();
 	ColorAttachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
-	ColorAttachmentDesc.loadOp = bFirstPass ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_LOAD;
+	ColorAttachmentDesc.loadOp = bFirstPass ? VK_ATTACHMENT_LOAD_OP_CLEAR : VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	ColorAttachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	ColorAttachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	ColorAttachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;

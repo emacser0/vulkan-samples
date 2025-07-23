@@ -260,6 +260,15 @@ void FVulkanMeshRenderer::CreateShadowDepthImage()
 	ShadowDepthImage->CreateView(
 		VK_IMAGE_VIEW_TYPE_2D,
 		VK_IMAGE_ASPECT_DEPTH_BIT);
+
+	VkDevice Device = Context->GetDevice();
+	VkCommandPool CommandPool = Context->GetCommandPool();
+
+	VkCommandBuffer CommandBuffer = Vk::BeginOneTimeCommandBuffer(Device, CommandPool);
+
+	TransitionShadowImage(CommandBuffer, VK_IMAGE_LAYOUT_UNDEFINED, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+
+	Vk::EndOneTimeCommandBuffer(Device, CommandPool, Context->GetGfxQueue(), CommandBuffer);
 }
 
 void FVulkanMeshRenderer::CreateFramebuffers()
@@ -1137,6 +1146,8 @@ void FVulkanMeshRenderer::Render()
 	ClearValuesBasePass[0].color = { { 0.0f, 0.0f, 0.0f, 1.0f } };
 	ClearValuesBasePass[1].depthStencil = { 1.0f, 0 };
 
+	TransitionShadowImage(CommandBuffer, VK_IMAGE_LAYOUT_DEPTH_STENCIL_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+
 	BasePass->Begin(CommandBuffer, Framebuffers[CurrentImageIndex], RenderArea, ClearValuesBasePass);
 
 	UpdateUniformBuffer(false);
@@ -1156,6 +1167,60 @@ void FVulkanMeshRenderer::Render()
 	}
 
 	BasePass->End(CommandBuffer);
+
+	TransitionShadowImage(CommandBuffer, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL);
+}
+
+void FVulkanMeshRenderer::TransitionShadowImage(VkCommandBuffer CommandBuffer, VkImageLayout InOldLayout, VkImageLayout InNewLayout)
+{
+	VkDevice Device = Context->GetDevice();
+	VkCommandPool CommandPool = Context->GetCommandPool();
+	VkQueue GfxQueue = Context->GetGfxQueue();
+	
+	VkImageMemoryBarrier ImageMemoryBarrier{};
+	ImageMemoryBarrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+	ImageMemoryBarrier.oldLayout = InOldLayout;
+	ImageMemoryBarrier.newLayout = InNewLayout;
+	ImageMemoryBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	ImageMemoryBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+	ImageMemoryBarrier.image = ShadowDepthImage->GetImage();
+	ImageMemoryBarrier.subresourceRange.baseMipLevel = 0;
+	ImageMemoryBarrier.subresourceRange.levelCount = 1;
+	ImageMemoryBarrier.subresourceRange.baseArrayLayer = 0;
+	ImageMemoryBarrier.subresourceRange.layerCount = 1;
+	ImageMemoryBarrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_DEPTH_BIT;
+
+	VkPipelineStageFlags SrcStage;
+	VkPipelineStageFlags DstStage;
+
+	if (InNewLayout == VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)
+	{
+		ImageMemoryBarrier.srcAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_WRITE_BIT;
+		ImageMemoryBarrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+
+		SrcStage = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+		DstStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+	}
+	else if (InNewLayout == VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL)
+	{
+		ImageMemoryBarrier.srcAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		ImageMemoryBarrier.dstAccessMask = VK_ACCESS_DEPTH_STENCIL_ATTACHMENT_READ_BIT;
+
+		SrcStage = VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT;
+		DstStage = VK_PIPELINE_STAGE_LATE_FRAGMENT_TESTS_BIT;
+	}
+	else
+	{
+		throw std::runtime_error("Unsupported layout transition.");
+	}
+
+	vkCmdPipelineBarrier(
+		CommandBuffer,
+		SrcStage, DstStage,
+		0,
+		0, nullptr,
+		0, nullptr,
+		1, &ImageMemoryBarrier);
 }
 
 void FVulkanMeshRenderer::Draw(

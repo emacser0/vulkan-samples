@@ -51,6 +51,8 @@ protected:
 	void UpdateInstanceBuffer(class FVulkanMesh* InMesh);
 	void UpdateDescriptorSets();
 
+	void TransitionShadowImage(VkCommandBuffer CommandBuffer, VkImageLayout InOldLayout, VkImageLayout InNewLayout);
+
 	struct FInstancedDrawingInfo
 	{
 		class FVulkanPipeline* Pipeline;
