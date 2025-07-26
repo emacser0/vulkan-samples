@@ -363,6 +363,10 @@ void Run(int argc, char** argv)
 	SkyMesh->Load(MeshDirectory + "sphere.fbx");
 	SkyMesh->SetMaterial(SkyMaterial);
 
+	UMesh* BaseplateMesh = FAssetManager::CreateAsset<UMesh>("SM_Baseplate");
+	BaseplateMesh->Load(MeshDirectory + "cube.obj");
+	BaseplateMesh->SetMaterial(BaseplateMaterial);
+
 	FWorld* World = GEngine->GetWorld();
 
 	PointLight = World->SpawnActor<APointLightActor>();
@@ -381,6 +385,11 @@ void Run(int argc, char** argv)
 	SphereActor2->SetMesh(SphereMesh);
 	SphereActor2->SetLocation(glm::vec3(4.0f, 0.0f, -2.0f));
 	SphereActor2->SetScale(glm::vec3(0.5f, 0.5f, 0.5f));
+
+	AMeshActor* BaseplateActor = World->SpawnActor<AMeshActor>();
+	BaseplateActor->SetMesh(BaseplateMesh);
+	BaseplateActor->SetLocation(glm::vec3(0.0f, 1.0f, 0.0f));
+	BaseplateActor->SetScale(glm::vec3(15.0f, 0.1f, 15.0f));
 
 	ASkyActor* SkyActor = World->GetSky();
 	SkyActor->SetMesh(SkyMesh);

@@ -485,7 +485,7 @@ void FVulkanMeshRenderer::CreateShadowPipeline()
 	GConfig->Get("ShaderDirectory", ShaderDirectory);
 
 	FVulkanShader* VS = Context->CreateObject<FVulkanShader>();
-	VS->LoadFile(ShaderDirectory + "visualizeTBN.vert.spv");
+	VS->LoadFile(ShaderDirectory + "shadow.vert.spv");
 
 	ShadowPipeline = Context->CreateObject<FVulkanPipeline>();
 	ShadowPipeline->SetVertexShader(VS);
@@ -703,7 +703,7 @@ void FVulkanMeshRenderer::CreateInstanceBuffers()
 			InstanceBuffers[Idx]->Map();
 		}
 
-		UpdateInstanceBuffer(Mesh, false);
+		UpdateInstanceBuffer(Mesh);
 	}
 }
 
@@ -888,7 +888,7 @@ void FVulkanMeshRenderer::UpdateMaterialBuffer(FVulkanMesh* InMesh)
 	memcpy(MaterialBuffers[CurrentFrame]->GetMappedAddress(), &MBO, sizeof(FMaterialBufferObject));
 }
 
-void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMesh* InMesh, bool bIsShadowPass)
+void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMesh* InMesh)
 {
 	if (Scene == nullptr)
 	{
@@ -910,19 +910,7 @@ void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMesh* InMesh, bool bIsShad
 
 	FVulkanCamera Camera = Scene->GetCamera();
 
-	glm::mat4 View(1.0f);
-	if (bIsShadowPass)
-	{
-		const std::vector<FVulkanPointLight>& PointLights = Scene->GetPointLights();
-		if (PointLights.size() > 0)
-		{
-			View = glm::lookAt(PointLights[0].Position, Camera.Position, glm::vec3(0.0f, 1.0f, 0.0f));
-		}
-	}
-	else
-	{
-		View = Camera.View;
-	}
+	glm::mat4 View = Camera.View;
 
 	FVulkanBuffer* InstanceBuffer = Iter->second.InstanceBuffers[Context->GetCurrentFrame()];
 
@@ -1151,8 +1139,7 @@ void FVulkanMeshRenderer::Render()
 			continue;
 		}
 
-		UpdateInstanceBuffer(Mesh, true);
-		Draw(Mesh, DrawingInfo, ViewportState, Scissor, /* bIsShadowPass */ true);
+		Draw(Mesh, DrawingInfo, ViewportState, Scissor);
 	}
 
 	ShadowPass->End(CommandBuffer);
@@ -1166,7 +1153,7 @@ void FVulkanMeshRenderer::Render()
 
 	BasePass->Begin(CommandBuffer, Framebuffers[CurrentImageIndex], RenderArea, ClearValuesBasePass);
 
-	UpdateUniformBuffer(false);
+//	UpdateUniformBuffer(false);
 
 	for (const auto& Pair : InstancedDrawingMap)
 	{
@@ -1179,8 +1166,8 @@ void FVulkanMeshRenderer::Render()
 		}
 
 		UpdateMaterialBuffer(Mesh);
-		UpdateInstanceBuffer(Mesh, false);
-		Draw(Mesh, DrawingInfo, ViewportState, Scissor, /* bIsShadowPass */ false);
+		UpdateInstanceBuffer(Mesh);
+		Draw(Mesh, DrawingInfo, ViewportState, Scissor);
 	}
 
 	BasePass->End(CommandBuffer);
@@ -1244,8 +1231,7 @@ void FVulkanMeshRenderer::Draw(
 	FVulkanMesh* InMesh,
 	const FInstancedDrawingInfo& InDrawingInfo,
 	VkViewport& InViewport,
-	VkRect2D& InScissor,
-	bool bIsShadowPass)
+	VkRect2D& InScissor)
 {
 	if (InMesh == nullptr)
 	{
