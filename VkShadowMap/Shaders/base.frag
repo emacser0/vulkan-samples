@@ -8,6 +8,7 @@ struct PointLight
     vec4 specular;
     vec4 attenuation;
     float shininess;
+    mat4 lightSpaceMatrix;
 };
 
 struct DirectionalLight

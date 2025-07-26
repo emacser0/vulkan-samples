@@ -10,6 +10,7 @@ struct FVulkanPointLight
 	alignas(16) glm::vec4 Specular;
 	alignas(16) glm::vec4 Attenuation;
 	alignas(8) float Shininess;
+	alignas(16) glm::mat4 LightSpaceMatrix;
 };
 
 
@@ -21,4 +22,5 @@ struct FVulkanDirectionalLight
 	alignas(16) glm::vec4 Specular;
 	alignas(16) glm::vec4 Attenuation;
 	alignas(8) float Shininess;
+	alignas(16) glm::mat4 LightSpaceMatrix;
 };

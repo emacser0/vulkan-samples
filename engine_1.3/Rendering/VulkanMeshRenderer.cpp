@@ -86,6 +86,7 @@ FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	CreateTextureSampler();
 	CreateDescriptorSetLayout();
 	CreateUniformBuffers();
+	CreateShadowPipeline();
 	CreateTBNPipeline();
 }
 
@@ -390,8 +391,6 @@ void FVulkanMeshRenderer::CreateGraphicsPipelines()
 	{
 		FVulkanMesh* Mesh = Pair.first;
 		FInstancedDrawingInfo& DrawingInfo = Pair.second;
-		std::vector<FVulkanBuffer*>& InstanceBuffers = DrawingInfo.InstanceBuffers;
-		std::vector<FVulkanModel*>& Models = DrawingInfo.Models;
 
 		FVulkanMaterial* Material = Mesh->GetMaterial();
 		if (Material == nullptr)
@@ -704,7 +703,7 @@ void FVulkanMeshRenderer::CreateInstanceBuffers()
 			InstanceBuffers[Idx]->Map();
 		}
 
-		UpdateInstanceBuffer(Mesh);
+		UpdateInstanceBuffer(Mesh, false);
 	}
 }
 
@@ -818,35 +817,40 @@ void FVulkanMeshRenderer::UpdateUniformBuffer(bool bIsShadowPass)
 
 	static const glm::mat4 IdentityMatrix(1.0f);
 
+	const std::vector<FVulkanPointLight>& PointLights = Scene->GetPointLights();
+	const std::vector<FVulkanDirectionalLight>& DirectionalLights = Scene->GetDirectionalLights();
+
 	FTransformBufferObject TBO{};
-	TBO.View = Camera.View;
+	if (bIsShadowPass && PointLights.size() > 0)
+	{
+		TBO.View = glm::lookAt(PointLights[0].Position, Camera.Position, glm::vec3(0.0f, 1.0f, 0.0f));
+		TBO.CameraPosition = PointLights[0].Position;
+	}
+	else
+	{
+		TBO.View = Camera.View;
+		TBO.CameraPosition = Camera.Position;
+	}
 	TBO.Projection = glm::perspective(FOVRadians, AspectRatio, Camera.Near, Camera.Far);
-	TBO.CameraPosition = Camera.Position;
 
 	FLightBufferObject LBO{};
-	if (Scene != nullptr)
+
+	LBO.NumPointLights = static_cast<uint32_t>(PointLights.size());
+	for (uint32_t Idx = 0; Idx < LBO.NumPointLights; ++Idx)
 	{
-		const std::vector<FVulkanPointLight>& PointLights = Scene->GetPointLights();
-		const std::vector<FVulkanDirectionalLight>& DirectionalLights = Scene->GetDirectionalLights();
+		LBO.PointLights[Idx] = PointLights[Idx];
+		LBO.PointLights[Idx].Position = Camera.View * glm::vec4(LBO.PointLights[Idx].Position, 1.0f);
 
-		LBO.NumPointLights = static_cast<uint32_t>(PointLights.size());
-		for (uint32_t Idx = 0; Idx < LBO.NumPointLights; ++Idx)
-		{
-			LBO.PointLights[Idx] = PointLights[Idx];
-			LBO.PointLights[Idx].Position = TBO.View * glm::vec4(LBO.PointLights[Idx].Position, 1.0f);
-		}
+		glm::vec3 LightForward = LBO.PointLights[Idx].Position - Camera.Position;
+		glm::mat4 LightView = glm::lookAt(LightForward, LBO.PointLights[Idx].Position, glm::vec3(0.0f, 1.0f, 0.0f));
+		LBO.PointLights[Idx].LightSpaceMatrix = TBO.Projection * LightView;
+	}
 
-		LBO.NumDirectionalLights = static_cast<uint32_t>(DirectionalLights.size());
-		for (uint32_t Idx = 0; Idx < LBO.NumDirectionalLights; ++Idx)
-		{
-			LBO.DirectionalLights[Idx] = DirectionalLights[Idx];
-			LBO.DirectionalLights[Idx].Direction = TBO.View * glm::vec4(LBO.DirectionalLights[Idx].Direction, 0.0f);
-
-			if (bIsShadowPass && Idx == 0)
-			{
-
-			}
-		}
+	LBO.NumDirectionalLights = static_cast<uint32_t>(DirectionalLights.size());
+	for (uint32_t Idx = 0; Idx < LBO.NumDirectionalLights; ++Idx)
+	{
+		LBO.DirectionalLights[Idx] = DirectionalLights[Idx];
+		LBO.DirectionalLights[Idx].Direction = Camera.View * glm::vec4(LBO.DirectionalLights[Idx].Direction, 0.0f);
 	}
 
 	FDebugBufferObject DBO{};
@@ -884,7 +888,7 @@ void FVulkanMeshRenderer::UpdateMaterialBuffer(FVulkanMesh* InMesh)
 	memcpy(MaterialBuffers[CurrentFrame]->GetMappedAddress(), &MBO, sizeof(FMaterialBufferObject));
 }
 
-void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMesh* InMesh)
+void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMesh* InMesh, bool bIsShadowPass)
 {
 	if (Scene == nullptr)
 	{
@@ -906,7 +910,19 @@ void FVulkanMeshRenderer::UpdateInstanceBuffer(FVulkanMesh* InMesh)
 
 	FVulkanCamera Camera = Scene->GetCamera();
 
-	glm::mat4 View = Camera.View;
+	glm::mat4 View(1.0f);
+	if (bIsShadowPass)
+	{
+		const std::vector<FVulkanPointLight>& PointLights = Scene->GetPointLights();
+		if (PointLights.size() > 0)
+		{
+			View = glm::lookAt(PointLights[0].Position, Camera.Position, glm::vec3(0.0f, 1.0f, 0.0f));
+		}
+	}
+	else
+	{
+		View = Camera.View;
+	}
 
 	FVulkanBuffer* InstanceBuffer = Iter->second.InstanceBuffers[Context->GetCurrentFrame()];
 
@@ -1135,8 +1151,8 @@ void FVulkanMeshRenderer::Render()
 			continue;
 		}
 
-		UpdateMaterialBuffer(Mesh);
-		Draw(Mesh, DrawingInfo, ViewportState, Scissor);
+		UpdateInstanceBuffer(Mesh, true);
+		Draw(Mesh, DrawingInfo, ViewportState, Scissor, /* bIsShadowPass */ true);
 	}
 
 	ShadowPass->End(CommandBuffer);
@@ -1163,7 +1179,8 @@ void FVulkanMeshRenderer::Render()
 		}
 
 		UpdateMaterialBuffer(Mesh);
-		Draw(Mesh, DrawingInfo, ViewportState, Scissor);
+		UpdateInstanceBuffer(Mesh, false);
+		Draw(Mesh, DrawingInfo, ViewportState, Scissor, /* bIsShadowPass */ false);
 	}
 
 	BasePass->End(CommandBuffer);
@@ -1227,7 +1244,8 @@ void FVulkanMeshRenderer::Draw(
 	FVulkanMesh* InMesh,
 	const FInstancedDrawingInfo& InDrawingInfo,
 	VkViewport& InViewport,
-	VkRect2D& InScissor)
+	VkRect2D& InScissor,
+	bool bIsShadowPass)
 {
 	if (InMesh == nullptr)
 	{
@@ -1245,8 +1263,6 @@ void FVulkanMeshRenderer::Draw(
 
 	vkCmdSetViewport(CommandBuffer, 0, 1, &InViewport);
 	vkCmdSetScissor(CommandBuffer, 0, 1, &InScissor);
-
-	UpdateInstanceBuffer(InMesh);
 
 	FVulkanBuffer* InstanceBuffer = InDrawingInfo.InstanceBuffers[CurrentFrame];
 	VkDescriptorSet DescriptorSet = InDrawingInfo.DescriptorSets[CurrentFrame];

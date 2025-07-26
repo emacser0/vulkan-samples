@@ -261,6 +261,41 @@ void Run(int argc, char** argv)
 		BaseMaterial->CreateRenderMaterial();
 	}
 
+	UMaterial* BaseplateMaterial = FAssetManager::CreateAsset<UMaterial>("M_Baseplate");
+	{
+		FShaderPath ShaderPath{};
+		ShaderPath.VS = ShaderDirectory + "base.vert.spv";
+		ShaderPath.FS = ShaderDirectory + "base.frag.spv";
+		BaseplateMaterial->SetShaderPath(ShaderPath);
+
+		FShaderParameter BaseColorParameter{};
+		BaseColorParameter.Type = EShaderParameterType::Texture;
+		BaseColorParameter.TexParam = WhiteTexture;
+		BaseplateMaterial->SetBaseColor(BaseColorParameter);
+
+		FShaderParameter NormalParameter{};
+		NormalParameter.Type = EShaderParameterType::Texture;
+		NormalParameter.TexParam = PlaneNormalTexture;
+		BaseplateMaterial->SetNormal(NormalParameter);
+
+		FShaderParameter AmbientParameter{};
+		AmbientParameter.Type = EShaderParameterType::Vector3;
+		AmbientParameter.Vec3Param = glm::vec3(0.05f, 0.05f, 0.05f);
+		BaseplateMaterial->SetAmbient(AmbientParameter);
+
+		FShaderParameter DiffuseParameter{};
+		DiffuseParameter.Type = EShaderParameterType::Vector3;
+		DiffuseParameter.Vec3Param = glm::vec3(1.0f);
+		BaseplateMaterial->SetDiffuse(DiffuseParameter);
+
+		FShaderParameter SpecularParameter{};
+		SpecularParameter.Type = EShaderParameterType::Vector3;
+		SpecularParameter.Vec3Param = glm::vec3(0.0f);
+		BaseplateMaterial->SetSpecular(SpecularParameter);
+
+		BaseplateMaterial->CreateRenderMaterial();
+	}
+
 	UMaterial* LightSourceMaterial = FAssetManager::CreateAsset<UMaterial>("M_LightSource");
 	{
 		FShaderPath ShaderPath{};

@@ -48,7 +48,7 @@ protected:
 
 	void UpdateUniformBuffer(bool bIsShadowPass);
 	void UpdateMaterialBuffer(class FVulkanMesh* InMesh);
-	void UpdateInstanceBuffer(class FVulkanMesh* InMesh);
+	void UpdateInstanceBuffer(class FVulkanMesh* InMesh, bool bInsShadowPass);
 	void UpdateDescriptorSets();
 
 	void TransitionShadowImage(VkCommandBuffer CommandBuffer, VkImageLayout InOldLayout, VkImageLayout InNewLayout);
@@ -60,7 +60,7 @@ protected:
 		std::vector<class FVulkanBuffer*> InstanceBuffers;
 		std::vector<VkDescriptorSet> DescriptorSets;
 	};
-	void Draw(class FVulkanMesh* InMesh, const FInstancedDrawingInfo& InDrawingInfo, VkViewport& InViewport, VkRect2D& InScissor);
+	void Draw(class FVulkanMesh* InMesh, const FInstancedDrawingInfo& InDrawingInfo, VkViewport& InViewport, VkRect2D& InScissor, bool bIsShadowPast);
 
 protected:
 	class FVulkanRenderPass* ShadowPass;
