@@ -20,6 +20,7 @@ layout(location = 0) out vec4 outPosition;
 layout(location = 1) out vec3 outNormal;
 layout(location = 2) out vec2 outTexCoord;
 layout(location = 3) out mat3 outTBN;
+layout(location = 6) out vec4 outWorldPosition;
 
 void main()
 {
@@ -34,4 +35,6 @@ void main()
     outTBN = mat3(tangent, bitangent, outNormal);
 
     gl_Position = transformBuffer.projection * outPosition;
+
+    outWorldPosition = vec4(inPosition, 1.0);
 }

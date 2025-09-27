@@ -52,6 +52,7 @@ layout(location = 0) in vec4 inPosition;
 layout(location = 1) in vec3 inNormal;
 layout(location = 2) in vec2 inTexCoord;
 layout(location = 3) in mat3 inTBN;
+layout(location = 6) in vec4 inWorldPosition;
 
 layout(location = 0) out vec4 outColor;
 
@@ -69,6 +70,25 @@ vec4 gammaCorrection(vec4 inColor)
     outColor = pow(outColor, vec3(1.0 / 1.2));
 
     return vec4(outColor, inColor.a);
+}
+
+float CalculateShadow()
+{
+    if (lightBuffer.numPointLights < 1)
+    {
+        return 0.0;
+    }
+
+    mat4 lightSpaceMatrix = lightBuffer.pointLights[0].lightSpaceMatrix;
+    vec4 lightSpacePosition = lightSpaceMatrix * inWorldPosition;
+
+    vec3 projectCoordinates = lightSpacePosition.xyz / lightSpacePosition.z;
+    projectCoordinates = projectCoordinates * 0.5 + 0.5;
+    float closestDepth = texture(shadowSampler, projectCoordinates.xy).r;
+    float currentDepth = projectCoordinates.z;
+    float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
+
+    return shadow;
 }
 
 void main()
@@ -117,7 +137,7 @@ void main()
 		specular += materialBuffer.specular * light.specular * pow(max(dot(N, H), 0.0), 3 * light.shininess);
     }
 
-    outColor = (ambient + diffuse + specular) * texture(baseColorSampler, inTexCoord);
+    outColor = (ambient * CalculateShadow() + diffuse + specular) * texture(baseColorSampler, inTexCoord);
 
     if (debugBuffer.bGammaCorrection)
     {
