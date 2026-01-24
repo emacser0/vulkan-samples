@@ -925,10 +925,9 @@ void FVulkanMeshRenderer::UpdateUniformBuffer()
 	for (uint32_t Idx = 0; Idx < LBO.NumPointLights; ++Idx)
 	{
 		LBO.PointLights[Idx] = PointLights[Idx];
-		LBO.PointLights[Idx].Position = Camera.View * glm::vec4(LBO.PointLights[Idx].Position, 1.0f);
+		LBO.PointLights[Idx].Position = glm::vec4(LBO.PointLights[Idx].Position, 1.0f);
 
-		glm::vec3 LightForward = LBO.PointLights[Idx].Position - Camera.Position;
-		glm::mat4 LightView = glm::lookAt(LBO.PointLights[Idx].Position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4 LightView = glm::lookAt(PointLights[Idx].Position, PointLights[Idx].Position + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		LBO.PointLights[Idx].LightSpaceMatrix = TBO.Projection * LightView;
 	}
 
@@ -968,7 +967,7 @@ void FVulkanMeshRenderer::UpdateShadowUniformBuffer()
 
 	VkExtent2D SwapchainExtent = Swapchain->GetExtent();
 
-	float FOVRadians = glm::radians(103.0f);
+	float FOVRadians = glm::radians(Camera.FOV);
 	float AspectRatio = SwapchainExtent.width / (float)SwapchainExtent.height;
 
 	static const glm::mat4 IdentityMatrix(1.0f);
@@ -979,7 +978,7 @@ void FVulkanMeshRenderer::UpdateShadowUniformBuffer()
 	FTransformBufferObject TBO{};
 	if (PointLights.size() > 0)
 	{
-		TBO.View = glm::lookAt(PointLights[0].Position, Camera.Position, glm::vec3(0.0f, 1.0f, 0.0f));
+		TBO.View = glm::lookAt(PointLights[0].Position, PointLights[0].Position + glm::vec3(0.0f, 1.0f, 0.0f), glm::vec3(0.0f, 0.0f, 1.0f));
 		TBO.CameraPosition = PointLights[0].Position;
 	}
 	TBO.Projection = glm::perspective(FOVRadians, AspectRatio, Camera.Near, Camera.Far);
