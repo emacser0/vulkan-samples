@@ -73,6 +73,7 @@ FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	, BasePass(nullptr)
 	, TBNPipeline(nullptr)
 	, DescriptorSetLayout(VK_NULL_HANDLE)
+	, ShadowDescriptorSetLayout(VK_NULL_HANDLE)
 	, Sampler(nullptr)
 	, bInitialized(false)
 	, bEnableTBNVisualization(false)
@@ -85,7 +86,9 @@ FVulkanMeshRenderer::FVulkanMeshRenderer(FVulkanContext* InContext)
 	CreateFramebuffers();
 	CreateTextureSampler();
 	CreateDescriptorSetLayout();
+	CreateShadowDescriptorSetLayout();
 	CreateUniformBuffers();
+	CreateShadowUniformBuffers();
 	CreateShadowPipeline();
 	CreateTBNPipeline();
 }
@@ -166,6 +169,18 @@ void FVulkanMeshRenderer::Destroy()
 	}
 	DebugBuffers.clear();
 
+
+	for (FVulkanBuffer* ShadowTransformBuffer : ShadowTransformBuffers)
+	{
+		if (ShadowTransformBuffer == nullptr)
+		{
+			continue;
+		}
+
+		Context->DestroyObject(ShadowTransformBuffer);
+	}
+	ShadowTransformBuffers.clear();
+
 	if (Sampler != nullptr)
 	{
 		Context->DestroyObject(Sampler);
@@ -173,6 +188,7 @@ void FVulkanMeshRenderer::Destroy()
 	}
 
 	vkDestroyDescriptorSetLayout(Device, DescriptorSetLayout, nullptr);
+	vkDestroyDescriptorSetLayout(Device, ShadowDescriptorSetLayout, nullptr);
 }
 
 void FVulkanMeshRenderer::OnRecreateSwapchain()
@@ -188,6 +204,7 @@ void FVulkanMeshRenderer::OnRecreateSwapchain()
 
 	CreateShadowDepthImage();
 	CreateFramebuffers();
+	UpdateDescriptorSets();
 }
 
 void FVulkanMeshRenderer::GenerateInstancedDrawingInfo()
@@ -383,6 +400,34 @@ void FVulkanMeshRenderer::CreateDescriptorSetLayout()
 	VK_ASSERT(vkCreateDescriptorSetLayout(Device, &DescriptorSetLayoutCI, nullptr, &DescriptorSetLayout));
 }
 
+void FVulkanMeshRenderer::CreateShadowDescriptorSetLayout()
+{
+	VkDevice Device = Context->GetDevice();
+
+	VkDescriptorSetLayoutBinding TransformBufferBinding{};
+	TransformBufferBinding.descriptorCount = 1;
+	TransformBufferBinding.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+	TransformBufferBinding.pImmutableSamplers = nullptr;
+	TransformBufferBinding.stageFlags = VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT;
+
+	std::vector<VkDescriptorSetLayoutBinding> Bindings =
+	{
+		TransformBufferBinding,
+	};
+
+	for (int Idx = 0; Idx < Bindings.size(); ++Idx)
+	{
+		Bindings[Idx].binding = Idx;
+	}
+
+	VkDescriptorSetLayoutCreateInfo DescriptorSetLayoutCI{};
+	DescriptorSetLayoutCI.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_LAYOUT_CREATE_INFO;
+	DescriptorSetLayoutCI.bindingCount = static_cast<uint32_t>(Bindings.size());
+	DescriptorSetLayoutCI.pBindings = Bindings.data();
+
+	VK_ASSERT(vkCreateDescriptorSetLayout(Device, &DescriptorSetLayoutCI, nullptr, &ShadowDescriptorSetLayout));
+}
+
 void FVulkanMeshRenderer::CreateGraphicsPipelines()
 {
 	VkDevice Device = Context->GetDevice();
@@ -525,7 +570,7 @@ void FVulkanMeshRenderer::CreateShadowPipeline()
 	VkPipelineLayoutCreateInfo PipelineLayoutCI{};
 	PipelineLayoutCI.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;
 	PipelineLayoutCI.setLayoutCount = 1;
-	PipelineLayoutCI.pSetLayouts = &DescriptorSetLayout;
+	PipelineLayoutCI.pSetLayouts = &ShadowDescriptorSetLayout;
 
 	ShadowPipeline->CreateLayout(PipelineLayoutCI);
 
@@ -678,6 +723,38 @@ void FVulkanMeshRenderer::CreateUniformBuffers()
 	}
 }
 
+void FVulkanMeshRenderer::CreateShadowUniformBuffers()
+{
+	VkPhysicalDevice PhysicalDevice = Context->GetPhysicalDevice();
+	VkDevice Device = Context->GetDevice();
+
+	struct FUniformBufferCreateInfo
+	{
+		VkDeviceSize BufferSize;
+		std::vector<FVulkanBuffer*>& TargetBuffer;
+	};
+
+	std::vector<FUniformBufferCreateInfo> UniformBufferCIs =
+	{
+		{ sizeof(FTransformBufferObject), ShadowTransformBuffers },
+	};
+
+	const uint32_t MaxConcurrentFrames = Context->GetMaxConcurrentFrames();
+
+	for (const FUniformBufferCreateInfo& CI : UniformBufferCIs)
+	{
+		CI.TargetBuffer.resize(MaxConcurrentFrames);
+		for (size_t Idx = 0; Idx < MaxConcurrentFrames; ++Idx)
+		{
+			CI.TargetBuffer[Idx] = Context->CreateObject<FVulkanBuffer>();
+			CI.TargetBuffer[Idx]->SetUsage(VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT);
+			CI.TargetBuffer[Idx]->SetProperties(VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+			CI.TargetBuffer[Idx]->Allocate(CI.BufferSize);
+			CI.TargetBuffer[Idx]->Map();
+		}
+	}
+}
+
 void FVulkanMeshRenderer::CreateInstanceBuffers()
 {
 	VkPhysicalDevice PhysicalDevice = Context->GetPhysicalDevice();
@@ -718,17 +795,34 @@ void FVulkanMeshRenderer::CreateDescriptorSets()
 	{
 		FVulkanMesh* Mesh = Pair.first;
 		std::vector<FVulkanModel*>& Models = Pair.second.Models;
-		std::vector<VkDescriptorSet>& DescriptorSets = Pair.second.DescriptorSets;
 
-		std::vector<VkDescriptorSetLayout> Layouts(MaxConcurrentFrames, DescriptorSetLayout);
-		VkDescriptorSetAllocateInfo DescriptorSetAllocInfo{};
-		DescriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
-		DescriptorSetAllocInfo.descriptorPool = DescriptorPool;
-		DescriptorSetAllocInfo.descriptorSetCount = static_cast<uint32_t>(MaxConcurrentFrames);
-		DescriptorSetAllocInfo.pSetLayouts = Layouts.data();
+		{
+			std::vector<VkDescriptorSet>& DescriptorSets = Pair.second.DescriptorSets;
 
-		DescriptorSets.resize(MaxConcurrentFrames);
-		VK_ASSERT(vkAllocateDescriptorSets(Device, &DescriptorSetAllocInfo, DescriptorSets.data()));
+			std::vector<VkDescriptorSetLayout> Layouts(MaxConcurrentFrames, DescriptorSetLayout);
+			VkDescriptorSetAllocateInfo DescriptorSetAllocInfo{};
+			DescriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+			DescriptorSetAllocInfo.descriptorPool = DescriptorPool;
+			DescriptorSetAllocInfo.descriptorSetCount = static_cast<uint32_t>(MaxConcurrentFrames);
+			DescriptorSetAllocInfo.pSetLayouts = Layouts.data();
+
+			DescriptorSets.resize(MaxConcurrentFrames);
+			VK_ASSERT(vkAllocateDescriptorSets(Device, &DescriptorSetAllocInfo, DescriptorSets.data()));
+		}
+
+		{
+			std::vector<VkDescriptorSet>& ShadowDescriptorSets = Pair.second.ShadowDescriptorSets;
+
+			std::vector<VkDescriptorSetLayout> Layouts(MaxConcurrentFrames, ShadowDescriptorSetLayout);
+			VkDescriptorSetAllocateInfo DescriptorSetAllocInfo{};
+			DescriptorSetAllocInfo.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_SET_ALLOCATE_INFO;
+			DescriptorSetAllocInfo.descriptorPool = DescriptorPool;
+			DescriptorSetAllocInfo.descriptorSetCount = static_cast<uint32_t>(MaxConcurrentFrames);
+			DescriptorSetAllocInfo.pSetLayouts = Layouts.data();
+
+			ShadowDescriptorSets.resize(MaxConcurrentFrames);
+			VK_ASSERT(vkAllocateDescriptorSets(Device, &DescriptorSetAllocInfo, ShadowDescriptorSets.data()));
+		}
 	}
 
 	UpdateDescriptorSets();
@@ -795,7 +889,7 @@ void FVulkanMeshRenderer::GetVertexInputAttributes(std::vector<VkVertexInputAttr
 	}
 }
 
-void FVulkanMeshRenderer::UpdateUniformBuffer(bool bIsShadowPass)
+void FVulkanMeshRenderer::UpdateUniformBuffer()
 {
 	if (Scene == nullptr)
 	{
@@ -821,16 +915,8 @@ void FVulkanMeshRenderer::UpdateUniformBuffer(bool bIsShadowPass)
 	const std::vector<FVulkanDirectionalLight>& DirectionalLights = Scene->GetDirectionalLights();
 
 	FTransformBufferObject TBO{};
-	if (bIsShadowPass && PointLights.size() > 0)
-	{
-		TBO.View = glm::lookAt(PointLights[0].Position, Camera.Position, glm::vec3(0.0f, 1.0f, 0.0f));
-		TBO.CameraPosition = PointLights[0].Position;
-	}
-	else
-	{
-		TBO.View = Camera.View;
-		TBO.CameraPosition = Camera.Position;
-	}
+	TBO.View = Camera.View;
+	TBO.CameraPosition = Camera.Position;
 	TBO.Projection = glm::perspective(FOVRadians, AspectRatio, Camera.Near, Camera.Far);
 
 	FLightBufferObject LBO{};
@@ -842,7 +928,7 @@ void FVulkanMeshRenderer::UpdateUniformBuffer(bool bIsShadowPass)
 		LBO.PointLights[Idx].Position = Camera.View * glm::vec4(LBO.PointLights[Idx].Position, 1.0f);
 
 		glm::vec3 LightForward = LBO.PointLights[Idx].Position - Camera.Position;
-		glm::mat4 LightView = glm::lookAt(LightForward, LBO.PointLights[Idx].Position, glm::vec3(0.0f, 1.0f, 0.0f));
+		glm::mat4 LightView = glm::lookAt(LBO.PointLights[Idx].Position, glm::vec3(0.0f), glm::vec3(0.0f, 1.0f, 0.0f));
 		LBO.PointLights[Idx].LightSpaceMatrix = TBO.Projection * LightView;
 	}
 
@@ -863,6 +949,44 @@ void FVulkanMeshRenderer::UpdateUniformBuffer(bool bIsShadowPass)
 	memcpy(TransformBuffers[CurrentFrame]->GetMappedAddress(), &TBO, sizeof(FTransformBufferObject));
 	memcpy(LightBuffers[CurrentFrame]->GetMappedAddress(), &LBO, sizeof(FLightBufferObject));
 	memcpy(DebugBuffers[CurrentFrame]->GetMappedAddress(), &DBO, sizeof(FDebugBufferObject));
+}
+
+void FVulkanMeshRenderer::UpdateShadowUniformBuffer()
+{
+	if (Scene == nullptr)
+	{
+		return;
+	}
+
+	FVulkanCamera Camera = Scene->GetCamera();
+
+	FVulkanViewport* Viewport = Context->GetViewport();
+	assert(Viewport != nullptr);
+
+	FVulkanSwapchain* Swapchain = Viewport->GetSwapchain();
+	assert(Swapchain != nullptr);
+
+	VkExtent2D SwapchainExtent = Swapchain->GetExtent();
+
+	float FOVRadians = glm::radians(103.0f);
+	float AspectRatio = SwapchainExtent.width / (float)SwapchainExtent.height;
+
+	static const glm::mat4 IdentityMatrix(1.0f);
+
+	const std::vector<FVulkanPointLight>& PointLights = Scene->GetPointLights();
+	const std::vector<FVulkanDirectionalLight>& DirectionalLights = Scene->GetDirectionalLights();
+
+	FTransformBufferObject TBO{};
+	if (PointLights.size() > 0)
+	{
+		TBO.View = glm::lookAt(PointLights[0].Position, Camera.Position, glm::vec3(0.0f, 1.0f, 0.0f));
+		TBO.CameraPosition = PointLights[0].Position;
+	}
+	TBO.Projection = glm::perspective(FOVRadians, AspectRatio, Camera.Near, Camera.Far);
+
+	uint32_t CurrentFrame = Context->GetCurrentFrame();
+
+	memcpy(ShadowTransformBuffers[CurrentFrame]->GetMappedAddress(), &TBO, sizeof(FTransformBufferObject));
 }
 
 void FVulkanMeshRenderer::UpdateMaterialBuffer(FVulkanMesh* InMesh)
@@ -1076,6 +1200,35 @@ void FVulkanMeshRenderer::UpdateDescriptorSets()
 
 			vkUpdateDescriptorSets(Device, static_cast<uint32_t>(DescriptorWrites.size()), DescriptorWrites.data(), 0, nullptr);
 		}
+
+		const std::vector<VkDescriptorSet>& ShadowDescriptorSets = Pair.second.ShadowDescriptorSets;
+		for (int32_t i = 0; i < ShadowDescriptorSets.size(); ++i)
+		{
+			VkDescriptorBufferInfo TransformBufferInfo{};
+			TransformBufferInfo.buffer = ShadowTransformBuffers[i]->GetHandle();
+			TransformBufferInfo.offset = 0;
+			TransformBufferInfo.range = sizeof(FTransformBufferObject);
+
+			VkWriteDescriptorSet TransformBufferDescriptor{};
+			TransformBufferDescriptor.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			TransformBufferDescriptor.descriptorType = VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER;
+			TransformBufferDescriptor.pBufferInfo = &TransformBufferInfo;
+
+			std::vector<VkWriteDescriptorSet> DescriptorWrites
+			{
+				TransformBufferDescriptor,
+			};
+
+			for (int j = 0; j < DescriptorWrites.size(); ++j)
+			{
+				DescriptorWrites[j].dstSet = ShadowDescriptorSets[i];
+				DescriptorWrites[j].dstArrayElement = 0;
+				DescriptorWrites[j].dstBinding = j;
+				DescriptorWrites[j].descriptorCount = 1;
+			}
+
+			vkUpdateDescriptorSets(Device, static_cast<uint32_t>(DescriptorWrites.size()), DescriptorWrites.data(), 0, nullptr);
+		}
 	}
 }
 
@@ -1124,9 +1277,9 @@ void FVulkanMeshRenderer::Render()
 	ClearValuesShadowPass.resize(1);
 	ClearValuesShadowPass[0].depthStencil = { 1.0f, 0 };
 
-	ShadowPass->Begin(CommandBuffer, ShadowFramebuffers[CurrentImageIndex], RenderArea, ClearValuesShadowPass);
+	UpdateShadowUniformBuffer();
 
-	UpdateUniformBuffer(true);
+	ShadowPass->Begin(CommandBuffer, ShadowFramebuffers[CurrentImageIndex], RenderArea, ClearValuesShadowPass);
 
 	for (const auto& Pair : InstancedDrawingMap)
 	{
@@ -1139,6 +1292,7 @@ void FVulkanMeshRenderer::Render()
 			continue;
 		}
 
+		DrawingInfo.DescriptorSets = DrawingInfo.ShadowDescriptorSets;
 		Draw(Mesh, DrawingInfo, ViewportState, Scissor);
 	}
 
@@ -1153,7 +1307,7 @@ void FVulkanMeshRenderer::Render()
 
 	BasePass->Begin(CommandBuffer, Framebuffers[CurrentImageIndex], RenderArea, ClearValuesBasePass);
 
-//	UpdateUniformBuffer(false);
+	UpdateUniformBuffer();
 
 	for (const auto& Pair : InstancedDrawingMap)
 	{

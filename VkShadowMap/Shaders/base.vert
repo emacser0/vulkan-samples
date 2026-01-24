@@ -36,5 +36,5 @@ void main()
 
     gl_Position = transformBuffer.projection * outPosition;
 
-    outWorldPosition = vec4(inPosition, 1.0);
+    outWorldPosition = inModel * vec4(inPosition, 1.0);
 }

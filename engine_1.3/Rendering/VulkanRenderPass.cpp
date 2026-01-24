@@ -39,7 +39,7 @@ FVulkanRenderPass* FVulkanRenderPass::CreateShadowPass(FVulkanContext* InContext
 	DepthAttachmentDesc.format = Vk::FindDepthFormat(PhysicalDevice);
 	DepthAttachmentDesc.samples = VK_SAMPLE_COUNT_1_BIT;
 	DepthAttachmentDesc.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-	DepthAttachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
+	DepthAttachmentDesc.storeOp = VK_ATTACHMENT_STORE_OP_STORE;
 	DepthAttachmentDesc.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
 	DepthAttachmentDesc.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
 	DepthAttachmentDesc.initialLayout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;

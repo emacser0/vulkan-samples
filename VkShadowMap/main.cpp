@@ -78,7 +78,7 @@ FMainWidget::FMainWidget()
 	, bEnableGammaCorrection(false)
 	, bEnableToneMapping(false)
 {
-	PointLightPosition = glm::vec3(1.0f, -0.5f, 1.0f);
+	PointLightPosition = glm::vec3(1.0f, -3.0f, 1.0f);
 	PointAmbient = glm::vec4(0.05f, 0.05f, 0.05f, 1.0f);
 	PointDiffuse = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
 	PointSpecular = glm::vec4(0.5f, 0.5f, 0.5f, 1.0f);
@@ -245,7 +245,7 @@ void Run(int argc, char** argv)
 
 		FShaderParameter AmbientParameter{};
 		AmbientParameter.Type = EShaderParameterType::Vector3;
-		AmbientParameter.Vec3Param = glm::vec3(0.05f, 0.05f, 0.05f);
+		AmbientParameter.Vec3Param = glm::vec3(0.1f, 0.1f, 0.1f);
 		BaseMaterial->SetAmbient(AmbientParameter);
 
 		FShaderParameter DiffuseParameter{};

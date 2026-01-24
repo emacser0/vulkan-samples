@@ -82,11 +82,31 @@ float CalculateShadow()
     mat4 lightSpaceMatrix = lightBuffer.pointLights[0].lightSpaceMatrix;
     vec4 lightSpacePosition = lightSpaceMatrix * inWorldPosition;
 
-    vec3 projectCoordinates = lightSpacePosition.xyz / lightSpacePosition.z;
+    vec3 projectCoordinates = lightSpacePosition.xyz / lightSpacePosition.w;
     projectCoordinates = projectCoordinates * 0.5 + 0.5;
     float closestDepth = texture(shadowSampler, projectCoordinates.xy).r;
     float currentDepth = projectCoordinates.z;
-    float shadow = currentDepth > closestDepth ? 1.0 : 0.0;
+
+	vec3 normal = normalize(inNormal);
+    vec3 lightDir = normalize(lightBuffer.pointLights[0].position.xyz - inWorldPosition.xyz);
+    float bias = max(0.05 * (1.0 - dot(normal, lightDir)), 0.005);
+
+    float shadow = 0.0;
+    vec2 texelSize = 1.0 / textureSize(shadowSampler, 0);
+    for (int x = -1; x <= 1; ++x)
+    {
+        for (int y = -1; y <= 1; ++y)
+        {
+            float pcfDepth = texture(shadowSampler, projectCoordinates.xy + vec2(x, y) * texelSize).r; 
+            shadow += currentDepth - bias > pcfDepth  ? 1.0 : 0.0;        
+        }    
+    }
+    shadow /= 9.0;
+    
+    if (projectCoordinates.z > 1.0)
+    {
+		shadow = 0.0;
+    }
 
     return shadow;
 }
@@ -137,7 +157,7 @@ void main()
 		specular += materialBuffer.specular * light.specular * pow(max(dot(N, H), 0.0), 3 * light.shininess);
     }
 
-    outColor = (ambient * CalculateShadow() + diffuse + specular) * texture(baseColorSampler, inTexCoord);
+    outColor = ((ambient + diffuse) * (1.0f - CalculateShadow()) + specular) * texture(baseColorSampler, inTexCoord);
 
     if (debugBuffer.bGammaCorrection)
     {

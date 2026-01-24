@@ -146,6 +146,7 @@
     <None Include="Shaders\base.vert" />
     <None Include="Shaders\lightSource.frag" />
     <None Include="Shaders\lightSource.vert" />
+    <None Include="Shaders\shadow.vert" />
     <None Include="Shaders\sky.frag" />
     <None Include="Shaders\sky.vert" />
     <None Include="Shaders\visualizeTBN.frag" />

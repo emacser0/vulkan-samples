@@ -35,18 +35,21 @@ protected:
 	void CreateShadowDepthImage();
 	void CreateFramebuffers();
 	void CreateDescriptorSetLayout();
+	void CreateShadowDescriptorSetLayout();
 	void CreateGraphicsPipelines();
 	void CreateShadowPipeline();
 	void CreateTBNPipeline();
 	void CreateTextureSampler();
 	void CreateUniformBuffers();
+	void CreateShadowUniformBuffers();
 	void CreateInstanceBuffers();
 	void CreateDescriptorSets();
 
 	void GetVertexInputBindings(std::vector<VkVertexInputBindingDescription>& OutDescs);
 	void GetVertexInputAttributes(std::vector<VkVertexInputAttributeDescription>& OutDescs);
 
-	void UpdateUniformBuffer(bool bIsShadowPass);
+	void UpdateUniformBuffer();
+	void UpdateShadowUniformBuffer();
 	void UpdateMaterialBuffer(class FVulkanMesh* InMesh);
 	void UpdateInstanceBuffer(class FVulkanMesh* InMesh);
 	void UpdateDescriptorSets();
@@ -59,6 +62,7 @@ protected:
 		std::vector<class FVulkanModel*> Models;
 		std::vector<class FVulkanBuffer*> InstanceBuffers;
 		std::vector<VkDescriptorSet> DescriptorSets;
+		std::vector<VkDescriptorSet> ShadowDescriptorSets;
 	};
 	void Draw(class FVulkanMesh* InMesh, const FInstancedDrawingInfo& InDrawingInfo, VkViewport& InViewport, VkRect2D& InScissor);
 
@@ -75,6 +79,7 @@ protected:
 	class FVulkanPipeline* TBNPipeline;
 
 	VkDescriptorSetLayout DescriptorSetLayout;
+	VkDescriptorSetLayout ShadowDescriptorSetLayout;
 
 	std::unordered_map<class FVulkanMesh*, FInstancedDrawingInfo> InstancedDrawingMap;
 
@@ -82,6 +87,8 @@ protected:
 	std::vector<class FVulkanBuffer*> LightBuffers;
 	std::vector<class FVulkanBuffer*> MaterialBuffers;
 	std::vector<class FVulkanBuffer*> DebugBuffers;
+
+	std::vector<class FVulkanBuffer*> ShadowTransformBuffers;
 
 	class FVulkanSampler* Sampler;
 
